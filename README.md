@@ -18,6 +18,14 @@
 
 必须用项目里的 `server.py` 启动。不要用 `python3 -m http.server`，否则 Google Maps 短链接无法展开。
 
+最简单方式：双击 `start.command`，然后打开：
+
+```text
+http://localhost:5174
+```
+
+也可以手动运行：
+
 ```bash
 cd /Users/chenjy/Desktop/美食地图
 python3 server.py 5173
