@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.Python
+
+node_modules/
+npm-debug.log*
+
+.env
+.env.*
+
+dist/
+build/
+coverage/

@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gourmet Map</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=20260518-2" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">🍱</span>
+          <span>Gourmet Map</span>
+        </div>
+        <label class="search-box">
+          <span>⌕</span>
+          <input id="searchInput" type="search" placeholder="Search bites..." />
+        </label>
+        <div class="top-actions">
+          <button class="icon-button" id="locateButton" title="获取当前位置">⌖</button>
+          <button class="icon-button" id="settingsButton" title="Google API 设置">⚙</button>
+          <button class="avatar" id="loginButton">ME</button>
+        </div>
+      </header>
+
+      <section class="layout">
+        <aside class="sidebar">
+          <section class="profile-card">
+            <div class="pixel-badge">🍴</div>
+            <div>
+              <p class="eyebrow">MY PANTRY</p>
+              <strong id="placeCount">0 places</strong>
+            </div>
+          </section>
+
+          <button class="primary-button" id="openAddPanel">＋ New Spot</button>
+          <button class="primary-button alt" id="pasteAddButton" type="button">Paste & Add</button>
+          <p class="action-status" id="pasteStatus">复制 Google Maps 链接后点 Paste & Add。</p>
+          <div class="data-actions" aria-label="Data actions">
+            <button class="secondary-button" id="exportButton" type="button">Export</button>
+            <button class="secondary-button" id="importButton" type="button">Import</button>
+            <button class="secondary-button danger" id="resetButton" type="button">Reset Demo</button>
+            <input id="importFile" type="file" accept="application/json" hidden />
+          </div>
+
+          <nav class="filter-list" aria-label="Restaurant filters">
+            <button class="filter-item active" data-filter="all">◎ All <span id="countAll">0</span></button>
+            <button class="filter-item" data-filter="visited">☑ Visited <span id="countVisited">0</span></button>
+            <button class="filter-item" data-filter="want_to_go">▱ Want to Go <span id="countWant">0</span></button>
+            <button class="filter-item" data-filter="favorite">♡ Favorites <span id="countFavorite">0</span></button>
+          </nav>
+
+          <section class="recent-panel">
+            <p class="eyebrow">RECENT DISCOVERIES</p>
+            <div id="recentList" class="recent-list"></div>
+          </section>
+        </aside>
+
+        <section class="map-stage">
+          <div class="map-toolbar">
+            <div>
+              <p class="eyebrow">Q MAP</p>
+              <h1>My Gourmet Map</h1>
+            </div>
+            <div class="location-control">
+              <div class="location-status" id="locationStatus">等待定位</div>
+              <button class="secondary-button location-button" id="mapLocateButton" type="button">Use My Location</button>
+            </div>
+          </div>
+
+          <div class="cute-map" id="cuteMap" aria-label="Relative restaurant map">
+            <div class="grid-overlay"></div>
+            <div class="range-ring ring-1"><span>1 km</span></div>
+            <div class="range-ring ring-2"><span>5 km</span></div>
+            <div class="range-ring ring-3"><span>15 km+</span></div>
+            <button class="me-marker" id="meMarker" title="当前位置">
+              <span>🧑‍🍳</span>
+              <small>YOU</small>
+            </button>
+            <div id="markersLayer"></div>
+            <div class="empty-map" id="emptyMap">
+              <strong>添加第一家餐厅</strong>
+              <span>保存地址或 Google Maps 链接后，它会出现在这张 Q 版相对地图上。</span>
+            </div>
+          </div>
+
+          <article class="spot-card" id="spotCard">
+            <span class="tape"></span>
+            <button class="close-card" id="closeCard">×</button>
+            <p class="eyebrow">SELECTED SPOT</p>
+            <h2 id="spotName">选择一家餐厅</h2>
+            <div class="meta-row">
+              <span id="spotDistance">-- km</span>
+              <span id="spotRating">☆ --</span>
+              <span id="spotStatus">--</span>
+            </div>
+            <p id="spotNotes">点击地图上的餐厅图标查看详情。</p>
+            <div class="dish-list" id="spotDishes"></div>
+            <div class="card-actions">
+              <button class="outline-button" id="editSpot" type="button">Edit</button>
+              <button class="outline-button danger" id="deleteSpot" type="button">Delete</button>
+            </div>
+            <a class="outline-link" id="openGoogleMaps" href="#" target="_blank" rel="noreferrer">Open Google Maps ›</a>
+          </article>
+        </section>
+      </section>
+
+      <dialog class="modal" id="addDialog">
+        <form class="modal-card" id="restaurantForm" method="dialog">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow" id="formModeLabel">NEW_SPOT</p>
+              <h2 id="formTitle">Save a Bite</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeAddPanel">×</button>
+          </div>
+
+          <input name="id" type="hidden" />
+          <label>
+            店名
+            <input name="name" required placeholder="自动识别，或手动输入店名" />
+          </label>
+          <label>
+            地址
+            <input name="address" placeholder="可选：手动记录地址" />
+          </label>
+          <label>
+            Google Maps 链接
+            <input name="googleUrl" placeholder="粘贴 Google Maps 完整链接，自动识别店名和坐标" />
+          </label>
+          <div class="two-col">
+            <label>
+              纬度
+              <input name="lat" type="number" min="-90" max="90" step="any" placeholder="自动填入" />
+            </label>
+            <label>
+              经度
+              <input name="lng" type="number" min="-180" max="180" step="any" placeholder="自动填入" />
+            </label>
+          </div>
+          <div class="two-col">
+            <label>
+              状态
+              <select name="status">
+                <option value="visited">Visited</option>
+                <option value="want_to_go">Want to Go</option>
+                <option value="favorite">Favorite</option>
+              </select>
+            </label>
+            <label>
+              评分
+              <input name="rating" type="number" min="0" max="5" step="0.1" value="4.5" />
+            </label>
+          </div>
+          <label>
+            推荐菜
+            <input name="dishes" placeholder="Black garlic tonkotsu, Gyoza" />
+          </label>
+          <label>
+            想法
+            <textarea name="notes" rows="4" placeholder="汤底浓郁，适合下班后一个人慢慢吃。"></textarea>
+          </label>
+          <p class="form-help" id="formHelp">
+            推荐复制 Google Maps 浏览器地址栏里的完整链接；短分享链接可能需要先在浏览器打开后再复制。
+          </p>
+          <button class="primary-button" id="saveSpotButton" type="submit">Save Spot</button>
+        </form>
+      </dialog>
+
+      <dialog class="modal" id="settingsDialog">
+        <form class="modal-card" id="settingsForm" method="dialog">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow">SETTINGS</p>
+              <h2>Google API</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeSettings">×</button>
+          </div>
+          <label>
+            Google Geocoding API Key
+            <input name="googleApiKey" id="googleApiKey" placeholder="AIza..." />
+          </label>
+          <p class="form-help">
+            MVP 默认优先解析 Google Maps 链接和手动经纬度；只有只填地址时才需要 Google Geocoding API。
+          </p>
+          <button class="primary-button" type="submit">Save Settings</button>
+        </form>
+      </dialog>
+    </main>
+    <script src="./app.js?v=20260518-2"></script>
+  </body>
+</html>
