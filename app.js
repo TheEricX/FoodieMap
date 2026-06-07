@@ -6,6 +6,8 @@ const SHORT_LINK_HELP =
   "这是 Google Maps 短链接，网页无法直接读取跳转后的坐标。请先在浏览器打开它，再复制地址栏里的完整 maps/place 链接粘回来。";
 const SERVER_HELP =
   "短链服务未连接。请停止当前服务，改用：python3 server.py 5174，然后打开 http://localhost:5174";
+const LOCATION_DENIED_HELP =
+  "定位权限已被浏览器拒绝。请点地址栏左侧图标 > 定位 > 允许或询问，然后再点 Use My Location。";
 
 const demoRestaurants = [
   {
@@ -54,6 +56,7 @@ let settings = loadSettings();
 let currentLocation = null;
 let activeFilter = "all";
 let selectedRestaurantId = restaurants[0]?.id ?? null;
+let isSpotCardOpen = Boolean(selectedRestaurantId);
 let editingRestaurantId = null;
 let shortLinkResolveTimer = null;
 let quickPasteMode = false;
@@ -95,6 +98,8 @@ const elements = {
   countFavorite: document.querySelector("#countFavorite"),
   cuteMap: document.querySelector("#cuteMap"),
   spotCard: document.querySelector("#spotCard"),
+  spotCardTab: document.querySelector("#spotCardTab"),
+  spotCardTabName: document.querySelector("#spotCardTabName"),
   spotName: document.querySelector("#spotName"),
   spotDistance: document.querySelector("#spotDistance"),
   spotRating: document.querySelector("#spotRating"),
@@ -136,7 +141,11 @@ function bindEvents() {
     elements.loginButton.textContent = elements.loginButton.textContent === "ME" ? "YOU" : "ME";
   });
   elements.closeCard.addEventListener("click", () => {
-    selectedRestaurantId = null;
+    isSpotCardOpen = false;
+    renderSpotCard();
+  });
+  elements.spotCardTab.addEventListener("click", () => {
+    isSpotCardOpen = true;
     renderSpotCard();
   });
   elements.editSpot.addEventListener("click", openEditDialog);
@@ -181,6 +190,7 @@ function bindEvents() {
         ? restaurants.map((item) => (item.id === editingRestaurantId ? restaurant : item))
         : [restaurant, ...restaurants];
       selectedRestaurantId = restaurant.id;
+      isSpotCardOpen = true;
       saveRestaurants();
       resetRestaurantForm();
       elements.addDialog.close();
@@ -389,6 +399,7 @@ function addParsedRestaurantWithConfirmation(parsed) {
   };
   restaurants = [restaurant, ...restaurants];
   selectedRestaurantId = restaurant.id;
+  isSpotCardOpen = true;
   saveRestaurants();
   if (elements.addDialog.open) elements.addDialog.close();
   render();
@@ -517,6 +528,7 @@ async function importRestaurants(event) {
 
     restaurants = mergeRestaurants(normalized, restaurants);
     selectedRestaurantId = restaurants[0]?.id ?? null;
+    isSpotCardOpen = Boolean(selectedRestaurantId);
     saveRestaurants();
     render();
   } catch (error) {
@@ -530,16 +542,43 @@ function resetDemoData() {
   if (!confirm("要把本地数据重置为演示数据吗？当前保存的餐厅会被覆盖。")) return;
   restaurants = demoRestaurants.map((restaurant) => ({ ...restaurant, id: crypto.randomUUID() }));
   selectedRestaurantId = restaurants[0]?.id ?? null;
+  isSpotCardOpen = Boolean(selectedRestaurantId);
   saveRestaurants();
   render();
 }
 
-function requestLocation() {
+async function getLocationPermissionState() {
+  if (!navigator.permissions?.query) return "unknown";
+
+  try {
+    const permission = await navigator.permissions.query({ name: "geolocation" });
+    return permission.state;
+  } catch {
+    return "unknown";
+  }
+}
+
+function setLocationButtonState(label, disabled = false) {
+  elements.mapLocateButton.textContent = label;
+  elements.mapLocateButton.disabled = disabled;
+  elements.locateButton.disabled = disabled;
+}
+
+async function requestLocation() {
   if (!navigator.geolocation) {
+    setLocationButtonState("Location Unavailable", true);
     setFallbackLocation("浏览器不支持定位，使用多伦多市中心作为临时位置。");
     return;
   }
 
+  const permissionState = await getLocationPermissionState();
+  if (permissionState === "denied") {
+    setLocationButtonState("Retry Location");
+    setFallbackLocation(LOCATION_DENIED_HELP);
+    return;
+  }
+
+  setLocationButtonState("Locating...", true);
   elements.locationStatus.textContent = "正在获取当前位置...";
   navigator.geolocation.getCurrentPosition(
     (position) => {
@@ -548,9 +587,17 @@ function requestLocation() {
         lng: position.coords.longitude,
       };
       elements.locationStatus.textContent = `当前位置 ${currentLocation.lat.toFixed(3)}, ${currentLocation.lng.toFixed(3)}`;
+      setLocationButtonState("Use My Location");
       render();
     },
-    () => setFallbackLocation("定位被拒绝，使用多伦多市中心作为临时位置。"),
+    (error) => {
+      setLocationButtonState("Retry Location");
+      const message =
+        error.code === error.PERMISSION_DENIED
+          ? LOCATION_DENIED_HELP
+          : "暂时无法获取当前位置，使用多伦多市中心作为临时位置。请稍后再试。";
+      setFallbackLocation(message);
+    },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
   );
 }
@@ -747,7 +794,9 @@ function renderRecentList() {
   elements.recentList.querySelectorAll(".recent-item").forEach((item) => {
     item.addEventListener("click", () => {
       selectedRestaurantId = item.dataset.id;
+      isSpotCardOpen = true;
       renderSpotCard();
+      renderMarkers();
     });
   });
 }
@@ -764,7 +813,7 @@ function renderMarkers() {
     const bearing = getBearing(currentLocation, restaurant);
     const point = mapPoint(distance, bearing, index);
     const marker = document.createElement("button");
-    marker.className = `restaurant-marker ${restaurant.status}`;
+    marker.className = `restaurant-marker ${restaurant.status}${restaurant.id === selectedRestaurantId ? " selected" : ""}`;
     marker.style.left = `${point.x}%`;
     marker.style.top = `${point.y}%`;
     marker.innerHTML = `
@@ -775,7 +824,9 @@ function renderMarkers() {
     marker.title = `${restaurant.name} - ${formatDistance(distance)}`;
     marker.addEventListener("click", () => {
       selectedRestaurantId = restaurant.id;
+      isSpotCardOpen = true;
       renderSpotCard();
+      renderMarkers();
     });
     elements.markersLayer.appendChild(marker);
   });
@@ -786,6 +837,9 @@ function renderSpotCard() {
   const hasSelection = Boolean(selected);
 
   if (!selected) {
+    isSpotCardOpen = false;
+    elements.spotCard.hidden = true;
+    elements.spotCardTab.hidden = true;
     elements.spotName.textContent = "选择一家餐厅";
     elements.spotDistance.textContent = "-- km";
     elements.spotRating.textContent = "☆ --";
@@ -797,6 +851,10 @@ function renderSpotCard() {
     elements.deleteSpot.disabled = true;
     return;
   }
+
+  elements.spotCard.hidden = !isSpotCardOpen;
+  elements.spotCardTab.hidden = isSpotCardOpen;
+  elements.spotCardTabName.textContent = selected.name;
 
   const distance = currentLocation ? haversineDistance(currentLocation, selected) : null;
   elements.spotName.textContent = selected.name;
@@ -817,6 +875,7 @@ function deleteSelectedRestaurant() {
 
   restaurants = restaurants.filter((restaurant) => restaurant.id !== selected.id);
   selectedRestaurantId = restaurants[0]?.id ?? null;
+  isSpotCardOpen = Boolean(selectedRestaurantId);
   saveRestaurants();
   render();
 }

@@ -603,6 +603,11 @@ button {
   background: #fffdfa;
 }
 
+.restaurant-marker.selected {
+  outline: 4px solid #2f6fed;
+  outline-offset: 3px;
+}
+
 .restaurant-marker .marker-icon {
   font-size: 22px;
   line-height: 1;
@@ -637,6 +642,48 @@ button {
   background: var(--paper);
   padding: clamp(18px, 1.6vw, 24px);
   box-shadow: var(--shadow);
+}
+
+.spot-card[hidden],
+.spot-card-tab[hidden] {
+  display: none;
+}
+
+.spot-card-tab {
+  position: absolute;
+  right: clamp(16px, 2.5vw, 46px);
+  bottom: clamp(16px, 2.5vw, 46px);
+  z-index: 8;
+  display: grid;
+  gap: 2px;
+  max-width: min(260px, calc(100% - 32px));
+  border: 4px solid var(--line);
+  background: var(--accent-blue);
+  color: #fffdfa;
+  padding: 12px 16px;
+  box-shadow: var(--shadow);
+  text-align: left;
+  cursor: pointer;
+}
+
+.spot-card-tab span,
+.spot-card-tab strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spot-card-tab span {
+  color: rgba(255, 253, 250, 0.78);
+  font-family: "Space Mono", monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.spot-card-tab strong {
+  font-family: "Space Mono", monospace;
+  font-size: 16px;
+  text-transform: uppercase;
 }
 
 .spot-card .tape {
@@ -882,6 +929,15 @@ button {
     bottom: auto;
     width: 100%;
     margin-top: 0;
+    box-shadow: 4px 4px 0 rgba(60, 52, 45, 0.55);
+  }
+
+  .spot-card-tab {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    max-width: none;
     box-shadow: 4px 4px 0 rgba(60, 52, 45, 0.55);
   }
 }
