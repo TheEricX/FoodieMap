@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260607-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260607-2" />
   </head>
   <body>
     <main class="app-shell">
@@ -26,7 +26,7 @@
         <div class="top-actions">
           <button class="icon-button" id="locateButton" title="获取当前位置">⌖</button>
           <button class="icon-button" id="settingsButton" title="Google API 设置">⚙</button>
-          <button class="avatar" id="loginButton">ME</button>
+          <button class="avatar" id="loginButton" type="button">Sign in</button>
         </div>
       </header>
 
@@ -105,6 +105,7 @@
             <div class="dish-list" id="spotDishes"></div>
             <div class="card-actions">
               <button class="outline-button" id="editSpot" type="button">Edit</button>
+              <button class="outline-button" id="shareSpot" type="button">Share</button>
               <button class="outline-button danger" id="deleteSpot" type="button">Delete</button>
             </div>
             <a class="outline-link" id="openGoogleMaps" href="#" target="_blank" rel="noreferrer">Open Google Maps ›</a>
@@ -160,21 +161,61 @@
             </label>
             <label>
               评分
-              <input name="rating" type="number" min="0" max="5" step="0.1" value="4.5" />
+              <input name="personalRating" type="number" min="0" max="5" step="0.1" value="4.5" />
             </label>
           </div>
           <label>
-            推荐菜
-            <input name="dishes" placeholder="Black garlic tonkotsu, Gyoza" />
+            去过次数
+            <input name="visitCount" type="number" min="0" step="1" value="0" />
           </label>
           <label>
             想法
             <textarea name="notes" rows="4" placeholder="汤底浓郁，适合下班后一个人慢慢吃。"></textarea>
           </label>
+          <section class="dish-editor" id="dishEditor" hidden>
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">DISHES</p>
+                <strong>菜品记录</strong>
+              </div>
+            </div>
+            <div class="dish-form-grid">
+              <input id="dishNameInput" placeholder="菜品名称，例如 Black Garlic Tonkotsu" />
+              <select id="dishStatusInput">
+                <option value="liked">Liked</option>
+                <option value="tried">Tried</option>
+              </select>
+              <input id="dishRatingInput" type="number" min="0" max="5" step="0.1" value="4.5" />
+              <button class="secondary-button" id="addDishButton" type="button">Add Dish</button>
+            </div>
+            <div class="dish-editor-list" id="dishEditorList"></div>
+          </section>
           <p class="form-help" id="formHelp">
             推荐复制 Google Maps 浏览器地址栏里的完整链接；短分享链接可能需要先在浏览器打开后再复制。
           </p>
           <button class="primary-button" id="saveSpotButton" type="submit">Save Spot</button>
+        </form>
+      </dialog>
+
+      <dialog class="modal" id="shareDialog">
+        <form class="modal-card" id="shareForm" method="dialog">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow">SHARE</p>
+              <h2>Share This Spot</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeShareDialog">×</button>
+          </div>
+          <p class="form-help">选择这次要推荐给朋友的菜品，然后生成分享链接。</p>
+          <div class="share-dish-list" id="shareDishList"></div>
+          <label>
+            分享链接
+            <input id="shareUrlInput" readonly placeholder="生成后显示链接" />
+          </label>
+          <div class="card-actions">
+            <button class="primary-button" id="createShareButton" type="submit">Create Share Link</button>
+            <button class="outline-button" id="copyShareButton" type="button">Copy</button>
+          </div>
         </form>
       </dialog>
 
@@ -198,6 +239,6 @@
         </form>
       </dialog>
     </main>
-    <script src="./app.js?v=20260519-3"></script>
+    <script src="/app.js?v=20260607-2"></script>
   </body>
 </html>

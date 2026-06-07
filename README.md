@@ -1,59 +1,73 @@
-# Gourmet Map MVP
+# FoodieMap MVP
 
-一个本地运行的美食地图 MVP。它可以保存餐厅、解析 Google Maps 链接、显示相对距离，并把数据保存在浏览器本地。
+FoodieMap 是一个可自托管的美食地图 MVP。它支持 Google 登录、云端保存餐厅、记录菜品和图片、生成分享链接，并保留原来的 Q 版相对地图体验。
 
 ## 功能
 
-- 保存餐厅名称、地址、评分、状态、推荐菜和备注
-- 复制 Google Maps 链接后，通过 `Paste & Add` 识别并确认添加
-- 支持 `maps.app.goo.gl` 短分享链接，本地展开后解析坐标
-- 支持 Google Maps 完整链接中的 `@lat,lng`、`?q=lat,lng`、`?query=lat,lng`、`!3d...!4d...`
-- 从 `/maps/place/...` 链接尽量自动填店名
-- 浏览器定位当前位置，按距离展示 Q 版相对地图
-- 搜索、筛选、编辑、删除餐厅
-- JSON 导入/导出备份
-- 可选 Google Geocoding API Key，只在“只填地址转坐标”时使用
+- Google OAuth 登录，不需要额外注册
+- SQLite 保存用户、餐厅、菜品、分享链接
+- 保存餐厅状态、去过次数、个人评分、备注、Google Maps 链接和坐标
+- 每家店可记录菜品：`Liked` / `Tried`、5 星评分、备注、1 张压缩图片
+- `Paste & Add` 支持 Google Maps 完整链接和 `maps.app.goo.gl` 短链接
+- 分享链接 `/share/{token}` 支持未登录预览
+- 朋友登录后可一键添加分享店铺到自己的列表，默认分类为 `Want to Go`
+- 响应式布局，支持桌面、平板和手机
 
 ## 本地运行
 
-必须用项目里的 `server.py` 启动。不要用 `python3 -m http.server`，否则 Google Maps 短链接无法展开。
-
-最简单方式：双击 `start.command`，然后打开：
-
-```text
-http://localhost:5174
-```
-
-也可以手动运行：
+安装依赖：
 
 ```bash
 cd /Users/chenjy/Desktop/美食地图
-python3 server.py 5173
+python3 -m pip install -r requirements.txt
+```
+
+创建 `.env`：
+
+```env
+GOOGLE_CLIENT_ID=你的 Google OAuth Client ID
+GOOGLE_CLIENT_SECRET=你的 Google OAuth Client Secret
+APP_BASE_URL=http://localhost:5174
+SESSION_SECRET=换成一串随机长字符串
+```
+
+启动：
+
+```bash
+python3 server.py 5174
 ```
 
 打开：
 
 ```text
-http://localhost:5173
+http://localhost:5174
 ```
 
-如果端口被占用，换一个端口：
+不要使用 `python3 -m http.server`，否则 API、登录、短链接展开、图片上传都不可用。
 
-```bash
-python3 server.py 5181
-```
+## Google 登录配置
 
-然后打开：
+`server.py` 会自动读取项目根目录的 `.env`。如果你已经在终端里 `export` 了同名变量，终端里的值优先。
+
+Google Cloud Console 里 OAuth Redirect URI 填：
 
 ```text
-http://localhost:5181
+http://localhost:5174/auth/google/callback
 ```
 
-停止服务：在运行服务的终端按 `Ctrl + C`。
+如果部署到公网域名，把 `APP_BASE_URL` 和 Redirect URI 换成 HTTPS 域名。
 
 ## Docker 运行
 
-安装 Docker Desktop 后运行：
+创建 `.env`：
+
+```bash
+SESSION_SECRET=换成一串随机长字符串
+GOOGLE_CLIENT_ID=你的 Google OAuth Client ID
+GOOGLE_CLIENT_SECRET=你的 Google OAuth Client Secret
+```
+
+启动：
 
 ```bash
 docker compose up --build
@@ -65,77 +79,61 @@ docker compose up --build
 http://localhost:5173
 ```
 
+数据保存在 Docker volume `foodiemap_foodie-map-data` 里，包括：
+
+- `/data/foodiemap.db`
+- `/data/uploads`
+
 停止：
 
 ```bash
 docker compose down
 ```
 
-Docker 版本同样运行 `server.py`，所以支持 Google Maps 短链接展开。
+## 使用流程
 
-## 添加餐厅
+1. 点击右上角 `Sign in`，用 Google 邮箱登录。
+2. 点击 `New Spot` 或复制 Google Maps 链接后点 `Paste & Add`。
+3. 编辑店铺时可以记录去过次数、个人评分和菜品。
+4. 在菜品区域添加菜名、状态、评分，并可上传一张图片。
+5. 在店铺详情卡点击 `Share`，手动选择要推荐的菜品，生成分享链接。
+6. 朋友打开分享链接可以预览；登录后点 `Add to My List` 加入自己的列表。
 
-推荐流程：
+## API
 
-1. 在 Google Maps 复制餐厅链接，短链接也可以，例如 `https://maps.app.goo.gl/...`
-2. 回到 Gourmet Map
-3. 点击 `Paste & Add`
-4. 浏览器如果询问剪贴板权限，选择允许
-5. 确认识别出的店名和坐标后添加
+主要 API：
 
-如果剪贴板权限不可用：
-
-1. 点击 `New Spot`
-2. 把 Google Maps 链接粘贴到 `Google Maps 链接`
-3. 页面会自动识别店名和坐标
-4. 点击 `Save Spot`
-
-## 短链服务状态
-
-左侧 `Paste & Add` 下方应该显示：
-
-```text
-短链服务已连接。复制 Google Maps 链接后点 Paste & Add。
-```
-
-如果显示“短链服务未连接”，说明当前页面不是通过 `server.py` 启动的。停止当前服务后重新运行：
-
-```bash
-python3 server.py 5173
-```
-
-如果浏览器仍显示旧内容，使用 `Cmd + Shift + R` 强制刷新。
-
-## 定位
-
-点击右上角或地图区域的 `Use My Location`。浏览器会请求定位权限。
-
-如果定位失败：
-
-- 确认页面是通过 `http://localhost:端口` 打开的
-- 在 macOS `System Settings > Privacy & Security > Location Services` 中允许浏览器定位
-- 刷新页面后重试
-
-定位失败时，应用会临时使用多伦多市中心作为当前位置。
-
-## 数据保存
-
-当前 MVP 使用浏览器 `localStorage` 保存数据。
-
-- 同一浏览器内刷新页面不会丢
-- 换浏览器、清理浏览器数据会丢
-- 用 `Export` / `Import` 做备份和恢复
-
-## Google API
-
-默认不需要 Google API。
-
-只有在你不粘贴带坐标的 Google Maps 链接、只填写普通地址并希望自动转坐标时，才需要在右上角设置里填写 Google Geocoding API Key。
+- `GET /api/me`
+- `GET /auth/google/login`
+- `GET /auth/google/callback`
+- `POST /auth/logout`
+- `GET /api/restaurants`
+- `POST /api/restaurants`
+- `GET /api/restaurants/{id}`
+- `PATCH /api/restaurants/{id}`
+- `DELETE /api/restaurants/{id}`
+- `POST /api/restaurants/{id}/dishes`
+- `PATCH /api/dishes/{id}`
+- `POST /api/dishes/{id}/image`
+- `DELETE /api/dishes/{id}`
+- `POST /api/restaurants/{id}/share`
+- `GET /api/share/{token}`
+- `POST /api/share/{token}/add`
+- `GET /api/resolve-google-link?url=...`
+- `GET /api/health`
 
 ## 项目文件
 
 - `index.html`：页面结构
 - `styles.css`：响应式 UI 样式
-- `app.js`：前端交互、地图、数据保存
-- `server.py`：本地静态服务和 Google Maps 短链接展开接口
+- `app.js`：前端交互、地图、API 数据层
+- `server.py`：FastAPI 后端、SQLite、OAuth、上传、分享
+- `requirements.txt`：Python 依赖
 - `Dockerfile` / `compose.yaml`：Docker 运行配置
+
+## 当前限制
+
+- 第一版只支持 Google OAuth，不支持邮箱密码注册。
+- 图片保存在本机或 Docker volume，不接 S3。
+- SQLite 适合 MVP 和小规模使用；多人高频使用后建议迁移到 Postgres。
+- 分享链接默认长期有效，暂不支持过期和撤销。

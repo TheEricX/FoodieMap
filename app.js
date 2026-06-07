@@ -1,66 +1,61 @@
-const STORAGE_KEY = "gourmet-map-restaurants";
-const SETTINGS_KEY = "gourmet-map-settings";
-const GOOGLE_MAPS_HELP =
-  "推荐复制 Google Maps 浏览器地址栏里的完整链接；短分享链接可能需要先在浏览器打开后再复制。";
-const SHORT_LINK_HELP =
-  "这是 Google Maps 短链接，网页无法直接读取跳转后的坐标。请先在浏览器打开它，再复制地址栏里的完整 maps/place 链接粘回来。";
-const SERVER_HELP =
-  "短链服务未连接。请停止当前服务，改用：python3 server.py 5174，然后打开 http://localhost:5174";
-const LOCATION_DENIED_HELP =
-  "定位权限已被浏览器拒绝。请点地址栏左侧图标 > 定位 > 允许或询问，然后再点 Use My Location。";
+const GOOGLE_MAPS_HELP = "推荐复制 Google Maps 浏览器地址栏里的完整链接；短分享链接会由本地服务自动展开。";
+const LOCATION_DENIED_HELP = "定位权限已被浏览器拒绝。请点地址栏左侧图标 > 定位 > 允许或询问，然后再点 Use My Location。";
 
 const demoRestaurants = [
   {
-    id: crypto.randomUUID(),
+    id: "demo-hachi",
     name: "Hachi Ramen",
     address: "131 Beecroft Rd, Toronto",
     lat: 43.7682,
     lng: -79.4139,
-    googleUrl: "https://www.google.com/maps?q=43.7682,-79.4139",
+    google_url: "https://www.google.com/maps?q=43.7682,-79.4139",
     status: "visited",
-    rating: 4.9,
+    visit_count: 3,
+    personal_rating: 4.9,
     notes: "汤底浓郁，适合寒冷晚上。队伍可能有点久。",
-    dishes: ["Tonkotsu", "Gyoza"],
-    createdAt: Date.now() - 200000,
+    dishes: [
+      { id: "demo-dish-1", name: "Tonkotsu", dish_status: "liked", rating: 4.9, image_url: "", notes: "" },
+      { id: "demo-dish-2", name: "Gyoza", dish_status: "tried", rating: 4.4, image_url: "", notes: "" },
+    ],
   },
   {
-    id: crypto.randomUUID(),
+    id: "demo-onigiri",
     name: "Onigiri Corner",
     address: "100 Queen St W, Toronto",
     lat: 43.6535,
     lng: -79.3839,
-    googleUrl: "https://www.google.com/maps?q=43.6535,-79.3839",
+    google_url: "https://www.google.com/maps?q=43.6535,-79.3839",
     status: "want_to_go",
-    rating: 4.5,
+    visit_count: 0,
+    personal_rating: 4.5,
     notes: "想试明太子饭团和抹茶。",
-    dishes: ["Mentaiko", "Matcha"],
-    createdAt: Date.now() - 100000,
+    dishes: [{ id: "demo-dish-3", name: "Mentaiko", dish_status: "liked", rating: 4.5, image_url: "", notes: "" }],
   },
   {
-    id: crypto.randomUUID(),
+    id: "demo-matcha",
     name: "Matcha Mornings",
     address: "30 Carlton St, Toronto",
     lat: 43.6618,
     lng: -79.3817,
-    googleUrl: "https://www.google.com/maps?q=43.6618,-79.3817",
+    google_url: "https://www.google.com/maps?q=43.6618,-79.3817",
     status: "favorite",
-    rating: 4.8,
+    visit_count: 2,
+    personal_rating: 4.8,
     notes: "甜品稳定，适合周末下午。",
-    dishes: ["Matcha Latte", "Roll Cake"],
-    createdAt: Date.now() - 50000,
+    dishes: [{ id: "demo-dish-4", name: "Matcha Latte", dish_status: "liked", rating: 4.8, image_url: "", notes: "" }],
   },
 ];
 
-let restaurants = loadRestaurants();
-let settings = loadSettings();
+let restaurants = [];
+let currentUser = null;
 let currentLocation = null;
 let activeFilter = "all";
-let selectedRestaurantId = restaurants[0]?.id ?? null;
-let isSpotCardOpen = Boolean(selectedRestaurantId);
+let selectedRestaurantId = null;
+let isSpotCardOpen = true;
 let editingRestaurantId = null;
 let shortLinkResolveTimer = null;
-let quickPasteMode = false;
-let shortLinkServiceAvailable = false;
+let shareToken = getShareToken();
+let shareData = null;
 
 const elements = {
   searchInput: document.querySelector("#searchInput"),
@@ -83,6 +78,12 @@ const elements = {
   formTitle: document.querySelector("#formTitle"),
   saveSpotButton: document.querySelector("#saveSpotButton"),
   formHelp: document.querySelector("#formHelp"),
+  dishEditor: document.querySelector("#dishEditor"),
+  dishEditorList: document.querySelector("#dishEditorList"),
+  dishNameInput: document.querySelector("#dishNameInput"),
+  dishStatusInput: document.querySelector("#dishStatusInput"),
+  dishRatingInput: document.querySelector("#dishRatingInput"),
+  addDishButton: document.querySelector("#addDishButton"),
   settingsDialog: document.querySelector("#settingsDialog"),
   settingsForm: document.querySelector("#settingsForm"),
   closeSettings: document.querySelector("#closeSettings"),
@@ -96,7 +97,6 @@ const elements = {
   countVisited: document.querySelector("#countVisited"),
   countWant: document.querySelector("#countWant"),
   countFavorite: document.querySelector("#countFavorite"),
-  cuteMap: document.querySelector("#cuteMap"),
   spotCard: document.querySelector("#spotCard"),
   spotCardTab: document.querySelector("#spotCardTab"),
   spotCardTabName: document.querySelector("#spotCardTabName"),
@@ -109,15 +109,27 @@ const elements = {
   openGoogleMaps: document.querySelector("#openGoogleMaps"),
   closeCard: document.querySelector("#closeCard"),
   editSpot: document.querySelector("#editSpot"),
+  shareSpot: document.querySelector("#shareSpot"),
   deleteSpot: document.querySelector("#deleteSpot"),
+  shareDialog: document.querySelector("#shareDialog"),
+  shareForm: document.querySelector("#shareForm"),
+  closeShareDialog: document.querySelector("#closeShareDialog"),
+  shareDishList: document.querySelector("#shareDishList"),
+  shareUrlInput: document.querySelector("#shareUrlInput"),
+  createShareButton: document.querySelector("#createShareButton"),
+  copyShareButton: document.querySelector("#copyShareButton"),
 };
 
 boot();
 
-function boot() {
-  elements.googleApiKey.value = settings.googleApiKey ?? "";
+async function boot() {
   bindEvents();
-  render();
+  await loadMe();
+  if (shareToken) {
+    await loadSharePage(shareToken);
+  } else {
+    await loadRestaurants();
+  }
   checkShortLinkService();
   requestLocation();
 }
@@ -125,21 +137,10 @@ function boot() {
 function bindEvents() {
   elements.locateButton.addEventListener("click", requestLocation);
   elements.mapLocateButton.addEventListener("click", requestLocation);
+  elements.loginButton.addEventListener("click", handleLoginButton);
   elements.openAddPanel.addEventListener("click", openCreateDialog);
   elements.pasteAddButton.addEventListener("click", pasteAndAddFromClipboard);
   elements.closeAddPanel.addEventListener("click", closeRestaurantDialog);
-  elements.addDialog.addEventListener("close", () => {
-    if (!editingRestaurantId) resetRestaurantForm();
-  });
-  elements.settingsButton.addEventListener("click", () => elements.settingsDialog.showModal());
-  elements.closeSettings.addEventListener("click", () => elements.settingsDialog.close());
-  elements.exportButton.addEventListener("click", exportRestaurants);
-  elements.importButton.addEventListener("click", () => elements.importFile.click());
-  elements.importFile.addEventListener("change", importRestaurants);
-  elements.resetButton.addEventListener("click", resetDemoData);
-  elements.loginButton.addEventListener("click", () => {
-    elements.loginButton.textContent = elements.loginButton.textContent === "ME" ? "YOU" : "ME";
-  });
   elements.closeCard.addEventListener("click", () => {
     isSpotCardOpen = false;
     renderSpotCard();
@@ -149,9 +150,24 @@ function bindEvents() {
     renderSpotCard();
   });
   elements.editSpot.addEventListener("click", openEditDialog);
+  elements.shareSpot.addEventListener("click", openShareDialog);
   elements.deleteSpot.addEventListener("click", deleteSelectedRestaurant);
   elements.searchInput.addEventListener("input", render);
   elements.googleUrlInput.addEventListener("input", autofillFromGoogleMapsUrl);
+  elements.restaurantForm.addEventListener("submit", saveRestaurantFromForm);
+  elements.addDishButton.addEventListener("click", addDishFromEditor);
+  elements.closeShareDialog.addEventListener("click", () => elements.shareDialog.close());
+  elements.shareForm.addEventListener("submit", createShareLink);
+  elements.copyShareButton.addEventListener("click", copyShareLink);
+  elements.exportButton.addEventListener("click", exportRestaurants);
+  elements.importButton.addEventListener("click", () => alert("云端版本暂不导入本地 JSON。"));
+  elements.resetButton.addEventListener("click", resetDemoData);
+  elements.settingsButton.addEventListener("click", () => elements.settingsDialog.showModal());
+  elements.closeSettings.addEventListener("click", () => elements.settingsDialog.close());
+  elements.settingsForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    elements.settingsDialog.close();
+  });
 
   document.querySelectorAll(".filter-item").forEach((button) => {
     button.addEventListener("click", () => {
@@ -161,73 +177,141 @@ function bindEvents() {
       render();
     });
   });
+}
 
-  elements.settingsForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    settings.googleApiKey = elements.googleApiKey.value.trim();
-    saveSettings();
-    elements.settingsDialog.close();
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.headers ?? {}),
+    },
   });
+  if (response.status === 401) {
+    throw new Error("请先使用 Google 登录。");
+  }
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.detail || data.error || "请求失败。");
+  }
+  return data;
+}
 
-  elements.restaurantForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const payload = getRestaurantPayload();
+async function loadMe() {
+  try {
+    const data = await api("/api/me");
+    currentUser = data.user;
+  } catch {
+    currentUser = null;
+  }
+  renderAuth();
+}
 
-    try {
-      elements.formHelp.textContent = "正在解析位置...";
-      const coordinates = await resolveCoordinates(payload);
-      const restaurant = {
-        id: editingRestaurantId || crypto.randomUUID(),
-        ...payload,
-        ...coordinates,
-        googleUrl: payload.googleUrl || `https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}`,
-        createdAt: editingRestaurantId
-          ? restaurants.find((item) => item.id === editingRestaurantId)?.createdAt || Date.now()
-          : Date.now(),
-        updatedAt: Date.now(),
-      };
-      restaurants = editingRestaurantId
-        ? restaurants.map((item) => (item.id === editingRestaurantId ? restaurant : item))
-        : [restaurant, ...restaurants];
-      selectedRestaurantId = restaurant.id;
-      isSpotCardOpen = true;
-      saveRestaurants();
-      resetRestaurantForm();
-      elements.addDialog.close();
-      render();
-    } catch (error) {
-      elements.formHelp.textContent = error.message;
-    }
-  });
+function renderAuth() {
+  elements.loginButton.textContent = currentUser ? shortUserName(currentUser) : "Sign in";
+  elements.loginButton.title = currentUser ? `${currentUser.email}，点击退出登录` : "使用 Google 登录";
+  elements.pasteStatus.textContent = currentUser
+    ? "复制 Google Maps 链接后点 Paste & Add。"
+    : "当前是演示模式。登录后可保存云端数据、上传图片和分享。";
+}
+
+async function handleLoginButton() {
+  if (!currentUser) {
+    window.location.href = `/auth/google/login?next=${encodeURIComponent(location.pathname + location.search)}`;
+    return;
+  }
+  if (!confirm(`退出 ${currentUser.email} 吗？`)) return;
+  await api("/auth/logout", { method: "POST" });
+  currentUser = null;
+  restaurants = demoRestaurants.map(cloneRestaurant);
+  selectedRestaurantId = restaurants[0]?.id ?? null;
+  renderAuth();
+  render();
+}
+
+async function loadRestaurants() {
+  if (!currentUser) {
+    restaurants = demoRestaurants.map(cloneRestaurant);
+  } else {
+    const data = await api("/api/restaurants");
+    restaurants = data.restaurants.map(normalizeRestaurant);
+  }
+  selectedRestaurantId = restaurants[0]?.id ?? null;
+  isSpotCardOpen = Boolean(selectedRestaurantId);
+  render();
+}
+
+async function loadSharePage(token) {
+  const data = await api(`/api/share/${token}`);
+  shareData = data.share;
+  restaurants = [normalizeRestaurant({ ...shareData.restaurant, dishes: shareData.dishes })];
+  selectedRestaurantId = restaurants[0].id;
+  isSpotCardOpen = true;
+  document.querySelector(".brand span:last-child").textContent = "Shared Bite";
+  elements.openAddPanel.textContent = "＋ Add to My List";
+  elements.openAddPanel.onclick = addSharedRestaurant;
+  elements.pasteAddButton.hidden = true;
+  elements.shareSpot.disabled = true;
+  elements.editSpot.disabled = true;
+  elements.deleteSpot.disabled = true;
+  elements.pasteStatus.textContent = "朋友分享给你的店铺。可以预览，登录后一键加入自己的列表。";
+  render();
+}
+
+function requireLogin() {
+  if (currentUser) return true;
+  if (confirm("这个操作需要 Google 登录。现在登录吗？")) {
+    window.location.href = `/auth/google/login?next=${encodeURIComponent(location.pathname + location.search)}`;
+  }
+  return false;
+}
+
+async function addSharedRestaurant() {
+  if (!shareToken || !requireLogin()) return;
+  const data = await api(`/api/share/${shareToken}/add`, { method: "POST" });
+  window.location.href = "/";
+  return data;
 }
 
 function openCreateDialog() {
+  if (shareToken) {
+    addSharedRestaurant();
+    return;
+  }
+  if (!requireLogin()) return;
   resetRestaurantForm();
+  elements.dishEditor.hidden = true;
   elements.addDialog.showModal();
 }
 
 function openEditDialog() {
-  const selected = restaurants.find((restaurant) => restaurant.id === selectedRestaurantId);
+  if (!requireLogin()) return;
+  const selected = selectedRestaurant();
   if (!selected) return;
 
   editingRestaurantId = selected.id;
   elements.formModeLabel.textContent = "EDIT_SPOT";
   elements.formTitle.textContent = "Edit Bite";
   elements.saveSpotButton.textContent = "Update Spot";
-  elements.formHelp.textContent = "更新后会覆盖当前餐厅记录。";
-
-  const form = elements.restaurantForm.elements;
-  form.id.value = selected.id;
-  form.name.value = selected.name || "";
-  form.address.value = selected.address || "";
-  form.googleUrl.value = selected.googleUrl || "";
-  form.lat.value = selected.lat ?? "";
-  form.lng.value = selected.lng ?? "";
-  form.status.value = selected.status || "visited";
-  form.rating.value = selected.rating ?? 0;
-  form.dishes.value = (selected.dishes || []).join(", ");
-  form.notes.value = selected.notes || "";
+  elements.formHelp.textContent = "可以更新店铺记录，也可以在下方维护菜品和图片。";
+  fillRestaurantForm(selected);
+  renderDishEditor(selected);
+  elements.dishEditor.hidden = false;
   elements.addDialog.showModal();
+}
+
+function fillRestaurantForm(restaurant) {
+  const form = elements.restaurantForm.elements;
+  form.id.value = restaurant.id;
+  form.name.value = restaurant.name || "";
+  form.address.value = restaurant.address || "";
+  form.googleUrl.value = restaurant.google_url || "";
+  form.lat.value = restaurant.lat ?? "";
+  form.lng.value = restaurant.lng ?? "";
+  form.status.value = restaurant.status || "want_to_go";
+  form.personalRating.value = restaurant.personal_rating ?? 0;
+  form.visitCount.value = restaurant.visit_count ?? 0;
+  form.notes.value = restaurant.notes || "";
 }
 
 function closeRestaurantDialog() {
@@ -236,323 +320,384 @@ function closeRestaurantDialog() {
 }
 
 function resetRestaurantForm() {
-  quickPasteMode = false;
   editingRestaurantId = null;
   elements.restaurantForm.reset();
   elements.formModeLabel.textContent = "NEW_SPOT";
   elements.formTitle.textContent = "Save a Bite";
   elements.saveSpotButton.textContent = "Save Spot";
-  elements.formHelp.textContent =
-    GOOGLE_MAPS_HELP;
+  elements.formHelp.textContent = GOOGLE_MAPS_HELP;
+  elements.dishEditor.hidden = true;
+  elements.dishEditorList.innerHTML = "";
 }
 
-function autofillFromGoogleMapsUrl() {
-  const form = elements.restaurantForm.elements;
-  const googleUrl = elements.googleUrlInput.value.trim();
-  if (isGoogleMapsShortLink(googleUrl)) {
-    elements.formHelp.textContent = "正在展开 Google Maps 短链接...";
-    setPasteStatus("正在展开 Google Maps 短链接...");
-    window.clearTimeout(shortLinkResolveTimer);
-    shortLinkResolveTimer = window.setTimeout(() => resolveShortGoogleMapsLink(googleUrl, quickPasteMode), 450);
-    return;
-  }
-
-  const parsed = parseGoogleMapsUrl(googleUrl);
-  if (!parsed) return;
-
-  const nameWasEmpty = !form.name.value.trim();
-  if (parsed.name && nameWasEmpty) {
-    form.name.value = parsed.name;
-  }
-
-  if (parsed.lat != null && parsed.lng != null) {
-    form.lat.value = parsed.lat;
-    form.lng.value = parsed.lng;
-    elements.formHelp.textContent = parsed.name
-      ? "已从 Google Maps 链接识别店名和坐标。"
-      : "已从 Google Maps 链接识别坐标。";
-    setPasteStatus(elements.formHelp.textContent);
-    if (quickPasteMode) {
-      addParsedRestaurantWithConfirmation({ ...parsed, url: googleUrl });
-    }
-  } else if (parsed.name && nameWasEmpty) {
-    elements.formHelp.textContent = "已从 Google Maps 链接识别店名，但没有找到坐标。";
-    setPasteStatus(elements.formHelp.textContent);
-  }
-}
-
-async function resolveShortGoogleMapsLink(url, confirmAfterResolve = false) {
-  const form = elements.restaurantForm.elements;
-  if (elements.googleUrlInput.value.trim() !== url) return;
-
-  if (!shortLinkServiceAvailable) {
-    elements.formHelp.textContent = SERVER_HELP;
-    setPasteStatus(SERVER_HELP);
-    return;
-  }
-
+async function saveRestaurantFromForm(event) {
+  event.preventDefault();
+  if (!requireLogin()) return;
+  const payload = getRestaurantPayload();
   try {
-    const endpoint = new URL("/api/resolve-google-link", window.location.origin);
-    endpoint.searchParams.set("url", url);
-    const response = await fetch(endpoint);
-    const data = await response.json();
-    if (!response.ok || !data.url) throw new Error(data.error || `短链展开接口返回 ${response.status}`);
-
-    elements.googleUrlInput.value = data.url;
-    elements.formHelp.textContent = "短链接已展开，正在识别店名和坐标...";
-    setPasteStatus(elements.formHelp.textContent);
-    const parsed = parseGoogleMapsUrl(data.url);
-    if (parsed?.lat != null && parsed?.lng != null) {
-      autofillFormFromParsed(parsed);
-      if (confirmAfterResolve) addParsedRestaurantWithConfirmation({ ...parsed, url: data.url });
-      return;
+    elements.formHelp.textContent = "正在保存...";
+    const coordinates = await resolveCoordinates(payload);
+    const body = {
+      name: payload.name,
+      address: payload.address,
+      lat: coordinates.lat,
+      lng: coordinates.lng,
+      google_url: payload.google_url || `https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}`,
+      status: payload.status,
+      visit_count: payload.visit_count,
+      personal_rating: payload.personal_rating,
+      notes: payload.notes,
+    };
+    const data = editingRestaurantId
+      ? await api(`/api/restaurants/${editingRestaurantId}`, { method: "PATCH", body: JSON.stringify(body) })
+      : await api("/api/restaurants", { method: "POST", body: JSON.stringify(body) });
+    upsertRestaurant(data.restaurant);
+    selectedRestaurantId = data.restaurant.id;
+    isSpotCardOpen = true;
+    if (!editingRestaurantId) {
+      resetRestaurantForm();
+      elements.addDialog.close();
+    } else {
+      editingRestaurantId = data.restaurant.id;
+      fillRestaurantForm(data.restaurant);
+      renderDishEditor(data.restaurant);
+      elements.formHelp.textContent = "已保存。";
     }
-    autofillFromGoogleMapsUrl();
+    render();
   } catch (error) {
-    const message = `${error.message || SHORT_LINK_HELP}。${SERVER_HELP}`;
-    elements.formHelp.textContent = message;
-    setPasteStatus(message);
+    elements.formHelp.textContent = error.message;
   }
+}
+
+function getRestaurantPayload() {
+  const form = new FormData(elements.restaurantForm);
+  const rating = Number(form.get("personalRating") ?? 0);
+  const visitCount = Number(form.get("visitCount") ?? 0);
+  return {
+    name: String(form.get("name") ?? "").trim(),
+    address: String(form.get("address") ?? "").trim(),
+    google_url: String(form.get("googleUrl") ?? "").trim(),
+    lat: String(form.get("lat") ?? "").trim(),
+    lng: String(form.get("lng") ?? "").trim(),
+    status: String(form.get("status") ?? "want_to_go"),
+    personal_rating: Number.isFinite(rating) ? Math.max(0, Math.min(5, rating)) : 0,
+    visit_count: Number.isFinite(visitCount) ? Math.max(0, Math.floor(visitCount)) : 0,
+    notes: String(form.get("notes") ?? "").trim(),
+  };
+}
+
+async function addDishFromEditor() {
+  if (!editingRestaurantId || !requireLogin()) return;
+  const name = elements.dishNameInput.value.trim();
+  if (!name) {
+    elements.formHelp.textContent = "请输入菜品名称。";
+    return;
+  }
+  const data = await api(`/api/restaurants/${editingRestaurantId}/dishes`, {
+    method: "POST",
+    body: JSON.stringify({
+      name,
+      dish_status: elements.dishStatusInput.value,
+      rating: Number(elements.dishRatingInput.value || 0),
+      notes: "",
+    }),
+  });
+  const restaurant = selectedRestaurant();
+  restaurant.dishes = [data.dish, ...(restaurant.dishes ?? [])];
+  elements.dishNameInput.value = "";
+  renderDishEditor(restaurant);
+  render();
+}
+
+function renderDishEditor(restaurant) {
+  const dishes = restaurant.dishes ?? [];
+  if (!dishes.length) {
+    elements.dishEditorList.innerHTML = '<p class="form-help">还没有菜品记录。</p>';
+    return;
+  }
+  elements.dishEditorList.innerHTML = dishes.map(dishEditorTemplate).join("");
+  elements.dishEditorList.querySelectorAll("[data-dish-action]").forEach((button) => {
+    button.addEventListener("click", () => handleDishAction(button));
+  });
+  elements.dishEditorList.querySelectorAll(".dish-image-input").forEach((input) => {
+    input.addEventListener("change", () => uploadDishImage(input));
+  });
+}
+
+function dishEditorTemplate(dish) {
+  return `
+    <article class="dish-editor-item" data-dish-id="${dish.id}">
+      ${dish.image_url ? `<img src="${escapeHtml(dish.image_url)}" alt="">` : '<div class="dish-image-placeholder">IMG</div>'}
+      <div class="dish-editor-fields">
+        <input data-field="name" value="${escapeAttribute(dish.name)}" />
+        <div class="dish-form-grid compact">
+          <select data-field="dish_status">
+            <option value="liked" ${dish.dish_status === "liked" ? "selected" : ""}>Liked</option>
+            <option value="tried" ${dish.dish_status === "tried" ? "selected" : ""}>Tried</option>
+          </select>
+          <input data-field="rating" type="number" min="0" max="5" step="0.1" value="${Number(dish.rating || 0)}" />
+          <input class="dish-image-input" type="file" accept="image/jpeg,image/png,image/webp" />
+        </div>
+        <textarea data-field="notes" rows="2" placeholder="这道菜的想法">${escapeHtml(dish.notes || "")}</textarea>
+      </div>
+      <div class="dish-editor-actions">
+        <button class="secondary-button" type="button" data-dish-action="save">Save</button>
+        <button class="secondary-button danger" type="button" data-dish-action="delete">Delete</button>
+      </div>
+    </article>
+  `;
+}
+
+async function handleDishAction(button) {
+  const item = button.closest(".dish-editor-item");
+  const dishId = item.dataset.dishId;
+  if (button.dataset.dishAction === "delete") {
+    if (!confirm("删除这个菜品吗？")) return;
+    await api(`/api/dishes/${dishId}`, { method: "DELETE" });
+    removeDish(dishId);
+    return;
+  }
+  const body = {
+    name: item.querySelector('[data-field="name"]').value.trim(),
+    dish_status: item.querySelector('[data-field="dish_status"]').value,
+    rating: Number(item.querySelector('[data-field="rating"]').value || 0),
+    notes: item.querySelector('[data-field="notes"]').value.trim(),
+  };
+  const data = await api(`/api/dishes/${dishId}`, { method: "PATCH", body: JSON.stringify(body) });
+  replaceDish(data.dish);
+}
+
+async function uploadDishImage(input) {
+  const item = input.closest(".dish-editor-item");
+  const file = input.files?.[0];
+  if (!file) return;
+  const compressed = await compressImage(file);
+  const form = new FormData();
+  form.append("image", compressed, compressed.name);
+  const data = await api(`/api/dishes/${item.dataset.dishId}/image`, { method: "POST", body: form });
+  replaceDish(data.dish);
+}
+
+async function compressImage(file) {
+  if (file.size <= 800_000 && file.type === "image/webp") return file;
+  const image = await createImageBitmap(file);
+  const maxSide = 1400;
+  const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.width * scale));
+  canvas.height = Math.max(1, Math.round(image.height * scale));
+  const context = canvas.getContext("2d");
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
+  return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, { type: "image/webp" });
+}
+
+function replaceDish(updatedDish) {
+  const restaurant = selectedRestaurant();
+  restaurant.dishes = (restaurant.dishes ?? []).map((dish) => (dish.id === updatedDish.id ? updatedDish : dish));
+  renderDishEditor(restaurant);
+  render();
+}
+
+function removeDish(dishId) {
+  const restaurant = selectedRestaurant();
+  restaurant.dishes = (restaurant.dishes ?? []).filter((dish) => dish.id !== dishId);
+  renderDishEditor(restaurant);
+  render();
+}
+
+function openShareDialog() {
+  if (!requireLogin()) return;
+  const restaurant = selectedRestaurant();
+  if (!restaurant) return;
+  elements.shareUrlInput.value = "";
+  const dishes = restaurant.dishes ?? [];
+  elements.shareDishList.innerHTML = dishes.length
+    ? dishes.map((dish) => `
+        <label class="share-dish-item">
+          <input type="checkbox" value="${dish.id}" ${dish.dish_status === "liked" ? "checked" : ""} />
+          <span>${escapeHtml(dish.name)}</span>
+          <small>☆ ${Number(dish.rating || 0).toFixed(1)} · ${dish.dish_status === "liked" ? "Liked" : "Tried"}</small>
+        </label>
+      `).join("")
+    : '<p class="form-help">这家店还没有菜品。可以先编辑店铺添加菜品，再分享。</p>';
+  elements.createShareButton.disabled = !dishes.length;
+  elements.shareDialog.showModal();
+}
+
+async function createShareLink(event) {
+  event.preventDefault();
+  const restaurant = selectedRestaurant();
+  const selectedIds = [...elements.shareDishList.querySelectorAll("input:checked")].map((input) => input.value);
+  const data = await api(`/api/restaurants/${restaurant.id}/share`, {
+    method: "POST",
+    body: JSON.stringify({ selected_dish_ids: selectedIds }),
+  });
+  elements.shareUrlInput.value = data.share_url;
+}
+
+async function copyShareLink() {
+  if (!elements.shareUrlInput.value) return;
+  await navigator.clipboard.writeText(elements.shareUrlInput.value);
+  elements.copyShareButton.textContent = "Copied";
+  window.setTimeout(() => (elements.copyShareButton.textContent = "Copy"), 1200);
+}
+
+async function deleteSelectedRestaurant() {
+  if (!requireLogin()) return;
+  const selected = selectedRestaurant();
+  if (!selected || !confirm(`删除「${selected.name}」吗？`)) return;
+  await api(`/api/restaurants/${selected.id}`, { method: "DELETE" });
+  restaurants = restaurants.filter((restaurant) => restaurant.id !== selected.id);
+  selectedRestaurantId = restaurants[0]?.id ?? null;
+  isSpotCardOpen = Boolean(selectedRestaurantId);
+  render();
 }
 
 async function pasteAndAddFromClipboard() {
-  quickPasteMode = true;
-  setPasteStatus("正在读取剪贴板...");
-  elements.pasteAddButton.textContent = "Reading...";
-
-  if (!navigator.clipboard?.readText) {
-    openPasteFallback("当前浏览器不支持直接读取剪贴板。请在链接框按 Cmd+V。");
-    return;
-  }
-
+  if (!requireLogin()) return;
   try {
-    const clipboardText = (await navigator.clipboard.readText()).trim();
-    const googleUrl = extractGoogleMapsUrl(clipboardText);
-    if (!googleUrl) {
-      openPasteFallback("剪贴板里没有识别到 Google Maps 链接。请在链接框按 Cmd+V。");
-      return;
-    }
-
-    elements.pasteAddButton.textContent = "Parsing...";
-    setPasteStatus("已读取剪贴板，正在识别链接...");
+    const text = (await navigator.clipboard.readText()).trim();
+    const googleUrl = extractGoogleMapsUrl(text);
+    if (!googleUrl) throw new Error("剪贴板里没有 Google Maps 链接。");
     const parsed = await parseAnyGoogleMapsLink(googleUrl);
-    if (parsed?.lat == null || parsed?.lng == null) {
-      openPasteFallback("没有从链接里识别到坐标。请确认复制的是 Google Maps 餐厅链接。");
-      return;
-    }
-
-    addParsedRestaurantWithConfirmation(parsed);
+    const name = parsed.name || "New Spot";
+    if (!confirm(`添加「${name}」到 Want to Go 吗？`)) return;
+    const body = {
+      name,
+      address: "",
+      lat: parsed.lat,
+      lng: parsed.lng,
+      google_url: parsed.url || googleUrl,
+      status: "want_to_go",
+      visit_count: 0,
+      personal_rating: 0,
+      notes: "",
+    };
+    const data = await api("/api/restaurants", { method: "POST", body: JSON.stringify(body) });
+    upsertRestaurant(data.restaurant);
+    selectedRestaurantId = data.restaurant.id;
+    isSpotCardOpen = true;
+    setPasteStatus(`已添加：${data.restaurant.name}`);
+    render();
   } catch (error) {
-    openPasteFallback(error.message || "读取剪贴板失败。请在链接框按 Cmd+V。");
-  } finally {
-    elements.pasteAddButton.textContent = "Paste & Add";
+    setPasteStatus(error.message);
   }
-}
-
-function openPasteFallback(message) {
-  setPasteStatus(message);
-  openCreateDialog();
-  quickPasteMode = true;
-  elements.formHelp.textContent = message;
-  window.setTimeout(() => elements.googleUrlInput.focus(), 0);
-  elements.pasteAddButton.textContent = "Paste & Add";
-}
-
-function autofillFormFromParsed(parsed) {
-  const form = elements.restaurantForm.elements;
-  if (parsed.name && !form.name.value.trim()) form.name.value = parsed.name;
-  form.lat.value = parsed.lat;
-  form.lng.value = parsed.lng;
-  elements.formHelp.textContent = parsed.name
-    ? "已从 Google Maps 链接识别店名和坐标。"
-    : "已从 Google Maps 链接识别坐标。";
-  setPasteStatus(elements.formHelp.textContent);
-}
-
-function addParsedRestaurantWithConfirmation(parsed) {
-  quickPasteMode = false;
-  const name = parsed.name || prompt("已识别坐标，但没有识别到店名。请输入店名：", "");
-  if (!name) {
-    setPasteStatus("已取消添加。");
-    return;
-  }
-
-  const confirmed = confirm(`添加这家餐厅吗？\n\n${name}\n${parsed.lat}, ${parsed.lng}`);
-  if (!confirmed) {
-    setPasteStatus("已取消添加。");
-    return;
-  }
-
-  const restaurant = {
-    id: crypto.randomUUID(),
-    name,
-    address: "",
-    lat: parsed.lat,
-    lng: parsed.lng,
-    googleUrl: parsed.url || `https://www.google.com/maps?q=${parsed.lat},${parsed.lng}`,
-    status: "want_to_go",
-    rating: 4.5,
-    notes: "",
-    dishes: [],
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  };
-  restaurants = [restaurant, ...restaurants];
-  selectedRestaurantId = restaurant.id;
-  isSpotCardOpen = true;
-  saveRestaurants();
-  if (elements.addDialog.open) elements.addDialog.close();
-  render();
-  setPasteStatus(`已添加：${name}`);
 }
 
 function setPasteStatus(message) {
   elements.pasteStatus.textContent = message;
 }
 
-function extractGoogleMapsUrl(text) {
-  const match = String(text).match(
-    /https?:\/\/(?:www\.google\.[^\s/]+\/maps|maps\.google\.[^\s/]+|maps\.app\.goo\.gl|goo\.gl\/maps)[^\s)]*/i,
-  );
-  return match?.[0] || "";
+async function autofillFromGoogleMapsUrl() {
+  const form = elements.restaurantForm.elements;
+  const googleUrl = elements.googleUrlInput.value.trim();
+  if (isGoogleMapsShortLink(googleUrl)) {
+    elements.formHelp.textContent = "正在展开 Google Maps 短链接...";
+    window.clearTimeout(shortLinkResolveTimer);
+    shortLinkResolveTimer = window.setTimeout(async () => {
+      try {
+        const parsed = await parseAnyGoogleMapsLink(googleUrl);
+        form.googleUrl.value = parsed.url || googleUrl;
+        form.name.value = parsed.name || form.name.value;
+        form.lat.value = parsed.lat ?? form.lat.value;
+        form.lng.value = parsed.lng ?? form.lng.value;
+        elements.formHelp.textContent = "短链接已展开并填入坐标。";
+      } catch (error) {
+        elements.formHelp.textContent = error.message;
+      }
+    }, 450);
+    return;
+  }
+
+  const parsed = parseGoogleMapsUrl(googleUrl);
+  if (!parsed) {
+    elements.formHelp.textContent = GOOGLE_MAPS_HELP;
+    return;
+  }
+  if (parsed.name && !form.name.value.trim()) form.name.value = parsed.name;
+  if (parsed.lat != null && parsed.lng != null) {
+    form.lat.value = parsed.lat;
+    form.lng.value = parsed.lng;
+    elements.formHelp.textContent = "已从 Google Maps 链接识别坐标。";
+  }
 }
 
 async function parseAnyGoogleMapsLink(url) {
   if (isGoogleMapsShortLink(url)) {
-    if (!shortLinkServiceAvailable) throw new Error(SERVER_HELP);
     const endpoint = new URL("/api/resolve-google-link", window.location.origin);
     endpoint.searchParams.set("url", url);
-    const response = await fetch(endpoint);
-    const data = await response.json();
-    if (!response.ok || !data.url) throw new Error(data.error || SHORT_LINK_HELP);
-    const parsed = parseGoogleMapsUrl(data.url);
-    return parsed ? { ...parsed, url: data.url } : null;
+    const data = await api(endpoint.toString());
+    url = data.url;
   }
-
   const parsed = parseGoogleMapsUrl(url);
-  return parsed ? { ...parsed, url } : null;
+  if (!parsed?.lat || !parsed?.lng) {
+    throw new Error("没有从链接识别到坐标。请打开短链接后复制完整 Google Maps 地址栏链接。");
+  }
+  return { ...parsed, url };
 }
 
 async function checkShortLinkService() {
   try {
-    const response = await fetch("/api/health", { cache: "no-store" });
-    const data = await response.json();
-    shortLinkServiceAvailable = Boolean(response.ok && data.ok);
-    setPasteStatus(
-      shortLinkServiceAvailable
-        ? "短链服务已连接。复制 Google Maps 链接后点 Paste & Add。"
-        : SERVER_HELP,
-    );
+    await api("/api/health");
   } catch {
-    shortLinkServiceAvailable = false;
-    setPasteStatus(SERVER_HELP);
+    setPasteStatus("后端服务未连接。请用 python3 server.py 5174 启动。");
   }
 }
 
-function getRestaurantPayload() {
-  const form = new FormData(elements.restaurantForm);
-  const rating = Number(form.get("rating") ?? 0);
-  return {
-    name: String(form.get("name") ?? "").trim(),
-    address: String(form.get("address") ?? "").trim(),
-    googleUrl: String(form.get("googleUrl") ?? "").trim(),
-    lat: parseOptionalNumber(form.get("lat")),
-    lng: parseOptionalNumber(form.get("lng")),
-    status: String(form.get("status") ?? "visited"),
-    rating: Number.isFinite(rating) ? Math.max(0, Math.min(5, rating)) : 0,
-    dishes: String(form.get("dishes") ?? "")
-      .split(",")
-      .map((dish) => dish.trim())
-      .filter(Boolean),
-    notes: String(form.get("notes") ?? "").trim(),
-  };
+async function resolveCoordinates(payload) {
+  const manual = validateCoordinates(payload.lat, payload.lng);
+  if (manual) return manual;
+  const parsed = await parseAnyGoogleMapsLink(payload.google_url);
+  return { lat: parsed.lat, lng: parsed.lng };
 }
 
-function loadRestaurants() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(demoRestaurants));
-    return demoRestaurants;
+function validateCoordinates(lat, lng) {
+  const parsedLat = Number(lat);
+  const parsedLng = Number(lng);
+  if (Number.isFinite(parsedLat) && Number.isFinite(parsedLng) && Math.abs(parsedLat) <= 90 && Math.abs(parsedLng) <= 180) {
+    return { lat: parsedLat, lng: parsedLng };
   }
+  return null;
+}
 
+function parseGoogleMapsUrl(url) {
+  if (!url) return null;
+  let decoded = safeDecode(url);
+  const atMatch = decoded.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  const bangMatch = decoded.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  const queryMatch = decoded.match(/[?&](?:q|query|destination|ll)=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  const coordinates = atMatch || bangMatch || queryMatch;
+  const name = parseGoogleMapsName(decoded);
+  if (!coordinates) return name ? { name } : null;
+  return { lat: Number(coordinates[1]), lng: Number(coordinates[2]), name };
+}
+
+function parseGoogleMapsName(url) {
+  const match = url.match(/\/maps\/place\/([^/@?]+)/);
+  return match ? safeDecode(match[1].replace(/\+/g, " ")).trim() : "";
+}
+
+function safeDecode(value) {
   try {
-    return JSON.parse(raw);
+    return decodeURIComponent(value);
   } catch {
-    return demoRestaurants;
+    return value;
   }
 }
 
-function saveRestaurants() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(restaurants));
+function isGoogleMapsShortLink(url) {
+  return /^https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps)\//i.test(url);
 }
 
-function loadSettings() {
-  try {
-    return JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {};
-  } catch {
-    return {};
-  }
-}
-
-function saveSettings() {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-}
-
-function exportRestaurants() {
-  const data = {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    restaurants,
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `gourmet-map-${new Date().toISOString().slice(0, 10)}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-async function importRestaurants(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-
-  try {
-    const content = await file.text();
-    const parsed = JSON.parse(content);
-    const imported = Array.isArray(parsed) ? parsed : parsed.restaurants;
-    if (!Array.isArray(imported)) throw new Error("JSON 里没有 restaurants 数组。");
-
-    const normalized = imported.map(normalizeRestaurant).filter(Boolean);
-    if (!normalized.length) throw new Error("没有可导入的餐厅。");
-
-    restaurants = mergeRestaurants(normalized, restaurants);
-    selectedRestaurantId = restaurants[0]?.id ?? null;
-    isSpotCardOpen = Boolean(selectedRestaurantId);
-    saveRestaurants();
-    render();
-  } catch (error) {
-    alert(`导入失败：${error.message}`);
-  } finally {
-    elements.importFile.value = "";
-  }
-}
-
-function resetDemoData() {
-  if (!confirm("要把本地数据重置为演示数据吗？当前保存的餐厅会被覆盖。")) return;
-  restaurants = demoRestaurants.map((restaurant) => ({ ...restaurant, id: crypto.randomUUID() }));
-  selectedRestaurantId = restaurants[0]?.id ?? null;
-  isSpotCardOpen = Boolean(selectedRestaurantId);
-  saveRestaurants();
-  render();
+function extractGoogleMapsUrl(text) {
+  return text.match(/https?:\/\/(?:www\.google\.[^\s/]+\/maps|maps\.google\.[^\s/]+|maps\.app\.goo\.gl|goo\.gl\/maps)[^\s)]*/i)?.[0] ?? "";
 }
 
 async function getLocationPermissionState() {
   if (!navigator.permissions?.query) return "unknown";
-
   try {
-    const permission = await navigator.permissions.query({ name: "geolocation" });
-    return permission.state;
+    return (await navigator.permissions.query({ name: "geolocation" })).state;
   } catch {
     return "unknown";
   }
@@ -566,37 +711,26 @@ function setLocationButtonState(label, disabled = false) {
 
 async function requestLocation() {
   if (!navigator.geolocation) {
-    setLocationButtonState("Location Unavailable", true);
     setFallbackLocation("浏览器不支持定位，使用多伦多市中心作为临时位置。");
     return;
   }
-
-  const permissionState = await getLocationPermissionState();
-  if (permissionState === "denied") {
+  if ((await getLocationPermissionState()) === "denied") {
     setLocationButtonState("Retry Location");
     setFallbackLocation(LOCATION_DENIED_HELP);
     return;
   }
-
   setLocationButtonState("Locating...", true);
   elements.locationStatus.textContent = "正在获取当前位置...";
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      currentLocation = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      };
+      currentLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
       elements.locationStatus.textContent = `当前位置 ${currentLocation.lat.toFixed(3)}, ${currentLocation.lng.toFixed(3)}`;
       setLocationButtonState("Use My Location");
       render();
     },
     (error) => {
       setLocationButtonState("Retry Location");
-      const message =
-        error.code === error.PERMISSION_DENIED
-          ? LOCATION_DENIED_HELP
-          : "暂时无法获取当前位置，使用多伦多市中心作为临时位置。请稍后再试。";
-      setFallbackLocation(message);
+      setFallbackLocation(error.code === error.PERMISSION_DENIED ? LOCATION_DENIED_HELP : "暂时无法获取当前位置，使用多伦多市中心作为临时位置。");
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
   );
@@ -608,140 +742,6 @@ function setFallbackLocation(message) {
   render();
 }
 
-async function resolveCoordinates(payload) {
-  const manualCoordinates = validateCoordinates(payload.lat, payload.lng);
-  if (manualCoordinates) return manualCoordinates;
-
-  if (isGoogleMapsShortLink(payload.googleUrl)) {
-    throw new Error(SHORT_LINK_HELP);
-  }
-
-  const fromUrl = parseGoogleMapsUrl(payload.googleUrl);
-  if (fromUrl?.lat != null && fromUrl?.lng != null) {
-    return { lat: fromUrl.lat, lng: fromUrl.lng };
-  }
-
-  if (!payload.address) {
-    throw new Error("请填写地址，或粘贴包含坐标的 Google Maps 链接。");
-  }
-
-  if (!settings.googleApiKey) {
-    throw new Error("这个链接没有可解析坐标。请在设置里填写 Google Geocoding API Key，或粘贴带坐标的 Google Maps 链接。");
-  }
-
-  const endpoint = new URL("https://maps.googleapis.com/maps/api/geocode/json");
-  endpoint.searchParams.set("address", payload.address);
-  endpoint.searchParams.set("key", settings.googleApiKey);
-
-  const response = await fetch(endpoint);
-  const data = await response.json();
-  const result = data.results?.[0]?.geometry?.location;
-
-  if (!response.ok || !result) {
-    throw new Error(data.error_message || "地址转坐标失败，请检查地址或 Google API Key。");
-  }
-
-  return { lat: result.lat, lng: result.lng };
-}
-
-function parseGoogleMapsUrl(url) {
-  if (!url) return null;
-  const decodedUrl = safeDecodeUrl(url.replace(/\+/g, " "));
-  const name = parseGoogleMapsPlaceName(decodedUrl);
-  const patterns = [
-    /@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
-    /[?&]q=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
-    /[?&]query=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
-    /[?&]destination=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
-    /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/,
-    /ll=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
-  ];
-
-  for (const pattern of patterns) {
-    const match = decodedUrl.match(pattern);
-    if (match) {
-      return { name, lat: Number(match[1]), lng: Number(match[2]) };
-    }
-  }
-
-  return name ? { name } : null;
-}
-
-function isGoogleMapsShortLink(url) {
-  return /^https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps)\//i.test(String(url).trim());
-}
-
-function safeDecodeUrl(url) {
-  try {
-    return decodeURIComponent(url);
-  } catch {
-    return url;
-  }
-}
-
-function parseGoogleMapsPlaceName(decodedUrl) {
-  const placeMatch = decodedUrl.match(/\/maps\/place\/([^/?#]+)/);
-  if (!placeMatch) return "";
-  return placeMatch[1]
-    .replace(/\+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function validateCoordinates(lat, lng) {
-  const hasLat = lat !== null;
-  const hasLng = lng !== null;
-  if (!hasLat && !hasLng) return null;
-  if (
-    !hasLat ||
-    !hasLng ||
-    !Number.isFinite(lat) ||
-    !Number.isFinite(lng) ||
-    lat < -90 ||
-    lat > 90 ||
-    lng < -180 ||
-    lng > 180
-  ) {
-    throw new Error("经纬度格式不正确，请填写有效纬度 -90 到 90、经度 -180 到 180。");
-  }
-  return { lat, lng };
-}
-
-function parseOptionalNumber(value) {
-  const text = String(value ?? "").trim();
-  if (!text) return null;
-  const number = Number(text);
-  return Number.isFinite(number) ? number : NaN;
-}
-
-function normalizeRestaurant(item) {
-  if (!item || typeof item !== "object") return null;
-  const lat = Number(item.lat);
-  const lng = Number(item.lng);
-  if (!item.name || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-
-  return {
-    id: String(item.id || crypto.randomUUID()),
-    name: String(item.name).trim(),
-    address: String(item.address || "").trim(),
-    lat,
-    lng,
-    googleUrl: String(item.googleUrl || `https://www.google.com/maps?q=${lat},${lng}`),
-    status: ["visited", "want_to_go", "favorite"].includes(item.status) ? item.status : "visited",
-    rating: Math.max(0, Math.min(5, Number(item.rating) || 0)),
-    notes: String(item.notes || ""),
-    dishes: Array.isArray(item.dishes) ? item.dishes.map(String).filter(Boolean) : [],
-    createdAt: Number(item.createdAt) || Date.now(),
-    updatedAt: Number(item.updatedAt) || Date.now(),
-  };
-}
-
-function mergeRestaurants(incoming, existing) {
-  const byId = new Map(existing.map((restaurant) => [restaurant.id, restaurant]));
-  incoming.forEach((restaurant) => byId.set(restaurant.id, restaurant));
-  return Array.from(byId.values()).sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
-}
-
 function render() {
   renderCounts();
   renderRecentList();
@@ -750,14 +750,11 @@ function render() {
 }
 
 function getVisibleRestaurants() {
-  const query = elements.searchInput.value.trim().toLowerCase();
+  const term = elements.searchInput.value.trim().toLowerCase();
   return restaurants.filter((restaurant) => {
     const matchesFilter = activeFilter === "all" || restaurant.status === activeFilter;
-    const matchesSearch = [restaurant.name, restaurant.address, restaurant.notes, ...(restaurant.dishes ?? [])]
-      .join(" ")
-      .toLowerCase()
-      .includes(query);
-    return matchesFilter && matchesSearch;
+    const haystack = [restaurant.name, restaurant.address, restaurant.notes, ...(restaurant.dishes ?? []).map((dish) => dish.name)].join(" ").toLowerCase();
+    return matchesFilter && (!term || haystack.includes(term));
   });
 }
 
@@ -770,33 +767,24 @@ function renderCounts() {
 }
 
 function renderRecentList() {
-  const recent = getVisibleRestaurants().slice(0, 3);
-  if (!recent.length) {
-    elements.recentList.innerHTML = '<p class="empty-recent">没有匹配餐厅</p>';
-    return;
-  }
-
-  elements.recentList.innerHTML = recent
-    .map(
-      (restaurant) => `
+  const recent = getVisibleRestaurants().slice(0, 5);
+  elements.recentList.innerHTML = recent.length
+    ? recent.map((restaurant) => `
         <button class="recent-item" data-id="${restaurant.id}">
           <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
           <span>
             <strong>${escapeHtml(restaurant.name)}</strong>
-            <small>☆ ${Number(restaurant.rating || 0).toFixed(1)}</small>
+            <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${restaurant.visit_count || 0} visits</small>
           </span>
           <span>♡</span>
         </button>
-      `,
-    )
-    .join("");
-
+      `).join("")
+    : '<p class="empty-recent">没有匹配餐厅</p>';
   elements.recentList.querySelectorAll(".recent-item").forEach((item) => {
     item.addEventListener("click", () => {
       selectedRestaurantId = item.dataset.id;
       isSpotCardOpen = true;
-      renderSpotCard();
-      renderMarkers();
+      render();
     });
   });
 }
@@ -805,13 +793,10 @@ function renderMarkers() {
   const visible = getVisibleRestaurants();
   elements.emptyMap.style.display = visible.length ? "none" : "grid";
   elements.markersLayer.innerHTML = "";
-
   if (!currentLocation) return;
-
   visible.forEach((restaurant, index) => {
     const distance = haversineDistance(currentLocation, restaurant);
-    const bearing = getBearing(currentLocation, restaurant);
-    const point = mapPoint(distance, bearing, index);
+    const point = mapPoint(distance, getBearing(currentLocation, restaurant), index);
     const marker = document.createElement("button");
     marker.className = `restaurant-marker ${restaurant.status}${restaurant.id === selectedRestaurantId ? " selected" : ""}`;
     marker.style.left = `${point.x}%`;
@@ -825,135 +810,187 @@ function renderMarkers() {
     marker.addEventListener("click", () => {
       selectedRestaurantId = restaurant.id;
       isSpotCardOpen = true;
-      renderSpotCard();
-      renderMarkers();
+      render();
     });
     elements.markersLayer.appendChild(marker);
   });
 }
 
 function renderSpotCard() {
-  const selected = restaurants.find((restaurant) => restaurant.id === selectedRestaurantId);
-  const hasSelection = Boolean(selected);
-
+  const selected = selectedRestaurant();
   if (!selected) {
-    isSpotCardOpen = false;
     elements.spotCard.hidden = true;
     elements.spotCardTab.hidden = true;
-    elements.spotName.textContent = "选择一家餐厅";
-    elements.spotDistance.textContent = "-- km";
-    elements.spotRating.textContent = "☆ --";
-    elements.spotStatus.textContent = "--";
-    elements.spotNotes.textContent = "点击地图上的餐厅图标查看详情。";
-    elements.spotDishes.innerHTML = "";
-    elements.openGoogleMaps.href = "#";
-    elements.editSpot.disabled = true;
-    elements.deleteSpot.disabled = true;
     return;
   }
-
   elements.spotCard.hidden = !isSpotCardOpen;
   elements.spotCardTab.hidden = isSpotCardOpen;
   elements.spotCardTabName.textContent = selected.name;
-
   const distance = currentLocation ? haversineDistance(currentLocation, selected) : null;
   elements.spotName.textContent = selected.name;
   elements.spotDistance.textContent = distance == null ? "等待定位" : formatDistance(distance);
-  elements.spotRating.textContent = `☆ ${Number(selected.rating || 0).toFixed(1)}`;
-  elements.spotStatus.textContent = statusLabel(selected.status);
+  elements.spotRating.textContent = `☆ ${Number(selected.personal_rating || 0).toFixed(1)}`;
+  elements.spotStatus.textContent = `${statusLabel(selected.status)} · ${selected.visit_count || 0} visits`;
   elements.spotNotes.textContent = selected.notes || selected.address || "还没有记录想法。";
-  elements.spotDishes.innerHTML = (selected.dishes ?? []).map((dish) => `<span>${escapeHtml(dish)}</span>`).join("");
-  elements.openGoogleMaps.href = selected.googleUrl || `https://www.google.com/maps?q=${selected.lat},${selected.lng}`;
-  elements.editSpot.disabled = !hasSelection;
-  elements.deleteSpot.disabled = !hasSelection;
+  elements.spotDishes.innerHTML = renderSpotDishes(selected);
+  elements.openGoogleMaps.href = selected.google_url || `https://www.google.com/maps?q=${selected.lat},${selected.lng}`;
+  const ownedMode = Boolean(currentUser && !shareToken);
+  elements.editSpot.disabled = !ownedMode;
+  elements.shareSpot.disabled = !ownedMode;
+  elements.deleteSpot.disabled = !ownedMode;
 }
 
-function deleteSelectedRestaurant() {
-  const selected = restaurants.find((restaurant) => restaurant.id === selectedRestaurantId);
-  if (!selected) return;
-  if (!confirm(`删除「${selected.name}」吗？`)) return;
-
-  restaurants = restaurants.filter((restaurant) => restaurant.id !== selected.id);
-  selectedRestaurantId = restaurants[0]?.id ?? null;
-  isSpotCardOpen = Boolean(selectedRestaurantId);
-  saveRestaurants();
-  render();
+function renderSpotDishes(restaurant) {
+  const dishes = restaurant.dishes ?? [];
+  if (!dishes.length) return "";
+  return dishes.map((dish) => `
+    <span class="dish-pill ${dish.dish_status}">
+      ${dish.image_url ? `<img src="${escapeHtml(dish.image_url)}" alt="">` : ""}
+      ${escapeHtml(dish.name)} · ☆ ${Number(dish.rating || 0).toFixed(1)}
+    </span>
+  `).join("");
 }
 
-function mapPoint(distanceKm, bearing, index) {
-  const maxDistance = 15;
-  const clampedDistance = Math.min(distanceKm, maxDistance);
-  const radius = 18 + (clampedDistance / maxDistance) * 32;
-  const jitter = ((index % 5) - 2) * 2.5;
-  const angle = ((bearing - 90 + index * 18) * Math.PI) / 180;
-  const x = 50 + Math.cos(angle) * (radius + jitter);
-  const y = 50 + Math.sin(angle) * (radius + jitter);
+function selectedRestaurant() {
+  return restaurants.find((restaurant) => restaurant.id === selectedRestaurantId) ?? null;
+}
+
+function upsertRestaurant(restaurant) {
+  const normalized = normalizeRestaurant(restaurant);
+  const index = restaurants.findIndex((item) => item.id === normalized.id);
+  if (index >= 0) restaurants[index] = normalized;
+  else restaurants = [normalized, ...restaurants];
+}
+
+function normalizeRestaurant(item) {
   return {
-    x: Math.max(8, Math.min(92, x)),
-    y: Math.max(10, Math.min(90, y)),
+    id: String(item.id),
+    name: String(item.name || "Untitled Spot"),
+    address: String(item.address || ""),
+    lat: Number(item.lat),
+    lng: Number(item.lng),
+    google_url: String(item.google_url || item.googleUrl || `https://www.google.com/maps?q=${item.lat},${item.lng}`),
+    status: ["visited", "want_to_go", "favorite"].includes(item.status) ? item.status : "want_to_go",
+    visit_count: Math.max(0, Number(item.visit_count ?? item.visitCount ?? 0) || 0),
+    personal_rating: Math.max(0, Math.min(5, Number(item.personal_rating ?? item.rating ?? 0) || 0)),
+    notes: String(item.notes || ""),
+    dishes: Array.isArray(item.dishes) ? item.dishes.map(normalizeDish) : [],
+    created_at: item.created_at ?? item.createdAt ?? Date.now(),
+    updated_at: item.updated_at ?? item.updatedAt ?? Date.now(),
   };
 }
 
-function haversineDistance(from, to) {
-  const earthRadius = 6371;
-  const dLat = toRadians(to.lat - from.lat);
-  const dLng = toRadians(to.lng - from.lng);
-  const lat1 = toRadians(from.lat);
-  const lat2 = toRadians(to.lat);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return earthRadius * c;
+function normalizeDish(item) {
+  return {
+    id: String(item.id),
+    restaurant_id: String(item.restaurant_id || ""),
+    name: String(item.name || "Dish"),
+    dish_status: ["liked", "tried"].includes(item.dish_status) ? item.dish_status : "tried",
+    rating: Math.max(0, Math.min(5, Number(item.rating || 0))),
+    image_url: String(item.image_url || ""),
+    notes: String(item.notes || ""),
+  };
 }
 
-function getBearing(from, to) {
-  const lat1 = toRadians(from.lat);
-  const lat2 = toRadians(to.lat);
-  const dLng = toRadians(to.lng - from.lng);
-  const y = Math.sin(dLng) * Math.cos(lat2);
-  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
-  return (toDegrees(Math.atan2(y, x)) + 360) % 360;
+function cloneRestaurant(restaurant) {
+  return normalizeRestaurant(JSON.parse(JSON.stringify(restaurant)));
 }
 
-function toRadians(degrees) {
-  return (degrees * Math.PI) / 180;
+function resetDemoData() {
+  if (currentUser) {
+    alert("登录后数据保存在云端，不使用 Reset Demo。");
+    return;
+  }
+  restaurants = demoRestaurants.map(cloneRestaurant);
+  selectedRestaurantId = restaurants[0]?.id ?? null;
+  isSpotCardOpen = Boolean(selectedRestaurantId);
+  render();
 }
 
-function toDegrees(radians) {
-  return (radians * 180) / Math.PI;
+function exportRestaurants() {
+  const blob = new Blob([JSON.stringify({ restaurants }, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `foodiemap-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function getShareToken() {
+  const match = location.pathname.match(/^\/share\/([^/]+)/);
+  return match ? match[1] : "";
+}
+
+function shortUserName(user) {
+  return (user.name || user.email || "ME").trim().slice(0, 2).toUpperCase();
+}
+
+function statusIcon(status) {
+  return { visited: "🍜", want_to_go: "🍙", favorite: "🍰" }[status] || "🍽";
+}
+
+function statusLabel(status) {
+  return { visited: "Visited", want_to_go: "Want to Go", favorite: "Favorite" }[status] || "Unknown";
+}
+
+function shortName(name) {
+  return name.length > 9 ? `${name.slice(0, 8)}...` : name;
 }
 
 function formatDistance(distanceKm) {
   if (distanceKm < 1) return `${Math.round(distanceKm * 1000)} m`;
-  return `${distanceKm.toFixed(distanceKm < 10 ? 1 : 0)} km`;
+  return `${Math.round(distanceKm)} km`;
 }
 
-function statusIcon(status) {
+function haversineDistance(origin, destination) {
+  const radius = 6371;
+  const dLat = toRad(destination.lat - origin.lat);
+  const dLng = toRad(destination.lng - origin.lng);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(origin.lat)) * Math.cos(toRad(destination.lat)) * Math.sin(dLng / 2) ** 2;
+  return radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function getBearing(origin, destination) {
+  const lat1 = toRad(origin.lat);
+  const lat2 = toRad(destination.lat);
+  const dLng = toRad(destination.lng - origin.lng);
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+function mapPoint(distanceKm, bearing, index) {
+  const maxDistance = 15;
+  const radius = Math.min(distanceKm / maxDistance, 1) * 43;
+  const jitter = ((index % 5) - 2) * 1.4;
+  const angle = toRad(bearing);
   return {
-    visited: "🍜",
-    want_to_go: "🍙",
-    favorite: "🍰",
-  }[status] ?? "🍽";
+    x: 50 + Math.sin(angle) * radius + jitter,
+    y: 50 - Math.cos(angle) * radius - jitter,
+  };
 }
 
-function statusLabel(status) {
-  return {
-    visited: "Visited",
-    want_to_go: "Want to Go",
-    favorite: "Favorite",
-  }[status] ?? "Saved";
+function toRad(degrees) {
+  return (degrees * Math.PI) / 180;
 }
 
-function shortName(name) {
-  return name.length > 10 ? `${name.slice(0, 9)}…` : name;
+function toDeg(radians) {
+  return (radians * 180) / Math.PI;
 }
 
 function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  })[character]);
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/`/g, "&#096;");
 }
