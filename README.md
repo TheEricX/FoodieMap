@@ -31,6 +31,8 @@ APP_BASE_URL=http://localhost:5174
 SESSION_SECRET=换成一串随机长字符串
 ```
 
+`SESSION_SECRET` 必须至少 32 个字符，不能使用默认示例值。
+
 启动：
 
 ```bash

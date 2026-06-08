@@ -54,6 +54,7 @@ ALLOWED_SHORT_HOSTS = {"maps.app.goo.gl", "goo.gl"}
 SESSION_COOKIE = "foodiemap_session"
 OAUTH_STATE_COOKIE = "foodiemap_oauth_state"
 PUBLIC_FILES = {"index.html", "app.js", "styles.css"}
+INSECURE_SESSION_SECRETS = {"", "dev-change-me", "change-me-in-production"}
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -111,6 +112,15 @@ def model_values(model: BaseModel) -> dict[str, Any]:
     if hasattr(model, "model_dump"):
         return model.model_dump(exclude_unset=True)
     return model.dict(exclude_unset=True)
+
+
+def validate_config() -> None:
+    if SESSION_SECRET in INSECURE_SESSION_SECRETS or len(SESSION_SECRET) < 32:
+        raise RuntimeError("SESSION_SECRET must be set to a random value of at least 32 characters")
+
+
+def secure_cookie_enabled() -> bool:
+    return APP_BASE_URL.startswith("https://")
 
 
 def safe_next_path(value: str) -> str:
@@ -190,6 +200,7 @@ def init_db() -> None:
 
 @app.on_event("startup")
 def startup() -> None:
+    validate_config()
     init_db()
 
 
@@ -332,7 +343,14 @@ def google_login(next: str = "/") -> RedirectResponse:
         "prompt": "select_account",
     }
     redirect = RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}")
-    redirect.set_cookie(OAUTH_STATE_COOKIE, sign_value(state), httponly=True, samesite="lax", max_age=600)
+    redirect.set_cookie(
+        OAUTH_STATE_COOKIE,
+        sign_value(state),
+        httponly=True,
+        samesite="lax",
+        secure=secure_cookie_enabled(),
+        max_age=600,
+    )
     return redirect
 
 
@@ -369,6 +387,9 @@ def google_callback(request: Request, code: str, state: str) -> RedirectResponse
     except (KeyError, urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
         raise HTTPException(status_code=502, detail="Google OAuth failed") from error
 
+    if profile.get("email_verified") is not True:
+        raise HTTPException(status_code=403, detail="Google email is not verified")
+
     user_id = new_id()
     timestamp = now()
     with connect() as db:
@@ -388,7 +409,14 @@ def google_callback(request: Request, code: str, state: str) -> RedirectResponse
     state_payload = json.loads(base64.urlsafe_b64decode(state.encode()).decode())
     destination = safe_next_path(state_payload.get("next") or "/")
     redirect = RedirectResponse(destination)
-    redirect.set_cookie(SESSION_COOKIE, sign_value(user_id), httponly=True, samesite="lax", max_age=60 * 60 * 24 * 30)
+    redirect.set_cookie(
+        SESSION_COOKIE,
+        sign_value(user_id),
+        httponly=True,
+        samesite="lax",
+        secure=secure_cookie_enabled(),
+        max_age=60 * 60 * 24 * 30,
+    )
     redirect.delete_cookie(OAUTH_STATE_COOKIE)
     return redirect
 
