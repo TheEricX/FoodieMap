@@ -10,18 +10,23 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260607-2" />
+    <link rel="stylesheet" href="/styles.css?v=20260613-wooden" />
   </head>
   <body>
     <main class="app-shell">
       <header class="topbar">
         <div class="brand">
-          <span class="brand-mark">🍱</span>
+          <span class="brand-mark">◎</span>
           <span>Gourmet Map</span>
         </div>
+        <nav class="top-nav" aria-label="Primary navigation">
+          <a class="active" href="#cuteMap">My Map</a>
+          <a href="#recentList">My Lists</a>
+          <a href="#recentList">Discovery</a>
+        </nav>
         <label class="search-box">
           <span>⌕</span>
-          <input id="searchInput" type="search" placeholder="Search bites..." />
+          <input id="searchInput" type="search" placeholder="Search for tasty treats..." />
         </label>
         <div class="top-actions">
           <button class="icon-button" id="locateButton" title="获取当前位置">⌖</button>
@@ -51,10 +56,10 @@
           </div>
 
           <nav class="filter-list" aria-label="Restaurant filters">
-            <button class="filter-item active" data-filter="all">◎ All <span id="countAll">0</span></button>
-            <button class="filter-item" data-filter="visited">☑ Visited <span id="countVisited">0</span></button>
-            <button class="filter-item" data-filter="want_to_go">▱ Want to Go <span id="countWant">0</span></button>
-            <button class="filter-item" data-filter="favorite">♡ Favorites <span id="countFavorite">0</span></button>
+            <button class="filter-item active" data-filter="all">All Spots <span id="countAll">0</span></button>
+            <button class="filter-item" data-filter="visited">Visited <span id="countVisited">0</span></button>
+            <button class="filter-item" data-filter="want_to_go">Want to Go <span id="countWant">0</span></button>
+            <button class="filter-item" data-filter="favorite">Favorites <span id="countFavorite">0</span></button>
           </nav>
 
           <section class="recent-panel">
@@ -66,7 +71,7 @@
         <section class="map-stage">
           <div class="map-toolbar">
             <div>
-              <p class="eyebrow">Q MAP</p>
+              <p class="eyebrow">WOODEN MAP</p>
               <h1>My Gourmet Map</h1>
             </div>
             <div class="location-control">
@@ -239,6 +244,6 @@
         </form>
       </dialog>
     </main>
-    <script src="/app.js?v=20260607-2"></script>
+    <script src="/app.js?v=20260613-wooden"></script>
   </body>
 </html>

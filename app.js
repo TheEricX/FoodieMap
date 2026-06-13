@@ -562,7 +562,27 @@ async function pasteAndAddFromClipboard() {
     if (!googleUrl) throw new Error("剪贴板里没有 Google Maps 链接。");
     const parsed = await parseAnyGoogleMapsLink(googleUrl);
     const name = parsed.name || "New Spot";
-    if (!confirm(`添加「${name}」到 Want to Go 吗？`)) return;
+    const duplicate = findDuplicateRestaurant({
+      name,
+      google_url: parsed.url || googleUrl,
+      lat: parsed.lat,
+      lng: parsed.lng,
+    });
+    let confirmedCreate = false;
+    if (duplicate) {
+      selectedRestaurantId = duplicate.id;
+      isSpotCardOpen = true;
+      render();
+      const duplicateDistance = formatDistance(haversineDistance(duplicate, { lat: parsed.lat, lng: parsed.lng }));
+      confirmedCreate = confirm(
+        `已经找到很像的餐厅：\n\n「${duplicate.name}」\n${duplicate.address || "没有地址"}\n距离新链接坐标约 ${duplicateDistance}\n\n还要继续创建一个新的重复记录吗？`,
+      );
+      if (!confirmedCreate) {
+        setPasteStatus(`已取消创建，已选中现有餐厅：${duplicate.name}`);
+        return;
+      }
+    }
+    if (!confirmedCreate && !confirm(`添加「${name}」到 Want to Go 吗？`)) return;
     const body = {
       name,
       address: "",
@@ -776,7 +796,7 @@ function renderRecentList() {
             <strong>${escapeHtml(restaurant.name)}</strong>
             <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${restaurant.visit_count || 0} visits</small>
           </span>
-          <span>♡</span>
+          <span>♥</span>
         </button>
       `).join("")
     : '<p class="empty-recent">没有匹配餐厅</p>';
@@ -862,6 +882,43 @@ function upsertRestaurant(restaurant) {
   else restaurants = [normalized, ...restaurants];
 }
 
+function findDuplicateRestaurant(candidate) {
+  const candidateName = normalizePlaceName(candidate.name);
+  const candidateUrlKey = googleMapsPlaceKey(candidate.google_url);
+  const candidateCoordinates = validateCoordinates(candidate.lat, candidate.lng);
+  return restaurants.find((restaurant) => {
+    const sameUrl = candidateUrlKey && googleMapsPlaceKey(restaurant.google_url) === candidateUrlKey;
+    if (sameUrl) return true;
+    const restaurantCoordinates = validateCoordinates(restaurant.lat, restaurant.lng);
+    const nearby =
+      candidateCoordinates && restaurantCoordinates
+        ? haversineDistance(restaurantCoordinates, candidateCoordinates) <= 0.03
+        : false;
+    if (!nearby) return false;
+    const restaurantName = normalizePlaceName(restaurant.name);
+    return candidateName && restaurantName && (candidateName === restaurantName || candidateName.includes(restaurantName) || restaurantName.includes(candidateName));
+  }) ?? null;
+}
+
+function normalizePlaceName(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function googleMapsPlaceKey(url) {
+  if (!url) return "";
+  const parsed = parseGoogleMapsUrl(url);
+  const name = normalizePlaceName(parsed?.name || "");
+  if (parsed?.lat != null && parsed?.lng != null) {
+    return `${name}|${Number(parsed.lat).toFixed(5)},${Number(parsed.lng).toFixed(5)}`;
+  }
+  return name ? `name:${name}` : "";
+}
+
 function normalizeRestaurant(item) {
   return {
     id: String(item.id),
@@ -927,7 +984,7 @@ function shortUserName(user) {
 }
 
 function statusIcon(status) {
-  return { visited: "🍜", want_to_go: "🍙", favorite: "🍰" }[status] || "🍽";
+  return { visited: "🍴", want_to_go: "⌑", favorite: "♥" }[status] || "•";
 }
 
 function statusLabel(status) {
