@@ -46,6 +46,13 @@ const demoRestaurants = [
   },
 ];
 
+const systemLists = [
+  { key: "all", title: "All Spots", eyebrow: "EVERYTHING", icon: "◎", description: "Every restaurant saved on your map.", filter: "all" },
+  { key: "visited", title: "Visited", eyebrow: "BEEN THERE", icon: "🍴", description: "Places you have already tried.", filter: "visited" },
+  { key: "want_to_go", title: "Want to Go", eyebrow: "NEXT UP", icon: "⌑", description: "Restaurants waiting for a first visit.", filter: "want_to_go" },
+  { key: "favorite", title: "Favorites", eyebrow: "LOVED", icon: "♥", description: "Your favorite spots in one quick list.", filter: "favorite" },
+];
+
 let restaurants = [];
 let currentUser = null;
 let currentLocation = null;
@@ -56,6 +63,15 @@ let editingRestaurantId = null;
 let shortLinkResolveTimer = null;
 let shareToken = getShareToken();
 let shareData = null;
+let activeView = getInitialView();
+let lists = [];
+let discoveryLists = [];
+let selectedListId = null;
+let activeMyListKey = "system:all";
+let selectedDiscoveryListId = null;
+let editingListId = null;
+let addSpotsListId = null;
+let discoverySort = "popular";
 
 const elements = {
   searchInput: document.querySelector("#searchInput"),
@@ -118,6 +134,28 @@ const elements = {
   shareUrlInput: document.querySelector("#shareUrlInput"),
   createShareButton: document.querySelector("#createShareButton"),
   copyShareButton: document.querySelector("#copyShareButton"),
+  navLinks: document.querySelectorAll("[data-view]"),
+  viewPanels: document.querySelectorAll("[data-view-panel]"),
+  mapView: document.querySelector("#mapView"),
+  listsView: document.querySelector("#listsView"),
+  discoveryView: document.querySelector("#discoveryView"),
+  createListButton: document.querySelector("#createListButton"),
+  myListsGrid: document.querySelector("#myListsGrid"),
+  systemListsGrid: document.querySelector("#systemListsGrid"),
+  myListDetail: document.querySelector("#myListDetail"),
+  discoveryGrid: document.querySelector("#discoveryGrid"),
+  discoveryDetail: document.querySelector("#discoveryDetail"),
+  listDialog: document.querySelector("#listDialog"),
+  listForm: document.querySelector("#listForm"),
+  listFormMode: document.querySelector("#listFormMode"),
+  listFormTitle: document.querySelector("#listFormTitle"),
+  listFormHelp: document.querySelector("#listFormHelp"),
+  saveListButton: document.querySelector("#saveListButton"),
+  closeListDialog: document.querySelector("#closeListDialog"),
+  addSpotsDialog: document.querySelector("#addSpotsDialog"),
+  closeAddSpotsDialog: document.querySelector("#closeAddSpotsDialog"),
+  addSpotsSearch: document.querySelector("#addSpotsSearch"),
+  addSpotsList: document.querySelector("#addSpotsList"),
 };
 
 boot();
@@ -126,10 +164,14 @@ async function boot() {
   bindEvents();
   await loadMe();
   if (shareToken) {
+    activeView = "my-map";
     await loadSharePage(shareToken);
   } else {
     await loadRestaurants();
+    await loadLists();
+    await loadDiscoveryLists();
   }
+  setActiveView(activeView, { push: false });
   checkShortLinkService();
   requestLocation();
 }
@@ -153,6 +195,25 @@ function bindEvents() {
   elements.shareSpot.addEventListener("click", openShareDialog);
   elements.deleteSpot.addEventListener("click", deleteSelectedRestaurant);
   elements.searchInput.addEventListener("input", render);
+  elements.navLinks.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      setActiveView(link.dataset.view);
+    });
+  });
+  window.addEventListener("hashchange", () => setActiveView(getInitialView(), { push: false }));
+  elements.createListButton.addEventListener("click", openCreateListDialog);
+  elements.closeListDialog.addEventListener("click", () => closeListDialog());
+  elements.listForm.addEventListener("submit", saveListFromForm);
+  elements.closeAddSpotsDialog.addEventListener("click", () => elements.addSpotsDialog.close());
+  elements.addSpotsSearch.addEventListener("input", renderAddSpotsDialog);
+  document.querySelectorAll("[data-discovery-sort]").forEach((button) => {
+    button.addEventListener("click", () => {
+      discoverySort = button.dataset.discoverySort;
+      document.querySelectorAll("[data-discovery-sort]").forEach((item) => item.classList.toggle("active", item === button));
+      renderDiscoveryView();
+    });
+  });
   elements.googleUrlInput.addEventListener("input", autofillFromGoogleMapsUrl);
   elements.restaurantForm.addEventListener("submit", saveRestaurantFromForm);
   elements.addDishButton.addEventListener("click", addDishFromEditor);
@@ -172,11 +233,14 @@ function bindEvents() {
   document.querySelectorAll(".filter-item").forEach((button) => {
     button.addEventListener("click", () => {
       activeFilter = button.dataset.filter;
-      document.querySelectorAll(".filter-item").forEach((item) => item.classList.remove("active"));
-      button.classList.add("active");
+      syncFilterButtons();
       render();
     });
   });
+}
+
+function syncFilterButtons() {
+  document.querySelectorAll(".filter-item").forEach((item) => item.classList.toggle("active", item.dataset.filter === activeFilter));
 }
 
 async function api(path, options = {}) {
@@ -224,6 +288,9 @@ async function handleLoginButton() {
   await api("/auth/logout", { method: "POST" });
   currentUser = null;
   restaurants = demoRestaurants.map(cloneRestaurant);
+  lists = [];
+  selectedListId = null;
+  activeMyListKey = "system:all";
   selectedRestaurantId = restaurants[0]?.id ?? null;
   renderAuth();
   render();
@@ -239,6 +306,48 @@ async function loadRestaurants() {
   selectedRestaurantId = restaurants[0]?.id ?? null;
   isSpotCardOpen = Boolean(selectedRestaurantId);
   render();
+}
+
+async function loadLists() {
+  if (!currentUser) {
+    lists = [];
+    selectedListId = null;
+    return;
+  }
+  const data = await api("/api/lists");
+  lists = data.lists.map(normalizeList);
+  selectedListId = selectedListId && lists.some((list) => list.id === selectedListId) ? selectedListId : lists[0]?.id ?? null;
+  if (activeMyListKey.startsWith("custom:") && !lists.some((list) => `custom:${list.id}` === activeMyListKey)) {
+    activeMyListKey = "system:all";
+  }
+}
+
+async function loadListDetail(listId) {
+  const data = await api(`/api/lists/${listId}`);
+  const list = normalizeList(data.list);
+  lists = lists.map((item) => (item.id === list.id ? list : item));
+  if (!lists.some((item) => item.id === list.id)) lists = [list, ...lists];
+  selectedListId = list.id;
+  activeMyListKey = `custom:${list.id}`;
+  return list;
+}
+
+async function loadDiscoveryLists() {
+  const data = await api("/api/discovery/lists");
+  discoveryLists = data.lists.map(normalizeList);
+  selectedDiscoveryListId =
+    selectedDiscoveryListId && discoveryLists.some((list) => list.id === selectedDiscoveryListId)
+      ? selectedDiscoveryListId
+      : discoveryLists[0]?.id ?? null;
+}
+
+async function loadDiscoveryDetail(listId) {
+  const data = await api(`/api/discovery/lists/${listId}`);
+  const list = normalizeList(data.list);
+  discoveryLists = discoveryLists.map((item) => (item.id === list.id ? list : item));
+  if (!discoveryLists.some((item) => item.id === list.id)) discoveryLists = [list, ...discoveryLists];
+  selectedDiscoveryListId = list.id;
+  return list;
 }
 
 async function loadSharePage(token) {
@@ -763,14 +872,49 @@ function setFallbackLocation(message) {
 }
 
 function render() {
+  renderViewShell();
   renderCounts();
   renderRecentList();
   renderMarkers();
   renderSpotCard();
+  renderListsView();
+  renderDiscoveryView();
+}
+
+function getInitialView() {
+  const hash = window.location.hash.replace("#", "");
+  return ["my-map", "my-lists", "discovery"].includes(hash) ? hash : "my-map";
+}
+
+function setActiveView(view, options = {}) {
+  if (!["my-map", "my-lists", "discovery"].includes(view)) view = "my-map";
+  activeView = shareToken ? "my-map" : view;
+  if (options.push !== false && window.location.hash !== `#${activeView}`) {
+    window.location.hash = activeView;
+  }
+  if (activeView === "my-lists" && currentUser && !lists.length) {
+    loadLists().then(render).catch((error) => alert(error.message));
+  }
+  if (activeView === "discovery" && !discoveryLists.length) {
+    loadDiscoveryLists().then(render).catch((error) => alert(error.message));
+  }
+  render();
+}
+
+function renderViewShell() {
+  elements.viewPanels.forEach((panel) => {
+    panel.hidden = panel.dataset.viewPanel !== activeView;
+  });
+  elements.navLinks.forEach((link) => link.classList.toggle("active", link.dataset.view === activeView));
+  elements.searchInput.placeholder = {
+    "my-map": "Search for tasty treats...",
+    "my-lists": "Search your lists...",
+    discovery: "Search curated lists...",
+  }[activeView];
 }
 
 function getVisibleRestaurants() {
-  const term = elements.searchInput.value.trim().toLowerCase();
+  const term = activeView === "my-map" ? elements.searchInput.value.trim().toLowerCase() : "";
   return restaurants.filter((restaurant) => {
     const matchesFilter = activeFilter === "all" || restaurant.status === activeFilter;
     const haystack = [restaurant.name, restaurant.address, restaurant.notes, ...(restaurant.dishes ?? []).map((dish) => dish.name)].join(" ").toLowerCase();
@@ -871,8 +1015,471 @@ function renderSpotDishes(restaurant) {
   `).join("");
 }
 
+function renderListsView() {
+  if (!elements.myListsGrid) return;
+  const term = activeView === "my-lists" ? elements.searchInput.value.trim().toLowerCase() : "";
+  elements.systemListsGrid.innerHTML = systemLists.map((list) => systemListCardTemplate(list, activeMyListKey === `system:${list.key}`)).join("");
+  elements.systemListsGrid.querySelectorAll("[data-system-list]").forEach((card) => {
+    card.addEventListener("click", () => {
+      activeMyListKey = `system:${card.dataset.systemList}`;
+      render();
+    });
+  });
+
+  if (!currentUser) {
+    elements.myListsGrid.innerHTML = emptyStateTemplate("Sign in to create private lists.", "Sign in");
+    elements.myListsGrid.querySelector("[data-empty-action]")?.addEventListener("click", requireLogin);
+  } else {
+    const visible = lists.filter((list) => listSearchText(list).includes(term));
+    elements.myListsGrid.innerHTML = visible.length
+      ? visible.map((list) => listCardTemplate(list, activeMyListKey === `custom:${list.id}`, "mine")).join("")
+      : emptyStateTemplate("No custom lists match this search.", "Create Your First List");
+    elements.myListsGrid.querySelectorAll("[data-list-id]").forEach((card) => {
+      card.addEventListener("click", async () => {
+        selectedListId = card.dataset.listId;
+        activeMyListKey = `custom:${selectedListId}`;
+        await ensureListDetail(selectedListId);
+        render();
+      });
+    });
+    elements.myListsGrid.querySelector("[data-empty-action]")?.addEventListener("click", openCreateListDialog);
+  }
+
+  if (activeMyListKey.startsWith("system:")) {
+    const systemKey = activeMyListKey.replace("system:", "");
+    const definition = systemLists.find((list) => list.key === systemKey) ?? systemLists[0];
+    elements.myListDetail.innerHTML = systemListDetailTemplate(definition, term);
+    bindSystemListDetailActions(definition);
+    return;
+  }
+
+  if (!currentUser) {
+    elements.myListDetail.innerHTML = emptyStateTemplate("Choose a smart list above, or sign in to manage custom lists.", "");
+    return;
+  }
+  const selected = lists.find((list) => `custom:${list.id}` === activeMyListKey) ?? lists.find((list) => list.id === selectedListId) ?? lists[0];
+  if (selected && !selected.items) {
+    ensureListDetail(selected.id).then(render).catch((error) => (elements.myListDetail.innerHTML = errorPanel(error.message)));
+    elements.myListDetail.innerHTML = loadingPanel("Loading list...");
+    return;
+  }
+  elements.myListDetail.innerHTML = selected ? myListDetailTemplate(selected) : emptyStateTemplate("Create a list, then add spots from your map.", "");
+  bindMyListDetailActions(selected);
+}
+
+function renderDiscoveryView() {
+  if (!elements.discoveryGrid) return;
+  const term = activeView === "discovery" ? elements.searchInput.value.trim().toLowerCase() : "";
+  const sorted = [...discoveryLists].sort((a, b) => {
+    if (discoverySort === "recent") return Number(b.published_at || 0) - Number(a.published_at || 0);
+    return Number(b.copy_count || 0) - Number(a.copy_count || 0) || Number(b.item_count || 0) - Number(a.item_count || 0);
+  });
+  const visible = sorted.filter((list) => listSearchText(list).includes(term));
+  elements.discoveryGrid.innerHTML = visible.length
+    ? visible.map((list) => listCardTemplate(list, list.id === selectedDiscoveryListId, "public")).join("")
+    : emptyStateTemplate("No public lists yet. Publish a list from My Lists to seed Discovery.", "");
+  elements.discoveryGrid.querySelectorAll("[data-list-id]").forEach((card) => {
+    card.addEventListener("click", async () => {
+      selectedDiscoveryListId = card.dataset.listId;
+      await ensureDiscoveryDetail(selectedDiscoveryListId);
+      render();
+    });
+  });
+  const selected = discoveryLists.find((list) => list.id === selectedDiscoveryListId) ?? visible[0] ?? discoveryLists[0];
+  if (selected && !selected.items) {
+    ensureDiscoveryDetail(selected.id).then(render).catch((error) => (elements.discoveryDetail.innerHTML = errorPanel(error.message)));
+    elements.discoveryDetail.innerHTML = loadingPanel("Loading public list...");
+    return;
+  }
+  elements.discoveryDetail.innerHTML = selected ? discoveryDetailTemplate(selected) : emptyStateTemplate("Published lists will open here.", "");
+  elements.discoveryDetail.querySelector("[data-copy-public]")?.addEventListener("click", copyPublicList);
+}
+
+function systemListCardTemplate(list, selected) {
+  const spots = restaurantsForSystemList(list);
+  return `
+    <button class="system-list-card ${selected ? "selected" : ""}" type="button" data-system-list="${list.key}">
+      <span class="system-list-icon">${list.icon}</span>
+      <span>
+        <strong>${escapeHtml(list.title)}</strong>
+        <small>${escapeHtml(list.description)}</small>
+      </span>
+      <span class="system-list-count">${spots.length}</span>
+    </button>
+  `;
+}
+
+function systemListDetailTemplate(definition, term) {
+  const spots = restaurantsForSystemList(definition).filter((restaurant) => restaurantSearchText(restaurant).includes(term));
+  return `
+    <div class="detail-head smart-detail">
+      <span class="list-cover smart-cover">${definition.icon}</span>
+      <div>
+        <p class="eyebrow">${escapeHtml(definition.eyebrow)}</p>
+        <h2>${escapeHtml(definition.title)}</h2>
+        <p>${escapeHtml(definition.description)}</p>
+        <div class="meta-row compact-meta">
+          <span>${spots.length} spots</span>
+          <span>Auto updated</span>
+        </div>
+      </div>
+    </div>
+    <div class="detail-actions system-actions">
+      <button class="outline-button" type="button" data-view-system-map>Open on Map</button>
+      <button class="outline-button" type="button" data-create-list-from-system>Create Custom List</button>
+    </div>
+    <div class="spot-row-list">
+      ${spots.length ? spots.map(systemSpotItemTemplate).join("") : emptyStateTemplate("No spots in this smart list yet.", "")}
+    </div>
+  `;
+}
+
+function systemSpotItemTemplate(restaurant) {
+  return `
+    <article class="spot-row" data-restaurant-id="${restaurant.id}">
+      <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
+      <div>
+        <strong>${escapeHtml(restaurant.name)}</strong>
+        <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits</small>
+      </div>
+      <button class="icon-link" type="button" data-open-spot="${restaurant.id}">Map</button>
+      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Google</a>
+    </article>
+  `;
+}
+
+function bindSystemListDetailActions(definition) {
+  elements.myListDetail.querySelector("[data-view-system-map]")?.addEventListener("click", () => {
+    activeFilter = definition.filter;
+    syncFilterButtons();
+    setActiveView("my-map");
+  });
+  elements.myListDetail.querySelector("[data-create-list-from-system]")?.addEventListener("click", openCreateListDialog);
+  elements.myListDetail.querySelectorAll("[data-open-spot]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedRestaurantId = button.dataset.openSpot;
+      activeFilter = definition.filter;
+      syncFilterButtons();
+      isSpotCardOpen = true;
+      setActiveView("my-map");
+    });
+  });
+}
+
+function listCardTemplate(list, selected, mode) {
+  return `
+    <button class="list-card ${selected ? "selected" : ""}" type="button" data-list-id="${list.id}">
+      ${coverTemplate(list)}
+      <span class="list-card-body">
+        <strong>${escapeHtml(list.title)}</strong>
+        <small>${escapeHtml(list.description || "No description yet.")}</small>
+        <span class="list-meta-row">
+          <span>${list.item_count || 0} spots</span>
+          <span>${mode === "public" ? `${list.copy_count || 0} copies` : visibilityLabel(list.visibility)}</span>
+        </span>
+      </span>
+    </button>
+  `;
+}
+
+function myListDetailTemplate(list) {
+  const isPublic = list.visibility === "public";
+  return `
+    <div class="detail-head">
+      ${coverTemplate(list)}
+      <div>
+        <p class="eyebrow">${isPublic ? "PUBLIC LIST" : "PRIVATE LIST"}</p>
+        <h2>${escapeHtml(list.title)}</h2>
+        <p>${escapeHtml(list.description || "No description yet.")}</p>
+        <div class="meta-row compact-meta">
+          <span>${list.item_count || 0} spots</span>
+          <span>${visibilityLabel(list.visibility)}</span>
+          <span>Updated ${formatDate(list.updated_at)}</span>
+        </div>
+      </div>
+    </div>
+    <div class="detail-actions">
+      <button class="outline-button" type="button" data-list-action="edit">Edit</button>
+      <button class="outline-button" type="button" data-list-action="publish">${isPublic ? "Unpublish" : "Publish"}</button>
+      <button class="outline-button" type="button" data-list-action="add">Add Spots</button>
+      <button class="outline-button danger" type="button" data-list-action="delete">Delete List</button>
+    </div>
+    <div class="spot-row-list">
+      ${(list.items ?? []).length ? list.items.map((item) => ownedListItemTemplate(item)).join("") : emptyStateTemplate("This list is empty. Add spots from your map.", "")}
+    </div>
+  `;
+}
+
+function discoveryDetailTemplate(list) {
+  return `
+    <div class="detail-head public-detail">
+      ${coverTemplate(list)}
+      <div>
+        <p class="eyebrow">PUBLIC PICK</p>
+        <h2>${escapeHtml(list.title)}</h2>
+        <p>${escapeHtml(list.description || "No description yet.")}</p>
+        <div class="meta-row compact-meta">
+          <span>${list.item_count || 0} spots</span>
+          <span>${list.copy_count || 0} copies</span>
+          <span>by ${escapeHtml(list.owner?.name || "Foodie")}</span>
+        </div>
+      </div>
+    </div>
+    <button class="primary-button compact full" type="button" data-copy-public>Copy to My Lists</button>
+    <div class="spot-row-list">
+      ${(list.items ?? []).length ? list.items.map((item) => publicListItemTemplate(item)).join("") : emptyStateTemplate("This public list has no visible spots.", "")}
+    </div>
+  `;
+}
+
+function ownedListItemTemplate(item) {
+  const restaurant = item.restaurant;
+  if (!restaurant) return "";
+  return `
+    <article class="spot-row" data-restaurant-id="${restaurant.id}">
+      <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
+      <div>
+        <strong>${escapeHtml(restaurant.name)}</strong>
+        <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits</small>
+        ${item.note ? `<p>${escapeHtml(item.note)}</p>` : ""}
+      </div>
+      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Map</a>
+      <button class="icon-link danger-text" type="button" data-remove-list-spot="${restaurant.id}">Remove</button>
+    </article>
+  `;
+}
+
+function publicListItemTemplate(item) {
+  const restaurant = item.restaurant;
+  if (!restaurant) return "";
+  return `
+    <article class="spot-row">
+      <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
+      <div>
+        <strong>${escapeHtml(restaurant.name)}</strong>
+        <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${escapeHtml(restaurant.address || "Address not shared")}</small>
+      </div>
+      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Map</a>
+    </article>
+  `;
+}
+
+function coverTemplate(list) {
+  return list.cover_image_url
+    ? `<span class="list-cover image-cover"><img src="${escapeAttribute(list.cover_image_url)}" alt=""></span>`
+    : `<span class="list-cover">${list.visibility === "public" ? "🍜" : "▦"}</span>`;
+}
+
+function emptyStateTemplate(message, actionLabel) {
+  return `
+    <div class="empty-panel">
+      <strong>${escapeHtml(message)}</strong>
+      ${actionLabel ? `<button class="secondary-button" type="button" data-empty-action>${escapeHtml(actionLabel)}</button>` : ""}
+    </div>
+  `;
+}
+
+function loadingPanel(message) {
+  return `<div class="empty-panel"><strong>${escapeHtml(message)}</strong></div>`;
+}
+
+function errorPanel(message) {
+  return `<div class="empty-panel error"><strong>${escapeHtml(message)}</strong></div>`;
+}
+
+async function ensureListDetail(listId) {
+  const list = lists.find((item) => item.id === listId);
+  return list?.items ? list : loadListDetail(listId);
+}
+
+async function ensureDiscoveryDetail(listId) {
+  const list = discoveryLists.find((item) => item.id === listId);
+  return list?.items ? list : loadDiscoveryDetail(listId);
+}
+
+function bindMyListDetailActions(list) {
+  if (!list) return;
+  elements.myListDetail.querySelector('[data-list-action="edit"]')?.addEventListener("click", () => openEditListDialog(list));
+  elements.myListDetail.querySelector('[data-list-action="publish"]')?.addEventListener("click", () => toggleListVisibility(list));
+  elements.myListDetail.querySelector('[data-list-action="add"]')?.addEventListener("click", () => openAddSpotsDialog(list.id));
+  elements.myListDetail.querySelector('[data-list-action="delete"]')?.addEventListener("click", () => deleteList(list));
+  elements.myListDetail.querySelectorAll("[data-remove-list-spot]").forEach((button) => {
+    button.addEventListener("click", () => removeSpotFromList(list.id, button.dataset.removeListSpot));
+  });
+}
+
+function openCreateListDialog() {
+  if (!requireLogin()) return;
+  editingListId = null;
+  elements.listForm.reset();
+  elements.listForm.elements.id.value = "";
+  elements.listFormMode.textContent = "NEW_LIST";
+  elements.listFormTitle.textContent = "Create List";
+  elements.saveListButton.textContent = "Create List";
+  elements.listFormHelp.textContent = "清单默认私密；发布后才会出现在 Discovery。";
+  elements.listDialog.showModal();
+}
+
+function openEditListDialog(list) {
+  editingListId = list.id;
+  elements.listForm.reset();
+  elements.listForm.elements.id.value = list.id;
+  elements.listForm.elements.title.value = list.title;
+  elements.listForm.elements.description.value = list.description || "";
+  elements.listForm.elements.coverImageUrl.value = list.cover_image_url || "";
+  elements.listFormMode.textContent = "EDIT_LIST";
+  elements.listFormTitle.textContent = "Edit List";
+  elements.saveListButton.textContent = "Update List";
+  elements.listFormHelp.textContent = "修改会立即影响 My Lists；公开清单会同步更新 Discovery 展示。";
+  elements.listDialog.showModal();
+}
+
+function closeListDialog() {
+  elements.listDialog.close();
+  editingListId = null;
+  elements.listForm.reset();
+}
+
+async function saveListFromForm(event) {
+  event.preventDefault();
+  if (!requireLogin()) return;
+  const form = new FormData(elements.listForm);
+  const body = {
+    title: String(form.get("title") ?? "").trim(),
+    description: String(form.get("description") ?? "").trim(),
+    cover_image_url: String(form.get("coverImageUrl") ?? "").trim(),
+  };
+  if (!body.title) {
+    elements.listFormHelp.textContent = "请输入清单标题。";
+    return;
+  }
+  try {
+    elements.listFormHelp.textContent = "正在保存...";
+    const data = editingListId
+      ? await api(`/api/lists/${editingListId}`, { method: "PATCH", body: JSON.stringify(body) })
+      : await api("/api/lists", { method: "POST", body: JSON.stringify(body) });
+    const list = normalizeList(data.list);
+    lists = editingListId ? lists.map((item) => (item.id === list.id ? list : item)) : [list, ...lists];
+    selectedListId = list.id;
+    activeMyListKey = `custom:${list.id}`;
+    closeListDialog();
+    setActiveView("my-lists");
+  } catch (error) {
+    elements.listFormHelp.textContent = error.message;
+  }
+}
+
+async function toggleListVisibility(list) {
+  if (!requireLogin()) return;
+  if (list.visibility !== "public" && !list.item_count) {
+    alert("至少添加一家餐厅后才能发布。");
+    return;
+  }
+  const visibility = list.visibility === "public" ? "private" : "public";
+  const data = await api(`/api/lists/${list.id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ visibility }),
+  });
+  const updated = normalizeList(data.list);
+  lists = lists.map((item) => (item.id === updated.id ? updated : item));
+  await loadDiscoveryLists();
+  render();
+}
+
+async function deleteList(list) {
+  if (!requireLogin() || !confirm(`删除清单「${list.title}」吗？餐厅记录不会被删除。`)) return;
+  await api(`/api/lists/${list.id}`, { method: "DELETE" });
+  lists = lists.filter((item) => item.id !== list.id);
+  selectedListId = lists[0]?.id ?? null;
+  activeMyListKey = selectedListId ? `custom:${selectedListId}` : "system:all";
+  await loadDiscoveryLists();
+  render();
+}
+
+function openAddSpotsDialog(listId) {
+  addSpotsListId = listId;
+  elements.addSpotsSearch.value = "";
+  renderAddSpotsDialog();
+  elements.addSpotsDialog.showModal();
+}
+
+function renderAddSpotsDialog() {
+  const list = lists.find((item) => item.id === addSpotsListId);
+  if (!list) {
+    elements.addSpotsList.innerHTML = emptyStateTemplate("Select a list first.", "");
+    return;
+  }
+  const added = new Set((list.items ?? []).map((item) => item.restaurant_id));
+  const term = elements.addSpotsSearch.value.trim().toLowerCase();
+  const visible = restaurants.filter((restaurant) => {
+    const haystack = [restaurant.name, restaurant.address, restaurant.notes].join(" ").toLowerCase();
+    return !term || haystack.includes(term);
+  });
+  elements.addSpotsList.innerHTML = visible.length
+    ? visible.map((restaurant) => `
+        <article class="add-spot-row">
+          <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
+          <div>
+            <strong>${escapeHtml(restaurant.name)}</strong>
+            <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)}</small>
+          </div>
+          <button class="secondary-button" type="button" data-add-list-spot="${restaurant.id}" ${added.has(restaurant.id) ? "disabled" : ""}>
+            ${added.has(restaurant.id) ? "Added" : "Add"}
+          </button>
+        </article>
+      `).join("")
+    : emptyStateTemplate("No restaurants match this search.", "");
+  elements.addSpotsList.querySelectorAll("[data-add-list-spot]").forEach((button) => {
+    button.addEventListener("click", () => addSpotToList(list.id, button.dataset.addListSpot));
+  });
+}
+
+async function addSpotToList(listId, restaurantId) {
+  const data = await api(`/api/lists/${listId}/items`, {
+    method: "POST",
+    body: JSON.stringify({ restaurant_id: restaurantId }),
+  });
+  const updated = normalizeList(data.list);
+  lists = lists.map((item) => (item.id === updated.id ? updated : item));
+  selectedListId = updated.id;
+  activeMyListKey = `custom:${updated.id}`;
+  renderAddSpotsDialog();
+  render();
+}
+
+async function removeSpotFromList(listId, restaurantId) {
+  const data = await api(`/api/lists/${listId}/items/${restaurantId}`, { method: "DELETE" });
+  const updated = normalizeList(data.list);
+  lists = lists.map((item) => (item.id === updated.id ? updated : item));
+  selectedListId = updated.id;
+  activeMyListKey = `custom:${updated.id}`;
+  render();
+}
+
+async function copyPublicList() {
+  if (!requireLogin()) return;
+  const list = discoveryLists.find((item) => item.id === selectedDiscoveryListId);
+  if (!list) return;
+  const data = await api(`/api/discovery/lists/${list.id}/copy`, { method: "POST" });
+  const copied = normalizeList(data.list);
+  await loadRestaurants();
+  await loadLists();
+  await loadDiscoveryLists();
+  selectedListId = copied.id;
+  activeMyListKey = `custom:${copied.id}`;
+  setActiveView("my-lists");
+}
+
 function selectedRestaurant() {
   return restaurants.find((restaurant) => restaurant.id === selectedRestaurantId) ?? null;
+}
+
+function restaurantsForSystemList(definition) {
+  return restaurants.filter((restaurant) => definition.filter === "all" || restaurant.status === definition.filter);
+}
+
+function restaurantSearchText(restaurant) {
+  return [restaurant.name, restaurant.address, restaurant.notes, ...(restaurant.dishes ?? []).map((dish) => dish.name)].join(" ").toLowerCase();
 }
 
 function upsertRestaurant(restaurant) {
@@ -947,6 +1554,52 @@ function normalizeDish(item) {
     image_url: String(item.image_url || ""),
     notes: String(item.notes || ""),
   };
+}
+
+function normalizeList(item) {
+  return {
+    id: String(item.id),
+    owner_user_id: String(item.owner_user_id || ""),
+    owner: item.owner || null,
+    title: String(item.title || "Untitled List"),
+    description: String(item.description || ""),
+    visibility: item.visibility === "public" ? "public" : "private",
+    cover_image_url: String(item.cover_image_url || ""),
+    copy_count: Math.max(0, Number(item.copy_count || 0)),
+    item_count: Math.max(0, Number(item.item_count || 0)),
+    created_at: Number(item.created_at || 0),
+    updated_at: Number(item.updated_at || 0),
+    published_at: item.published_at ? Number(item.published_at) : null,
+    items: Array.isArray(item.items)
+      ? item.items.map((entry) => ({
+          id: String(entry.id),
+          list_id: String(entry.list_id),
+          restaurant_id: String(entry.restaurant_id),
+          note: String(entry.note || ""),
+          sort_order: Number(entry.sort_order || 0),
+          created_at: Number(entry.created_at || 0),
+          restaurant: entry.restaurant ? normalizeRestaurant(entry.restaurant) : null,
+        }))
+      : undefined,
+  };
+}
+
+function listSearchText(list) {
+  return [
+    list.title,
+    list.description,
+    list.owner?.name,
+    ...(list.items ?? []).map((item) => [item.restaurant?.name, item.restaurant?.address, item.note].join(" ")),
+  ].join(" ").toLowerCase();
+}
+
+function visibilityLabel(visibility) {
+  return visibility === "public" ? "Public" : "Private";
+}
+
+function formatDate(timestamp) {
+  if (!timestamp) return "--";
+  return new Date(timestamp * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function cloneRestaurant(restaurant) {

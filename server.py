@@ -104,6 +104,24 @@ class ShareIn(BaseModel):
     selected_dish_ids: list[str] = Field(default_factory=list)
 
 
+class ListIn(BaseModel):
+    title: str = Field(min_length=1, max_length=160)
+    description: str = ""
+    cover_image_url: str = ""
+
+
+class ListPatch(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=1, max_length=160)
+    description: Optional[str] = None
+    cover_image_url: Optional[str] = None
+    visibility: Optional[str] = None
+
+
+class ListItemIn(BaseModel):
+    restaurant_id: str
+    note: str = ""
+
+
 def now() -> int:
     return int(time.time())
 
@@ -194,6 +212,29 @@ def init_db() -> None:
               selected_dish_ids TEXT NOT NULL DEFAULT '[]',
               created_at INTEGER NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS lists (
+              id TEXT PRIMARY KEY,
+              owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              title TEXT NOT NULL,
+              description TEXT NOT NULL DEFAULT '',
+              visibility TEXT NOT NULL DEFAULT 'private',
+              cover_image_url TEXT NOT NULL DEFAULT '',
+              copy_count INTEGER NOT NULL DEFAULT 0,
+              created_at INTEGER NOT NULL,
+              updated_at INTEGER NOT NULL,
+              published_at INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS list_items (
+              id TEXT PRIMARY KEY,
+              list_id TEXT NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+              restaurant_id TEXT NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+              note TEXT NOT NULL DEFAULT '',
+              sort_order INTEGER NOT NULL DEFAULT 0,
+              created_at INTEGER NOT NULL,
+              UNIQUE(list_id, restaurant_id)
+            );
             """
         )
 
@@ -268,6 +309,12 @@ def valid_dish_status(status: str) -> str:
     return status
 
 
+def valid_visibility(visibility: str) -> str:
+    if visibility not in {"private", "public"}:
+        raise HTTPException(status_code=422, detail="Invalid list visibility")
+    return visibility
+
+
 def dish_json(row: sqlite3.Row) -> dict[str, Any]:
     return {
         "id": row["id"],
@@ -315,6 +362,85 @@ def owned_restaurant(db: sqlite3.Connection, restaurant_id: str, user_id: str) -
     if not row:
         raise HTTPException(status_code=404, detail="Restaurant not found")
     return row
+
+
+def owned_list(db: sqlite3.Connection, list_id: str, user_id: str) -> sqlite3.Row:
+    row = db.execute(
+        "SELECT * FROM lists WHERE id = ? AND owner_user_id = ?",
+        (list_id, user_id),
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="List not found")
+    return row
+
+
+def public_list(db: sqlite3.Connection, list_id: str) -> sqlite3.Row:
+    row = db.execute(
+        "SELECT * FROM lists WHERE id = ? AND visibility = 'public'",
+        (list_id,),
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="List not found")
+    return row
+
+
+def list_item_count(db: sqlite3.Connection, list_id: str) -> int:
+    row = db.execute("SELECT COUNT(*) AS count FROM list_items WHERE list_id = ?", (list_id,)).fetchone()
+    return int(row["count"] if row else 0)
+
+
+def list_cover(db: sqlite3.Connection, row: sqlite3.Row) -> str:
+    if row["cover_image_url"]:
+        return row["cover_image_url"]
+    dish = db.execute(
+        """
+        SELECT dishes.image_path FROM list_items
+        JOIN dishes ON dishes.restaurant_id = list_items.restaurant_id
+        WHERE list_items.list_id = ? AND dishes.image_path != ''
+        ORDER BY list_items.sort_order ASC, list_items.created_at ASC, dishes.updated_at DESC
+        LIMIT 1
+        """,
+        (row["id"],),
+    ).fetchone()
+    return f"/uploads/{dish['image_path']}" if dish else ""
+
+
+def list_item_json(db: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
+    restaurant = db.execute("SELECT * FROM restaurants WHERE id = ?", (row["restaurant_id"],)).fetchone()
+    return {
+        "id": row["id"],
+        "list_id": row["list_id"],
+        "restaurant_id": row["restaurant_id"],
+        "note": row["note"],
+        "sort_order": row["sort_order"],
+        "created_at": row["created_at"],
+        "restaurant": restaurant_json(db, restaurant) if restaurant else None,
+    }
+
+
+def list_json(db: sqlite3.Connection, row: sqlite3.Row, include_items: bool = False) -> dict[str, Any]:
+    owner = db.execute("SELECT * FROM users WHERE id = ?", (row["owner_user_id"],)).fetchone()
+    payload = {
+        "id": row["id"],
+        "owner_user_id": row["owner_user_id"],
+        "owner": public_owner(dict(owner)) if owner else None,
+        "title": row["title"],
+        "description": row["description"],
+        "visibility": row["visibility"],
+        "cover_image_url": list_cover(db, row),
+        "copy_count": row["copy_count"],
+        "item_count": list_item_count(db, row["id"]),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "published_at": row["published_at"],
+    }
+    if include_items:
+        items = db.execute(
+            "SELECT * FROM list_items WHERE list_id = ? ORDER BY sort_order ASC, created_at ASC",
+            (row["id"],),
+        ).fetchall()
+        payload["items"] = [list_item_json(db, item) for item in items]
+    return payload
 
 
 @app.get("/api/health")
@@ -695,6 +821,228 @@ def add_shared_restaurant(token: str, user: dict[str, Any] = Depends(require_use
             )
         row = owned_restaurant(db, restaurant_id, user["id"])
         return {"restaurant": restaurant_json(db, row)}
+
+
+@app.get("/api/lists")
+def get_lists(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    with connect() as db:
+        rows = db.execute(
+            "SELECT * FROM lists WHERE owner_user_id = ? ORDER BY updated_at DESC, created_at DESC",
+            (user["id"],),
+        ).fetchall()
+        return {"lists": [list_json(db, row) for row in rows]}
+
+
+@app.post("/api/lists")
+def create_list(payload: ListIn, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    list_id = new_id()
+    timestamp = now()
+    with connect() as db:
+        db.execute(
+            """
+            INSERT INTO lists
+            (id, owner_user_id, title, description, visibility, cover_image_url, created_at, updated_at)
+            VALUES (?, ?, ?, ?, 'private', ?, ?, ?)
+            """,
+            (
+                list_id,
+                user["id"],
+                payload.title.strip(),
+                payload.description.strip(),
+                payload.cover_image_url.strip(),
+                timestamp,
+                timestamp,
+            ),
+        )
+        row = owned_list(db, list_id, user["id"])
+        return {"list": list_json(db, row, include_items=True)}
+
+
+@app.get("/api/lists/{list_id}")
+def get_list(list_id: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    with connect() as db:
+        row = owned_list(db, list_id, user["id"])
+        return {"list": list_json(db, row, include_items=True)}
+
+
+@app.patch("/api/lists/{list_id}")
+def update_list(list_id: str, payload: ListPatch, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    updates = model_values(payload)
+    if "visibility" in updates and updates["visibility"] is not None:
+        valid_visibility(updates["visibility"])
+    if not updates:
+        raise HTTPException(status_code=400, detail="No changes provided")
+
+    allowed = ["title", "description", "cover_image_url", "visibility"]
+    fields = [field for field in allowed if field in updates and updates[field] is not None]
+    values = [updates[field].strip() if isinstance(updates[field], str) else updates[field] for field in fields]
+    with connect() as db:
+        row = owned_list(db, list_id, user["id"])
+        if updates.get("visibility") == "public" and list_item_count(db, list_id) == 0:
+            raise HTTPException(status_code=422, detail="Add at least one spot before publishing")
+        timestamp = now()
+        assignments = [f"{field} = ?" for field in fields]
+        if "visibility" in updates:
+            if updates["visibility"] == "public" and row["visibility"] != "public":
+                assignments.append("published_at = ?")
+                values.append(timestamp)
+            elif updates["visibility"] == "private":
+                assignments.append("published_at = NULL")
+        assignments.append("updated_at = ?")
+        values.extend([timestamp, list_id, user["id"]])
+        db.execute(
+            f"UPDATE lists SET {', '.join(assignments)} WHERE id = ? AND owner_user_id = ?",
+            values,
+        )
+        updated = owned_list(db, list_id, user["id"])
+        return {"list": list_json(db, updated, include_items=True)}
+
+
+@app.delete("/api/lists/{list_id}")
+def delete_list(list_id: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    with connect() as db:
+        owned_list(db, list_id, user["id"])
+        db.execute("DELETE FROM lists WHERE id = ? AND owner_user_id = ?", (list_id, user["id"]))
+    return {"ok": True}
+
+
+@app.post("/api/lists/{list_id}/items")
+def add_list_item(list_id: str, payload: ListItemIn, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    timestamp = now()
+    with connect() as db:
+        owned_list(db, list_id, user["id"])
+        owned_restaurant(db, payload.restaurant_id, user["id"])
+        row = db.execute(
+            "SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM list_items WHERE list_id = ?",
+            (list_id,),
+        ).fetchone()
+        try:
+            db.execute(
+                """
+                INSERT INTO list_items (id, list_id, restaurant_id, note, sort_order, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (new_id(), list_id, payload.restaurant_id, payload.note.strip(), row["next_order"], timestamp),
+            )
+        except sqlite3.IntegrityError as error:
+            raise HTTPException(status_code=409, detail="Spot is already in this list") from error
+        db.execute("UPDATE lists SET updated_at = ? WHERE id = ?", (timestamp, list_id))
+        updated = owned_list(db, list_id, user["id"])
+        return {"list": list_json(db, updated, include_items=True)}
+
+
+@app.delete("/api/lists/{list_id}/items/{restaurant_id}")
+def delete_list_item(list_id: str, restaurant_id: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    with connect() as db:
+        owned_list(db, list_id, user["id"])
+        db.execute("DELETE FROM list_items WHERE list_id = ? AND restaurant_id = ?", (list_id, restaurant_id))
+        db.execute("UPDATE lists SET updated_at = ? WHERE id = ?", (now(), list_id))
+        updated = owned_list(db, list_id, user["id"])
+        return {"list": list_json(db, updated, include_items=True)}
+
+
+@app.get("/api/discovery/lists")
+def get_discovery_lists() -> dict[str, Any]:
+    with connect() as db:
+        rows = db.execute(
+            """
+            SELECT * FROM lists
+            WHERE visibility = 'public'
+            ORDER BY published_at DESC, updated_at DESC
+            """
+        ).fetchall()
+        return {"lists": [list_json(db, row) for row in rows]}
+
+
+@app.get("/api/discovery/lists/{list_id}")
+def get_discovery_list(list_id: str) -> dict[str, Any]:
+    with connect() as db:
+        row = public_list(db, list_id)
+        return {"list": list_json(db, row, include_items=True)}
+
+
+@app.post("/api/discovery/lists/{list_id}/copy")
+def copy_discovery_list(list_id: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    timestamp = now()
+    new_list_id = new_id()
+    with connect() as db:
+        source = public_list(db, list_id)
+        db.execute(
+            """
+            INSERT INTO lists
+            (id, owner_user_id, title, description, visibility, cover_image_url, created_at, updated_at)
+            VALUES (?, ?, ?, ?, 'private', ?, ?, ?)
+            """,
+            (
+                new_list_id,
+                user["id"],
+                source["title"],
+                source["description"],
+                source["cover_image_url"],
+                timestamp,
+                timestamp,
+            ),
+        )
+        items = db.execute(
+            "SELECT * FROM list_items WHERE list_id = ? ORDER BY sort_order ASC, created_at ASC",
+            (source["id"],),
+        ).fetchall()
+        for index, item in enumerate(items):
+            source_restaurant = db.execute("SELECT * FROM restaurants WHERE id = ?", (item["restaurant_id"],)).fetchone()
+            if not source_restaurant:
+                continue
+            restaurant_id = new_id()
+            db.execute(
+                """
+                INSERT INTO restaurants
+                (id, owner_user_id, name, address, lat, lng, google_url, status, visit_count, personal_rating, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'want_to_go', 0, ?, ?, ?, ?)
+                """,
+                (
+                    restaurant_id,
+                    user["id"],
+                    source_restaurant["name"],
+                    source_restaurant["address"],
+                    source_restaurant["lat"],
+                    source_restaurant["lng"],
+                    source_restaurant["google_url"],
+                    source_restaurant["personal_rating"],
+                    f"来自公开清单：{source['title']}",
+                    timestamp,
+                    timestamp,
+                ),
+            )
+            source_dishes = db.execute(
+                "SELECT * FROM dishes WHERE restaurant_id = ? ORDER BY updated_at DESC, created_at DESC",
+                (source_restaurant["id"],),
+            ).fetchall()
+            for dish in source_dishes:
+                db.execute(
+                    """
+                    INSERT INTO dishes (id, restaurant_id, name, dish_status, rating, image_path, notes, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, '', ?, ?, ?)
+                    """,
+                    (
+                        new_id(),
+                        restaurant_id,
+                        dish["name"],
+                        dish["dish_status"],
+                        dish["rating"],
+                        dish["notes"],
+                        timestamp,
+                        timestamp,
+                    ),
+                )
+            db.execute(
+                """
+                INSERT INTO list_items (id, list_id, restaurant_id, note, sort_order, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (new_id(), new_list_id, restaurant_id, item["note"], index, timestamp),
+            )
+        db.execute("UPDATE lists SET copy_count = copy_count + 1 WHERE id = ?", (source["id"],))
+        row = owned_list(db, new_list_id, user["id"])
+        return {"list": list_json(db, row, include_items=True)}
 
 
 @app.get("/api/resolve-google-link")

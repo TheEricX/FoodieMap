@@ -20,9 +20,9 @@
           <span>Gourmet Map</span>
         </div>
         <nav class="top-nav" aria-label="Primary navigation">
-          <a class="active" href="#cuteMap">My Map</a>
-          <a href="#recentList">My Lists</a>
-          <a href="#recentList">Discovery</a>
+          <a class="active" href="#my-map" data-view="my-map">My Map</a>
+          <a href="#my-lists" data-view="my-lists">My Lists</a>
+          <a href="#discovery" data-view="discovery">Discovery</a>
         </nav>
         <label class="search-box">
           <span>⌕</span>
@@ -68,7 +68,7 @@
           </section>
         </aside>
 
-        <section class="map-stage">
+        <section class="map-stage app-view" id="mapView" data-view-panel="my-map">
           <div class="map-toolbar">
             <div>
               <p class="eyebrow">WOODEN MAP</p>
@@ -119,6 +119,65 @@
             <span>Selected</span>
             <strong id="spotCardTabName">Spot</strong>
           </button>
+        </section>
+
+        <section class="lists-stage app-view" id="listsView" data-view-panel="my-lists" hidden>
+          <div class="view-toolbar">
+            <div>
+              <p class="eyebrow">PRIVATE PANTRY</p>
+              <h1>My Lists</h1>
+            </div>
+            <button class="primary-button compact" id="createListButton" type="button">＋ Create List</button>
+          </div>
+          <div class="list-layout">
+            <section class="panel-surface">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">SMART LISTS</p>
+                  <strong>Built from your map</strong>
+                </div>
+              </div>
+              <div class="system-list-grid" id="systemListsGrid"></div>
+
+              <div class="section-head custom-list-head">
+                <div>
+                  <p class="eyebrow">COLLECTIONS</p>
+                  <strong>Your custom lists</strong>
+                </div>
+              </div>
+              <div class="list-grid" id="myListsGrid"></div>
+            </section>
+            <section class="panel-surface list-detail-panel" id="myListDetail"></section>
+          </div>
+        </section>
+
+        <section class="discovery-stage app-view" id="discoveryView" data-view-panel="discovery" hidden>
+          <div class="discovery-hero">
+            <div>
+              <span class="paper-label">COMMUNITY PICKS</span>
+              <h1>Pantry Discovery</h1>
+              <p>Explore public taste maps shared by the Gourmet Map community.</p>
+            </div>
+            <div class="hero-mascot" aria-hidden="true">🍜</div>
+          </div>
+          <div class="discovery-controls">
+            <div class="segmented-tabs" role="tablist" aria-label="Discovery sort">
+              <button class="active" type="button" data-discovery-sort="popular">Popular</button>
+              <button type="button" data-discovery-sort="recent">Recent</button>
+            </div>
+          </div>
+          <div class="discovery-layout">
+            <section class="panel-surface">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">PUBLIC LISTS</p>
+                  <strong>Published by food explorers</strong>
+                </div>
+              </div>
+              <div class="list-grid discovery-grid" id="discoveryGrid"></div>
+            </section>
+            <section class="panel-surface list-detail-panel" id="discoveryDetail"></section>
+          </div>
         </section>
       </section>
 
@@ -221,6 +280,51 @@
             <button class="primary-button" id="createShareButton" type="submit">Create Share Link</button>
             <button class="outline-button" id="copyShareButton" type="button">Copy</button>
           </div>
+        </form>
+      </dialog>
+
+      <dialog class="modal" id="listDialog">
+        <form class="modal-card" id="listForm" method="dialog">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow" id="listFormMode">NEW_LIST</p>
+              <h2 id="listFormTitle">Create List</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeListDialog">×</button>
+          </div>
+          <input name="id" type="hidden" />
+          <label>
+            标题
+            <input name="title" required maxlength="160" placeholder="Tokyo Ramen Hunt" />
+          </label>
+          <label>
+            描述
+            <textarea name="description" rows="4" placeholder="记录这组餐厅适合什么场景。"></textarea>
+          </label>
+          <label>
+            封面 URL（可选）
+            <input name="coverImageUrl" placeholder="不填时自动使用清单内菜品图片" />
+          </label>
+          <p class="form-help" id="listFormHelp">清单默认私密；发布后才会出现在 Discovery。</p>
+          <button class="primary-button" id="saveListButton" type="submit">Save List</button>
+        </form>
+      </dialog>
+
+      <dialog class="modal" id="addSpotsDialog">
+        <form class="modal-card" method="dialog">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow">ADD_SPOTS</p>
+              <h2>Add Spots</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeAddSpotsDialog">×</button>
+          </div>
+          <label>
+            搜索餐厅
+            <input id="addSpotsSearch" type="search" placeholder="Search your map..." />
+          </label>
+          <div class="add-spots-list" id="addSpotsList"></div>
+          <p class="form-help">同一个清单内，同一家餐厅只能加入一次。</p>
         </form>
       </dialog>
 
