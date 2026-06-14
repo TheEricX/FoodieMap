@@ -1,17 +1,21 @@
-# FoodieMap MVP
+# Gourmet Map / FoodieMap MVP
 
-FoodieMap 是一个可自托管的美食地图 MVP。它支持 Google 登录、云端保存餐厅、记录菜品和图片、生成分享链接，并保留原来的 Q 版相对地图体验。
+Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google 登录、云端保存餐厅、记录菜品和图片、生成分享链接、自定义餐厅清单，以及公开 Discovery 清单浏览；前端使用木质手账风 UI，并保留 Q 版相对地图体验。
 
 ## 功能
 
 - Google OAuth 登录，不需要额外注册
-- SQLite 保存用户、餐厅、菜品、分享链接
+- SQLite 保存用户、餐厅、菜品、分享链接、自定义 list 和公开 Discovery list
 - 保存餐厅状态、去过次数、个人评分、备注、Google Maps 链接和坐标
 - 每家店可记录菜品：`Liked` / `Tried`、5 星评分、备注、1 张压缩图片
 - `Paste & Add` 支持 Google Maps 完整链接和 `maps.app.goo.gl` 短链接
+- `Paste & Add` 会检测相似餐厅；发现重复时先询问用户是否继续创建
+- `My Lists` 支持智能分类和自定义餐厅清单：`All Spots`、`Visited`、`Want to Go`、`Favorites`，以及用户创建的私密/公开 list
+- 自定义 list 默认私密，可手动 `Publish` 到 Discovery；公开 list 可被其他用户复制到自己的 My Lists
+- `Discovery` 支持浏览公开清单、按 Popular / Recent 排序、搜索公开清单
 - 分享链接 `/share/{token}` 支持未登录预览
 - 朋友登录后可一键添加分享店铺到自己的列表，默认分类为 `Want to Go`
-- 响应式布局，支持桌面、平板和手机
+- 木质手账风响应式布局，支持桌面、平板和手机；桌面 topbar 固定在顶部，只有内容滚动到其下方时才显示阴影
 
 ## 本地运行
 
@@ -96,10 +100,14 @@ docker compose down
 
 1. 点击右上角 `Sign in`，用 Google 邮箱登录。
 2. 点击 `New Spot` 或复制 Google Maps 链接后点 `Paste & Add`。
-3. 编辑店铺时可以记录去过次数、个人评分和菜品。
-4. 在菜品区域添加菜名、状态、评分，并可上传一张图片。
-5. 在店铺详情卡点击 `Share`，手动选择要推荐的菜品，生成分享链接。
-6. 朋友打开分享链接可以预览；登录后点 `Add to My List` 加入自己的列表。
+3. 如果自动添加时发现相似餐厅，确认是否继续创建重复记录。
+4. 编辑店铺时可以记录去过次数、个人评分和菜品。
+5. 在菜品区域添加菜名、状态、评分，并可上传一张图片。
+6. 在 `My Lists` 查看智能分类，或创建自定义 list，把餐厅加入不同主题清单。
+7. 自定义 list 默认私密；点击 `Publish` 后会进入 `Discovery`。
+8. 在 `Discovery` 浏览公开清单；登录后可 `Copy to My Lists` 复制到自己的私密清单。
+9. 在店铺详情卡点击 `Share`，手动选择要推荐的菜品，生成分享链接。
+10. 朋友打开分享链接可以预览；登录后点 `Add to My List` 加入自己的列表。
 
 ## API
 
@@ -121,6 +129,16 @@ docker compose down
 - `POST /api/restaurants/{id}/share`
 - `GET /api/share/{token}`
 - `POST /api/share/{token}/add`
+- `GET /api/lists`
+- `POST /api/lists`
+- `GET /api/lists/{id}`
+- `PATCH /api/lists/{id}`
+- `DELETE /api/lists/{id}`
+- `POST /api/lists/{id}/items`
+- `DELETE /api/lists/{id}/items/{restaurant_id}`
+- `GET /api/discovery/lists`
+- `GET /api/discovery/lists/{id}`
+- `POST /api/discovery/lists/{id}/copy`
 - `GET /api/resolve-google-link?url=...`
 - `GET /api/health`
 
@@ -128,8 +146,8 @@ docker compose down
 
 - `index.html`：页面结构
 - `styles.css`：响应式 UI 样式
-- `app.js`：前端交互、地图、API 数据层
-- `server.py`：FastAPI 后端、SQLite、OAuth、上传、分享
+- `app.js`：前端交互、地图、My Lists、Discovery、API 数据层
+- `server.py`：FastAPI 后端、SQLite、OAuth、上传、分享、list API
 - `requirements.txt`：Python 依赖
 - `Dockerfile` / `compose.yaml`：Docker 运行配置
 
@@ -139,3 +157,5 @@ docker compose down
 - 图片保存在本机或 Docker volume，不接 S3。
 - SQLite 适合 MVP 和小规模使用；多人高频使用后建议迁移到 Postgres。
 - 分享链接默认长期有效，暂不支持过期和撤销。
+- 第一版不支持 list 封面上传；封面优先使用清单内容或主题占位图。
+- Discovery 的 `Friends` 社交关系仅作为未来方向，当前只提供公开清单浏览与复制。
