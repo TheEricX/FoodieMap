@@ -75,6 +75,8 @@ let addSpotsListId = null;
 let discoverySort = "popular";
 
 const elements = {
+  topbar: document.querySelector(".topbar"),
+  sidebar: document.querySelector(".sidebar"),
   searchInput: document.querySelector("#searchInput"),
   locateButton: document.querySelector("#locateButton"),
   mapLocateButton: document.querySelector("#mapLocateButton"),
@@ -202,6 +204,10 @@ function bindEvents() {
     });
   });
   window.addEventListener("hashchange", () => setActiveView(getInitialView(), { push: false }));
+  window.addEventListener("scroll", updateTopbarElevation, { passive: true });
+  [elements.sidebar, elements.mapView, elements.listsView, elements.discoveryView].forEach((scrollArea) => {
+    scrollArea?.addEventListener("scroll", updateTopbarElevation, { passive: true });
+  });
   elements.createListButton.addEventListener("click", openCreateListDialog);
   elements.closeListDialog.addEventListener("click", () => closeListDialog());
   elements.listForm.addEventListener("submit", saveListFromForm);
@@ -886,6 +892,7 @@ function render() {
   renderSpotCard();
   renderListsView();
   renderDiscoveryView();
+  updateTopbarElevation();
 }
 
 function getInitialView() {
@@ -906,6 +913,16 @@ function setActiveView(view, options = {}) {
     loadDiscoveryLists().then(render).catch((error) => alert(error.message));
   }
   render();
+  requestAnimationFrame(updateTopbarElevation);
+}
+
+function updateTopbarElevation() {
+  const activePanel = document.querySelector(`[data-view-panel="${activeView}"]`);
+  const documentScrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+  const activePanelScrollTop = activePanel?.scrollTop || 0;
+  const sidebarScrollTop = elements.sidebar?.scrollTop || 0;
+  const isElevated = Math.max(documentScrollTop, activePanelScrollTop, sidebarScrollTop) > 4;
+  document.body.classList.toggle("is-topbar-elevated", isElevated);
 }
 
 function renderViewShell() {
@@ -1161,17 +1178,13 @@ function systemListDetailTemplate(definition, term) {
 }
 
 function systemSpotItemTemplate(restaurant) {
-  return `
-    <article class="spot-row" data-restaurant-id="${restaurant.id}">
-      <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
-      <div>
-        <strong>${escapeHtml(restaurant.name)}</strong>
-        <small>${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits</small>
-      </div>
+  return restaurantRowTemplate(restaurant, {
+    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits`,
+    actions: `
       <button class="icon-link" type="button" data-open-spot="${restaurant.id}">Map</button>
       <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Google</a>
-    </article>
-  `;
+    `,
+  });
 }
 
 function bindSystemListDetailActions(definition) {
@@ -1261,31 +1274,42 @@ function discoveryDetailTemplate(list) {
 function ownedListItemTemplate(item) {
   const restaurant = item.restaurant;
   if (!restaurant) return "";
-  return `
-    <article class="spot-row" data-restaurant-id="${restaurant.id}">
-      <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
-      <div>
-        <strong>${escapeHtml(restaurant.name)}</strong>
-        <small>${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits</small>
-        ${item.note ? `<p>${escapeHtml(item.note)}</p>` : ""}
-      </div>
+  return restaurantRowTemplate(restaurant, {
+    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits`,
+    note: item.note,
+    actions: `
       <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Map</a>
       <button class="icon-link danger-text" type="button" data-remove-list-spot="${restaurant.id}">Remove</button>
-    </article>
-  `;
+    `,
+  });
 }
 
 function publicListItemTemplate(item) {
   const restaurant = item.restaurant;
   if (!restaurant) return "";
-  return `
-    <article class="spot-row">
-      <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
-      <div>
-        <strong>${escapeHtml(restaurant.name)}</strong>
-        <small>${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${escapeHtml(restaurant.address || "Address not shared")}</small>
-      </div>
+  return restaurantRowTemplate(restaurant, {
+    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${escapeHtml(restaurant.address || "Address not shared")}`,
+    actions: `
       <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Map</a>
+    `,
+  });
+}
+
+function restaurantRowTemplate(restaurant, options = {}) {
+  const accent = accentVariant(restaurant.id);
+  return `
+    <article class="spot-row accent-${accent}" data-restaurant-id="${restaurant.id}">
+      <span class="row-tape" aria-hidden="true"></span>
+      <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
+      <div class="spot-row-main">
+        <div class="spot-row-title">
+          <strong>${escapeHtml(restaurant.name)}</strong>
+          <span class="tag-pill ${restaurant.status}">${statusLabel(restaurant.status)}</span>
+        </div>
+        <small>${options.body || ""}</small>
+        ${options.note ? `<p>${escapeHtml(options.note)}</p>` : ""}
+      </div>
+      ${options.actions || ""}
     </article>
   `;
 }
@@ -1521,6 +1545,15 @@ function sortListItemsByDistance(items) {
 
 function distanceLabel(restaurant) {
   return currentLocation ? formatDistance(haversineDistance(currentLocation, restaurant)) : "Distance pending";
+}
+
+function accentVariant(value) {
+  const text = String(value || "");
+  let hash = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    hash = (hash + text.charCodeAt(index) * (index + 1)) % 4;
+  }
+  return hash + 1;
 }
 
 function restaurantSearchText(restaurant) {
