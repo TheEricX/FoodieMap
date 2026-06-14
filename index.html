@@ -29,6 +29,7 @@
           <input id="searchInput" type="search" placeholder="Search for tasty treats..." />
         </label>
         <div class="top-actions">
+          <div class="location-status top-location-status" id="locationStatus">等待定位</div>
           <button class="icon-button" id="locateButton" title="获取当前位置">⌖</button>
           <button class="icon-button" id="settingsButton" title="Google API 设置">⚙</button>
           <button class="avatar" id="loginButton" type="button">Sign in</button>
@@ -62,23 +63,29 @@
             <button class="filter-item" data-filter="favorite">Favorites <span id="countFavorite">0</span></button>
           </nav>
 
-          <section class="recent-panel">
-            <p class="eyebrow">RECENT DISCOVERIES</p>
-            <div id="recentList" class="recent-list"></div>
+          <section class="sidebar-lists-panel" aria-label="Custom list filters">
+            <div class="sidebar-section-head">
+              <div>
+                <p class="eyebrow">CUSTOM LISTS</p>
+                <strong>Drag to reorder</strong>
+              </div>
+              <button class="icon-button mini-action" id="createListButton" type="button" title="Create List">＋</button>
+            </div>
+            <div class="sidebar-list-filters" id="sidebarListFilters"></div>
           </section>
+
         </aside>
 
         <section class="map-stage app-view" id="mapView" data-view-panel="my-map">
-          <div class="map-toolbar">
-            <div>
-              <p class="eyebrow">WOODEN MAP</p>
-              <h1>My Gourmet Map</h1>
+          <section class="map-nearest-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">NEAREST SPOTS</p>
+                <strong>Sorted by distance from you</strong>
+              </div>
             </div>
-            <div class="location-control">
-              <div class="location-status" id="locationStatus">等待定位</div>
-              <button class="secondary-button location-button" id="mapLocateButton" type="button">Use My Location</button>
-            </div>
-          </div>
+            <div id="recentList" class="recent-list map-nearest-list"></div>
+          </section>
 
           <div class="cute-map" id="cuteMap" aria-label="Relative restaurant map">
             <div class="grid-overlay"></div>
@@ -122,33 +129,7 @@
         </section>
 
         <section class="lists-stage app-view" id="listsView" data-view-panel="my-lists" hidden>
-          <div class="view-toolbar">
-            <div>
-              <p class="eyebrow">PRIVATE PANTRY</p>
-              <h1>My Lists</h1>
-            </div>
-            <button class="primary-button compact" id="createListButton" type="button">＋ Create List</button>
-          </div>
-          <div class="list-layout">
-            <section class="panel-surface">
-              <div class="section-head">
-                <div>
-                  <p class="eyebrow">SMART LISTS</p>
-                  <strong>Built from your map</strong>
-                </div>
-              </div>
-              <div class="system-list-grid" id="systemListsGrid"></div>
-
-              <div class="section-head custom-list-head">
-                <div>
-                  <p class="eyebrow">COLLECTIONS</p>
-                  <strong>Your custom lists</strong>
-                </div>
-              </div>
-              <div class="list-grid" id="myListsGrid"></div>
-            </section>
-            <section class="panel-surface list-detail-panel" id="myListDetail"></section>
-          </div>
+          <section class="panel-surface list-detail-panel" id="myListDetail"></section>
         </section>
 
         <section class="discovery-stage app-view" id="discoveryView" data-view-panel="discovery" hidden>

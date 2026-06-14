@@ -1,5 +1,6 @@
 const GOOGLE_MAPS_HELP = "推荐复制 Google Maps 浏览器地址栏里的完整链接；短分享链接会由本地服务自动展开。";
 const LOCATION_DENIED_HELP = "定位权限已被浏览器拒绝。请点地址栏左侧图标 > 定位 > 允许或询问，然后再点 Use My Location。";
+const LIST_FILTER_ORDER_KEY = "foodiemap:list-filter-order";
 
 const demoRestaurants = [
   {
@@ -140,8 +141,7 @@ const elements = {
   listsView: document.querySelector("#listsView"),
   discoveryView: document.querySelector("#discoveryView"),
   createListButton: document.querySelector("#createListButton"),
-  myListsGrid: document.querySelector("#myListsGrid"),
-  systemListsGrid: document.querySelector("#systemListsGrid"),
+  sidebarListFilters: document.querySelector("#sidebarListFilters"),
   myListDetail: document.querySelector("#myListDetail"),
   discoveryGrid: document.querySelector("#discoveryGrid"),
   discoveryDetail: document.querySelector("#discoveryDetail"),
@@ -178,7 +178,7 @@ async function boot() {
 
 function bindEvents() {
   elements.locateButton.addEventListener("click", requestLocation);
-  elements.mapLocateButton.addEventListener("click", requestLocation);
+  elements.mapLocateButton?.addEventListener("click", requestLocation);
   elements.loginButton.addEventListener("click", handleLoginButton);
   elements.openAddPanel.addEventListener("click", openCreateDialog);
   elements.pasteAddButton.addEventListener("click", pasteAndAddFromClipboard);
@@ -233,6 +233,9 @@ function bindEvents() {
   document.querySelectorAll(".filter-item").forEach((button) => {
     button.addEventListener("click", () => {
       activeFilter = button.dataset.filter;
+      if (activeView === "my-lists") {
+        activeMyListKey = `system:${activeFilter}`;
+      }
       syncFilterButtons();
       render();
     });
@@ -833,8 +836,11 @@ async function getLocationPermissionState() {
 }
 
 function setLocationButtonState(label, disabled = false) {
-  elements.mapLocateButton.textContent = label;
-  elements.mapLocateButton.disabled = disabled;
+  if (elements.mapLocateButton) {
+    elements.mapLocateButton.textContent = label;
+    elements.mapLocateButton.disabled = disabled;
+  }
+  elements.locateButton.title = label;
   elements.locateButton.disabled = disabled;
 }
 
@@ -874,6 +880,7 @@ function setFallbackLocation(message) {
 function render() {
   renderViewShell();
   renderCounts();
+  renderSidebarListFilters();
   renderRecentList();
   renderMarkers();
   renderSpotCard();
@@ -902,6 +909,7 @@ function setActiveView(view, options = {}) {
 }
 
 function renderViewShell() {
+  document.body.dataset.view = activeView;
   elements.viewPanels.forEach((panel) => {
     panel.hidden = panel.dataset.viewPanel !== activeView;
   });
@@ -930,17 +938,61 @@ function renderCounts() {
   elements.countFavorite.textContent = restaurants.filter((item) => item.status === "favorite").length;
 }
 
+function renderSidebarListFilters() {
+  if (!elements.sidebarListFilters) return;
+  if (!currentUser) {
+    elements.sidebarListFilters.innerHTML = '<p class="sidebar-empty">Sign in to manage lists.</p>';
+    return;
+  }
+  const ordered = orderedLists();
+  elements.sidebarListFilters.innerHTML = ordered.length
+    ? ordered.map((list) => `
+        <button class="list-filter-item ${activeMyListKey === `custom:${list.id}` ? "active" : ""}" type="button" draggable="true" data-sidebar-list-id="${list.id}">
+          <span class="drag-handle" aria-hidden="true">⋮⋮</span>
+          <span class="list-filter-text">
+            <strong>${escapeHtml(list.title)}</strong>
+            <small>${list.item_count || 0} spots · ${visibilityLabel(list.visibility)}</small>
+          </span>
+        </button>
+      `).join("")
+    : '<p class="sidebar-empty">No custom lists yet.</p>';
+  elements.sidebarListFilters.querySelectorAll("[data-sidebar-list-id]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      selectedListId = button.dataset.sidebarListId;
+      activeMyListKey = `custom:${selectedListId}`;
+      await ensureListDetail(selectedListId);
+      setActiveView("my-lists");
+    });
+    button.addEventListener("dragstart", (event) => {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", button.dataset.sidebarListId);
+      button.classList.add("dragging");
+    });
+    button.addEventListener("dragend", () => button.classList.remove("dragging"));
+    button.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      button.classList.add("drag-over");
+    });
+    button.addEventListener("dragleave", () => button.classList.remove("drag-over"));
+    button.addEventListener("drop", (event) => {
+      event.preventDefault();
+      button.classList.remove("drag-over");
+      reorderListFilter(event.dataTransfer.getData("text/plain"), button.dataset.sidebarListId);
+    });
+  });
+}
+
 function renderRecentList() {
-  const recent = getVisibleRestaurants().slice(0, 5);
+  const recent = sortRestaurantsByDistance(getVisibleRestaurants()).slice(0, 5);
   elements.recentList.innerHTML = recent.length
     ? recent.map((restaurant) => `
         <button class="recent-item" data-id="${restaurant.id}">
           <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
           <span>
             <strong>${escapeHtml(restaurant.name)}</strong>
-            <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${restaurant.visit_count || 0} visits</small>
+            <small>${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${restaurant.visit_count || 0} visits</small>
           </span>
-          <span>♥</span>
+          <span>${statusIcon(restaurant.status)}</span>
         </button>
       `).join("")
     : '<p class="empty-recent">没有匹配餐厅</p>';
@@ -1016,34 +1068,8 @@ function renderSpotDishes(restaurant) {
 }
 
 function renderListsView() {
-  if (!elements.myListsGrid) return;
+  if (!elements.myListDetail) return;
   const term = activeView === "my-lists" ? elements.searchInput.value.trim().toLowerCase() : "";
-  elements.systemListsGrid.innerHTML = systemLists.map((list) => systemListCardTemplate(list, activeMyListKey === `system:${list.key}`)).join("");
-  elements.systemListsGrid.querySelectorAll("[data-system-list]").forEach((card) => {
-    card.addEventListener("click", () => {
-      activeMyListKey = `system:${card.dataset.systemList}`;
-      render();
-    });
-  });
-
-  if (!currentUser) {
-    elements.myListsGrid.innerHTML = emptyStateTemplate("Sign in to create private lists.", "Sign in");
-    elements.myListsGrid.querySelector("[data-empty-action]")?.addEventListener("click", requireLogin);
-  } else {
-    const visible = lists.filter((list) => listSearchText(list).includes(term));
-    elements.myListsGrid.innerHTML = visible.length
-      ? visible.map((list) => listCardTemplate(list, activeMyListKey === `custom:${list.id}`, "mine")).join("")
-      : emptyStateTemplate("No custom lists match this search.", "Create Your First List");
-    elements.myListsGrid.querySelectorAll("[data-list-id]").forEach((card) => {
-      card.addEventListener("click", async () => {
-        selectedListId = card.dataset.listId;
-        activeMyListKey = `custom:${selectedListId}`;
-        await ensureListDetail(selectedListId);
-        render();
-      });
-    });
-    elements.myListsGrid.querySelector("[data-empty-action]")?.addEventListener("click", openCreateListDialog);
-  }
 
   if (activeMyListKey.startsWith("system:")) {
     const systemKey = activeMyListKey.replace("system:", "");
@@ -1054,7 +1080,8 @@ function renderListsView() {
   }
 
   if (!currentUser) {
-    elements.myListDetail.innerHTML = emptyStateTemplate("Choose a smart list above, or sign in to manage custom lists.", "");
+    elements.myListDetail.innerHTML = emptyStateTemplate("Choose a smart list on the left, or sign in to manage custom lists.", "Sign in");
+    elements.myListDetail.querySelector("[data-empty-action]")?.addEventListener("click", requireLogin);
     return;
   }
   const selected = lists.find((list) => `custom:${list.id}` === activeMyListKey) ?? lists.find((list) => list.id === selectedListId) ?? lists[0];
@@ -1110,25 +1137,24 @@ function systemListCardTemplate(list, selected) {
 }
 
 function systemListDetailTemplate(definition, term) {
-  const spots = restaurantsForSystemList(definition).filter((restaurant) => restaurantSearchText(restaurant).includes(term));
+  const spots = sortRestaurantsByDistance(restaurantsForSystemList(definition).filter((restaurant) => restaurantSearchText(restaurant).includes(term)));
   return `
-    <div class="detail-head smart-detail">
-      <span class="list-cover smart-cover">${definition.icon}</span>
+    <div class="list-view-head">
       <div>
         <p class="eyebrow">${escapeHtml(definition.eyebrow)}</p>
         <h2>${escapeHtml(definition.title)}</h2>
-        <p>${escapeHtml(definition.description)}</p>
-        <div class="meta-row compact-meta">
-          <span>${spots.length} spots</span>
-          <span>Auto updated</span>
-        </div>
+        <p>${escapeHtml(definition.description)} Sorted by distance from your current location.</p>
+      </div>
+      <div class="list-view-meta">
+        <span>${spots.length} spots</span>
+        <span>Nearest first</span>
       </div>
     </div>
-    <div class="detail-actions system-actions">
+    <div class="detail-actions system-actions compact-actions">
       <button class="outline-button" type="button" data-view-system-map>Open on Map</button>
       <button class="outline-button" type="button" data-create-list-from-system>Create Custom List</button>
     </div>
-    <div class="spot-row-list">
+    <div class="spot-row-list restaurant-list-mode">
       ${spots.length ? spots.map(systemSpotItemTemplate).join("") : emptyStateTemplate("No spots in this smart list yet.", "")}
     </div>
   `;
@@ -1140,7 +1166,7 @@ function systemSpotItemTemplate(restaurant) {
       <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
       <div>
         <strong>${escapeHtml(restaurant.name)}</strong>
-        <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits</small>
+        <small>${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits</small>
       </div>
       <button class="icon-link" type="button" data-open-spot="${restaurant.id}">Map</button>
       <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Google</a>
@@ -1205,7 +1231,7 @@ function myListDetailTemplate(list) {
       <button class="outline-button danger" type="button" data-list-action="delete">Delete List</button>
     </div>
     <div class="spot-row-list">
-      ${(list.items ?? []).length ? list.items.map((item) => ownedListItemTemplate(item)).join("") : emptyStateTemplate("This list is empty. Add spots from your map.", "")}
+      ${(list.items ?? []).length ? sortListItemsByDistance(list.items).map((item) => ownedListItemTemplate(item)).join("") : emptyStateTemplate("This list is empty. Add spots from your map.", "")}
     </div>
   `;
 }
@@ -1227,7 +1253,7 @@ function discoveryDetailTemplate(list) {
     </div>
     <button class="primary-button compact full" type="button" data-copy-public>Copy to My Lists</button>
     <div class="spot-row-list">
-      ${(list.items ?? []).length ? list.items.map((item) => publicListItemTemplate(item)).join("") : emptyStateTemplate("This public list has no visible spots.", "")}
+      ${(list.items ?? []).length ? sortListItemsByDistance(list.items).map((item) => publicListItemTemplate(item)).join("") : emptyStateTemplate("This public list has no visible spots.", "")}
     </div>
   `;
 }
@@ -1240,7 +1266,7 @@ function ownedListItemTemplate(item) {
       <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
       <div>
         <strong>${escapeHtml(restaurant.name)}</strong>
-        <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits</small>
+        <small>${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits</small>
         ${item.note ? `<p>${escapeHtml(item.note)}</p>` : ""}
       </div>
       <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Map</a>
@@ -1257,7 +1283,7 @@ function publicListItemTemplate(item) {
       <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
       <div>
         <strong>${escapeHtml(restaurant.name)}</strong>
-        <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${escapeHtml(restaurant.address || "Address not shared")}</small>
+        <small>${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${escapeHtml(restaurant.address || "Address not shared")}</small>
       </div>
       <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Map</a>
     </article>
@@ -1362,6 +1388,7 @@ async function saveListFromForm(event) {
     lists = editingListId ? lists.map((item) => (item.id === list.id ? list : item)) : [list, ...lists];
     selectedListId = list.id;
     activeMyListKey = `custom:${list.id}`;
+    if (!editingListId) saveListFilterOrder([list.id, ...orderedLists().filter((item) => item.id !== list.id).map((item) => item.id)]);
     closeListDialog();
     setActiveView("my-lists");
   } catch (error) {
@@ -1467,6 +1494,7 @@ async function copyPublicList() {
   await loadDiscoveryLists();
   selectedListId = copied.id;
   activeMyListKey = `custom:${copied.id}`;
+  saveListFilterOrder([copied.id, ...orderedLists().filter((item) => item.id !== copied.id).map((item) => item.id)]);
   setActiveView("my-lists");
 }
 
@@ -1476,6 +1504,23 @@ function selectedRestaurant() {
 
 function restaurantsForSystemList(definition) {
   return restaurants.filter((restaurant) => definition.filter === "all" || restaurant.status === definition.filter);
+}
+
+function sortRestaurantsByDistance(items) {
+  if (!currentLocation) return [...items];
+  return [...items].sort((a, b) => haversineDistance(currentLocation, a) - haversineDistance(currentLocation, b));
+}
+
+function sortListItemsByDistance(items) {
+  if (!currentLocation) return [...items];
+  return [...items].sort((a, b) => {
+    if (!a.restaurant || !b.restaurant) return a.restaurant ? -1 : 1;
+    return haversineDistance(currentLocation, a.restaurant) - haversineDistance(currentLocation, b.restaurant);
+  });
+}
+
+function distanceLabel(restaurant) {
+  return currentLocation ? formatDistance(haversineDistance(currentLocation, restaurant)) : "Distance pending";
 }
 
 function restaurantSearchText(restaurant) {
@@ -1582,6 +1627,39 @@ function normalizeList(item) {
         }))
       : undefined,
   };
+}
+
+function listFilterOrder() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LIST_FILTER_ORDER_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveListFilterOrder(ids) {
+  localStorage.setItem(LIST_FILTER_ORDER_KEY, JSON.stringify(ids));
+}
+
+function orderedLists() {
+  const order = listFilterOrder();
+  const knownIds = new Set(lists.map((list) => list.id));
+  const orderedIds = order.filter((id) => knownIds.has(id));
+  const missing = lists.filter((list) => !orderedIds.includes(list.id));
+  const byId = new Map(lists.map((list) => [list.id, list]));
+  return [...orderedIds.map((id) => byId.get(id)).filter(Boolean), ...missing];
+}
+
+function reorderListFilter(sourceId, targetId) {
+  if (!sourceId || !targetId || sourceId === targetId) return;
+  const ids = orderedLists().map((list) => list.id);
+  const from = ids.indexOf(sourceId);
+  const to = ids.indexOf(targetId);
+  if (from < 0 || to < 0) return;
+  ids.splice(to, 0, ids.splice(from, 1)[0]);
+  saveListFilterOrder(ids);
+  render();
 }
 
 function listSearchText(list) {

@@ -209,6 +209,7 @@ a {
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
+  min-width: 0;
 }
 
 .icon-button,
@@ -400,6 +401,108 @@ a {
   gap: 10px;
 }
 
+.sidebar-lists-panel {
+  display: none;
+  min-height: 0;
+}
+
+body[data-view="my-lists"] .sidebar-lists-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.sidebar-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sidebar-section-head strong {
+  color: var(--primary-dark);
+  font-size: 13px;
+}
+
+.mini-action {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.sidebar-list-filters {
+  display: grid;
+  gap: 8px;
+  max-height: min(260px, 34vh);
+  overflow: auto;
+  padding-right: 2px;
+  scrollbar-color: rgba(150, 105, 76, 0.34) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.list-filter-item {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 46px;
+  border: 1px solid rgba(217, 197, 183, 0.84);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 250, 244, 0.86);
+  color: var(--primary-dark);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.list-filter-item.active {
+  border-color: var(--primary);
+  background: rgba(244, 238, 231, 0.94);
+  box-shadow: 0 0 0 3px rgba(150, 105, 76, 0.12);
+}
+
+.list-filter-item.dragging {
+  opacity: 0.48;
+}
+
+.list-filter-item.drag-over {
+  border-style: dashed;
+  transform: translateY(-1px);
+}
+
+.drag-handle {
+  color: rgba(104, 68, 45, 0.55);
+  cursor: grab;
+  font-weight: 700;
+}
+
+.list-filter-text {
+  min-width: 0;
+}
+
+.list-filter-text strong,
+.list-filter-text small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-filter-text small,
+.sidebar-empty {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sidebar-empty {
+  margin: 0;
+  border: 1px dashed rgba(139, 106, 87, 0.32);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+}
+
 .filter-item {
   display: flex;
   align-items: center;
@@ -439,6 +542,34 @@ a {
 .recent-list {
   display: grid;
   gap: 10px;
+}
+
+.map-nearest-panel {
+  min-width: 0;
+  border: 1px solid rgba(217, 197, 183, 0.82);
+  border-radius: var(--radius-md);
+  background: rgba(255, 250, 244, 0.72);
+  padding: 10px;
+  box-shadow: 0 7px 16px rgba(82, 61, 48, 0.06);
+}
+
+.map-nearest-panel .section-head {
+  margin: 0 0 8px;
+}
+
+.map-nearest-list {
+  display: grid;
+  grid-auto-columns: minmax(220px, 280px);
+  grid-auto-flow: column;
+  overflow-x: auto;
+  padding: 0 0 4px;
+  scrollbar-color: rgba(150, 105, 76, 0.28) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.map-nearest-list .recent-item {
+  min-width: 0;
 }
 
 .recent-item {
@@ -515,6 +646,10 @@ a {
   scrollbar-width: thin;
 }
 
+.lists-stage {
+  padding-top: clamp(12px, 1.2vw, 18px);
+}
+
 .lists-stage::-webkit-scrollbar,
 .discovery-stage::-webkit-scrollbar,
 .add-spots-list::-webkit-scrollbar {
@@ -563,12 +698,23 @@ a {
   margin: 16px 0;
 }
 
+.compact-action {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .list-layout,
 .discovery-layout {
   display: grid;
   grid-template-columns: minmax(320px, 0.9fr) minmax(380px, 1.1fr);
   gap: clamp(16px, 1.6vw, 24px);
   align-items: start;
+}
+
+.lists-stage > .list-detail-panel {
+  width: 100%;
 }
 
 .panel-surface {
@@ -587,7 +733,7 @@ a {
 }
 
 .custom-list-head {
-  margin-top: 22px;
+  margin-top: 0;
 }
 
 .system-list-grid {
@@ -753,6 +899,47 @@ a {
   grid-template-columns: 128px minmax(0, 1fr);
   gap: 16px;
   align-items: start;
+}
+
+.list-view-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid rgba(217, 197, 183, 0.82);
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+}
+
+.list-view-head h2 {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.05;
+}
+
+.list-view-head p:not(.eyebrow) {
+  margin: 0;
+  color: #594a42;
+  line-height: 1.45;
+}
+
+.list-view-meta {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.list-view-meta span {
+  border: 1px solid rgba(139, 106, 87, 0.42);
+  border-radius: 999px;
+  background: rgba(253, 248, 242, 0.92);
+  color: var(--primary-dark);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .detail-head h2 {
@@ -971,6 +1158,14 @@ a {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.compact-actions {
+  margin: 12px 0;
+}
+
+.restaurant-list-mode {
+  gap: 8px;
+}
+
 .map-toolbar {
   display: flex;
   align-items: center;
@@ -1013,6 +1208,13 @@ a {
   box-shadow: 0 6px 16px rgba(82, 61, 48, 0.08);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.top-location-status {
+  flex: 0 1 320px;
+  min-width: 160px;
+  max-width: min(320px, 24vw);
+  padding: 9px 13px;
 }
 
 .location-button {
@@ -1208,6 +1410,11 @@ a {
     padding: 8px 10px;
   }
 
+  .top-location-status {
+    max-width: 260px;
+    padding: 7px 10px;
+  }
+
   .spot-card {
     width: min(340px, calc(100% - 28px));
     padding: 17px;
@@ -1344,6 +1551,11 @@ a {
     min-width: 160px;
     max-width: 40vw;
     padding: 7px 10px;
+  }
+
+  .top-location-status {
+    min-width: 140px;
+    max-width: 240px;
   }
 
   .location-button {
@@ -1901,6 +2113,10 @@ a {
     grid-column: 1 / -1;
     order: 4;
   }
+
+  .top-location-status {
+    max-width: 280px;
+  }
 }
 
 @media (max-width: 900px) {
@@ -1988,7 +2204,7 @@ a {
   .map-stage {
     order: 1;
     display: grid;
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto;
     overflow: visible;
     padding: 14px;
   }
@@ -2106,8 +2322,14 @@ a {
 
   .top-actions {
     display: grid;
-    grid-template-columns: 42px 42px minmax(88px, 1fr);
+    grid-template-columns: minmax(0, 1fr) 42px 42px minmax(88px, auto);
     justify-content: stretch;
+  }
+
+  .top-location-status {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
   }
 
   .top-actions .icon-button {
@@ -2142,9 +2364,18 @@ a {
   }
 
   .view-toolbar,
+  .list-view-head,
   .detail-head,
   .discovery-hero {
     grid-template-columns: 1fr;
+  }
+
+  .list-view-head {
+    display: grid;
+  }
+
+  .list-view-meta {
+    justify-content: flex-start;
   }
 
   .view-toolbar {
