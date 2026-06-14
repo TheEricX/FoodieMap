@@ -249,7 +249,10 @@ function bindEvents() {
 }
 
 function syncFilterButtons() {
-  document.querySelectorAll(".filter-item").forEach((item) => item.classList.toggle("active", item.dataset.filter === activeFilter));
+  document.querySelectorAll(".filter-item").forEach((item) => {
+    const isActive = activeView === "my-lists" ? activeMyListKey === `system:${item.dataset.filter}` : item.dataset.filter === activeFilter;
+    item.classList.toggle("active", isActive);
+  });
 }
 
 async function api(path, options = {}) {
@@ -964,7 +967,7 @@ function renderSidebarListFilters() {
   const ordered = orderedLists();
   elements.sidebarListFilters.innerHTML = ordered.length
     ? ordered.map((list) => `
-        <button class="list-filter-item ${activeMyListKey === `custom:${list.id}` ? "active" : ""}" type="button" draggable="true" data-sidebar-list-id="${list.id}">
+        <button class="list-filter-item ${activeView === "my-lists" && activeMyListKey === `custom:${list.id}` ? "active" : ""}" type="button" draggable="true" data-sidebar-list-id="${list.id}">
           <span class="drag-handle" aria-hidden="true">⋮⋮</span>
           <span class="list-filter-text">
             <strong>${escapeHtml(list.title)}</strong>
@@ -1007,9 +1010,8 @@ function renderRecentList() {
           <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
           <span>
             <strong>${escapeHtml(restaurant.name)}</strong>
-            <small>${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${restaurant.visit_count || 0} visits</small>
+            <small>${distanceLabel(restaurant)} · ${statusLabel(restaurant.status)}</small>
           </span>
-          <span>${statusIcon(restaurant.status)}</span>
         </button>
       `).join("")
     : '<p class="empty-recent">没有匹配餐厅</p>';
@@ -1169,7 +1171,6 @@ function systemListDetailTemplate(definition, term) {
     </div>
     <div class="detail-actions system-actions compact-actions">
       <button class="outline-button" type="button" data-view-system-map>Open on Map</button>
-      <button class="outline-button" type="button" data-create-list-from-system>Create Custom List</button>
     </div>
     <div class="spot-row-list restaurant-list-mode">
       ${spots.length ? spots.map(systemSpotItemTemplate).join("") : emptyStateTemplate("No spots in this smart list yet.", "")}

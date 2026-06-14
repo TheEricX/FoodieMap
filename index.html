@@ -49,25 +49,36 @@
           <button class="primary-button" id="openAddPanel">＋ New Spot</button>
           <button class="primary-button alt" id="pasteAddButton" type="button">Paste & Add</button>
           <p class="action-status" id="pasteStatus">复制 Google Maps 链接后点 Paste & Add。</p>
-          <div class="data-actions" aria-label="Data actions">
-            <button class="secondary-button" id="exportButton" type="button">Export</button>
-            <button class="secondary-button" id="importButton" type="button">Import</button>
-            <button class="secondary-button danger" id="resetButton" type="button">Reset Demo</button>
-            <input id="importFile" type="file" accept="application/json" hidden />
-          </div>
+          <details class="data-tools">
+            <summary>Data tools</summary>
+            <div class="data-actions" aria-label="Data actions">
+              <button class="secondary-button" id="exportButton" type="button">Export</button>
+              <button class="secondary-button" id="importButton" type="button">Import</button>
+              <button class="secondary-button danger" id="resetButton" type="button">Reset Demo</button>
+              <input id="importFile" type="file" accept="application/json" hidden />
+            </div>
+          </details>
 
-          <nav class="filter-list" aria-label="Restaurant filters">
-            <button class="filter-item active" data-filter="all">All Spots <span id="countAll">0</span></button>
-            <button class="filter-item" data-filter="visited">Visited <span id="countVisited">0</span></button>
-            <button class="filter-item" data-filter="want_to_go">Want to Go <span id="countWant">0</span></button>
-            <button class="filter-item" data-filter="favorite">Favorites <span id="countFavorite">0</span></button>
-          </nav>
+          <section class="sidebar-index-panel" aria-label="Pantry index">
+            <div class="sidebar-section-head compact">
+              <div>
+                <p class="eyebrow">SMART LISTS</p>
+                <strong>Built from your map</strong>
+              </div>
+            </div>
+            <nav class="filter-list" aria-label="Restaurant filters">
+              <button class="filter-item active" data-filter="all">All Spots <span id="countAll">0</span></button>
+              <button class="filter-item" data-filter="visited">Visited <span id="countVisited">0</span></button>
+              <button class="filter-item" data-filter="want_to_go">Want to Go <span id="countWant">0</span></button>
+              <button class="filter-item" data-filter="favorite">Favorites <span id="countFavorite">0</span></button>
+            </nav>
+          </section>
 
           <section class="sidebar-lists-panel" aria-label="Custom list filters">
             <div class="sidebar-section-head">
               <div>
                 <p class="eyebrow">CUSTOM LISTS</p>
-                <strong>Drag to reorder</strong>
+                <strong>Your saved routes</strong>
               </div>
               <button class="icon-button mini-action" id="createListButton" type="button" title="Create List">＋</button>
             </div>
