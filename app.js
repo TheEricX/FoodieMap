@@ -126,10 +126,24 @@ const elements = {
   spotNotes: document.querySelector("#spotNotes"),
   spotDishes: document.querySelector("#spotDishes"),
   openGoogleMaps: document.querySelector("#openGoogleMaps"),
+  openSpotDetail: document.querySelector("#openSpotDetail"),
   closeCard: document.querySelector("#closeCard"),
   editSpot: document.querySelector("#editSpot"),
   shareSpot: document.querySelector("#shareSpot"),
   deleteSpot: document.querySelector("#deleteSpot"),
+  spotDetailDialog: document.querySelector("#spotDetailDialog"),
+  spotDetailForm: document.querySelector("#spotDetailForm"),
+  closeSpotDetail: document.querySelector("#closeSpotDetail"),
+  detailSpotName: document.querySelector("#detailSpotName"),
+  detailSpotMeta: document.querySelector("#detailSpotMeta"),
+  detailStatus: document.querySelector("#detailStatus"),
+  detailDishName: document.querySelector("#detailDishName"),
+  detailDishStatus: document.querySelector("#detailDishStatus"),
+  detailDishRating: document.querySelector("#detailDishRating"),
+  detailDishImage: document.querySelector("#detailDishImage"),
+  detailDishNotes: document.querySelector("#detailDishNotes"),
+  detailAddDish: document.querySelector("#detailAddDish"),
+  detailDishList: document.querySelector("#detailDishList"),
   shareDialog: document.querySelector("#shareDialog"),
   shareForm: document.querySelector("#shareForm"),
   closeShareDialog: document.querySelector("#closeShareDialog"),
@@ -193,6 +207,11 @@ function bindEvents() {
     isSpotCardOpen = true;
     renderSpotCard();
   });
+  elements.openSpotDetail.addEventListener("click", openSpotDetail);
+  elements.closeSpotDetail.addEventListener("click", closeSpotDetail);
+  elements.spotDetailDialog.addEventListener("click", closeSpotDetailFromBackdrop);
+  elements.spotDetailForm.addEventListener("submit", saveDetailRestaurant);
+  elements.detailAddDish.addEventListener("click", addDishFromDetail);
   elements.editSpot.addEventListener("click", openEditDialog);
   elements.shareSpot.addEventListener("click", openShareDialog);
   elements.deleteSpot.addEventListener("click", deleteSelectedRestaurant);
@@ -615,15 +634,22 @@ async function compressImage(file) {
 
 function replaceDish(updatedDish) {
   const restaurant = selectedRestaurant();
-  restaurant.dishes = (restaurant.dishes ?? []).map((dish) => (dish.id === updatedDish.id ? updatedDish : dish));
-  renderDishEditor(restaurant);
+  if (!restaurant) return;
+  const normalized = normalizeDish(updatedDish);
+  restaurant.dishes = (restaurant.dishes ?? []).map((dish) => (dish.id === normalized.id ? normalized : dish));
+  syncRestaurantReferences(restaurant);
+  if (editingRestaurantId === restaurant.id) renderDishEditor(restaurant);
+  if (elements.spotDetailDialog.open) renderSpotDetail(restaurant);
   render();
 }
 
 function removeDish(dishId) {
   const restaurant = selectedRestaurant();
+  if (!restaurant) return;
   restaurant.dishes = (restaurant.dishes ?? []).filter((dish) => dish.id !== dishId);
-  renderDishEditor(restaurant);
+  syncRestaurantReferences(restaurant);
+  if (editingRestaurantId === restaurant.id) renderDishEditor(restaurant);
+  if (elements.spotDetailDialog.open) renderSpotDetail(restaurant);
   render();
 }
 
@@ -672,7 +698,205 @@ async function deleteSelectedRestaurant() {
   restaurants = restaurants.filter((restaurant) => restaurant.id !== selected.id);
   selectedRestaurantId = restaurants[0]?.id ?? null;
   isSpotCardOpen = Boolean(selectedRestaurantId);
+  closeSpotDetail();
   render();
+}
+
+function openSpotDetail() {
+  const selected = selectedRestaurant();
+  if (!selected) return;
+  renderSpotDetail(selected);
+  elements.spotDetailDialog.showModal();
+}
+
+function closeSpotDetail() {
+  if (elements.spotDetailDialog.open) elements.spotDetailDialog.close();
+}
+
+function closeSpotDetailFromBackdrop(event) {
+  if (event.target !== elements.spotDetailDialog) return;
+  const drawerCard = elements.spotDetailDialog.querySelector(".detail-drawer-card");
+  const bounds = drawerCard.getBoundingClientRect();
+  const clickedInsideDrawer =
+    event.clientX >= bounds.left &&
+    event.clientX <= bounds.right &&
+    event.clientY >= bounds.top &&
+    event.clientY <= bounds.bottom;
+  if (!clickedInsideDrawer) closeSpotDetail();
+}
+
+function renderSpotDetail(restaurant = selectedRestaurant()) {
+  if (!restaurant) return;
+  const form = elements.spotDetailForm.elements;
+  form.restaurantId.value = restaurant.id;
+  form.status.value = restaurant.status || "want_to_go";
+  form.personalRating.value = Number(restaurant.personal_rating || 0).toFixed(1);
+  form.visitCount.value = restaurant.visit_count || 0;
+  form.notes.value = restaurant.notes || "";
+  elements.detailSpotName.textContent = restaurant.name;
+  elements.detailSpotMeta.innerHTML = `
+    <span>${statusLabel(restaurant.status)}</span>
+    <span>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}</span>
+    <span>${restaurant.visit_count || 0} visits</span>
+    <span>${distanceLabel(restaurant)}</span>
+  `;
+  elements.detailStatus.textContent = currentUser ? "点击 Save 保存餐厅评价。" : "演示模式可查看；登录后可以保存评价、菜单和图片。";
+  renderDetailDishList(restaurant);
+}
+
+async function saveDetailRestaurant(event) {
+  event.preventDefault();
+  if (!requireLogin()) return;
+  const restaurant = selectedRestaurant();
+  if (!restaurant) return;
+  const form = new FormData(elements.spotDetailForm);
+  const body = {
+    status: String(form.get("status") || "want_to_go"),
+    personal_rating: clampRating(Number(form.get("personalRating") || 0)),
+    visit_count: Math.max(0, Math.floor(Number(form.get("visitCount") || 0))),
+    notes: String(form.get("notes") || "").trim(),
+  };
+  try {
+    elements.detailStatus.textContent = "正在保存餐厅评价...";
+    const data = await api(`/api/restaurants/${restaurant.id}`, { method: "PATCH", body: JSON.stringify(body) });
+    upsertRestaurant(data.restaurant);
+    elements.detailStatus.textContent = "已保存餐厅评价。";
+    render();
+    renderSpotDetail(selectedRestaurant());
+  } catch (error) {
+    elements.detailStatus.textContent = error.message;
+  }
+}
+
+async function addDishFromDetail() {
+  const restaurant = selectedRestaurant();
+  if (!restaurant || !requireLogin()) return;
+  const name = elements.detailDishName.value.trim();
+  if (!name) {
+    elements.detailStatus.textContent = "请输入菜品名称。";
+    return;
+  }
+  try {
+    elements.detailStatus.textContent = "正在添加菜单...";
+    const data = await api(`/api/restaurants/${restaurant.id}/dishes`, {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        dish_status: elements.detailDishStatus.value,
+        rating: clampRating(Number(elements.detailDishRating.value || 0)),
+        notes: elements.detailDishNotes.value.trim(),
+      }),
+    });
+    const added = await uploadOptionalDishImage(data.dish, elements.detailDishImage.files?.[0]);
+    restaurant.dishes = [added, ...(restaurant.dishes ?? [])];
+    syncRestaurantReferences(restaurant);
+    clearDetailDishInputs();
+    elements.detailStatus.textContent = "已添加菜单。";
+    render();
+    renderSpotDetail(restaurant);
+  } catch (error) {
+    elements.detailStatus.textContent = error.message;
+  }
+}
+
+async function uploadOptionalDishImage(dish, file) {
+  if (!file) return normalizeDish(dish);
+  const compressed = await compressImage(file);
+  const form = new FormData();
+  form.append("image", compressed, compressed.name);
+  const data = await api(`/api/dishes/${dish.id}/image`, { method: "POST", body: form });
+  return normalizeDish(data.dish);
+}
+
+function clearDetailDishInputs() {
+  elements.detailDishName.value = "";
+  elements.detailDishStatus.value = "liked";
+  elements.detailDishRating.value = "4.5";
+  elements.detailDishImage.value = "";
+  elements.detailDishNotes.value = "";
+}
+
+function renderDetailDishList(restaurant) {
+  const dishes = restaurant.dishes ?? [];
+  elements.detailDishList.innerHTML = dishes.length
+    ? dishes.map(detailDishTemplate).join("")
+    : emptyStateTemplate("还没有菜单记录。添加第一道菜后，可以给它评分、上传图片、写感想。", "");
+  elements.detailDishList.querySelectorAll("[data-detail-dish-action]").forEach((button) => {
+    button.addEventListener("click", () => handleDetailDishAction(button));
+  });
+  elements.detailDishList.querySelectorAll(".detail-dish-image-input").forEach((input) => {
+    input.addEventListener("change", () => uploadDetailDishImage(input));
+  });
+}
+
+function detailDishTemplate(dish) {
+  return `
+    <article class="detail-dish-card" data-dish-id="${dish.id}">
+      <div class="detail-dish-photo">
+        ${dish.image_url ? `<img src="${escapeAttribute(dish.image_url)}" alt="">` : "<span>IMG</span>"}
+      </div>
+      <div class="detail-dish-body">
+        <input data-field="name" value="${escapeAttribute(dish.name)}" />
+        <div class="detail-dish-controls">
+          <select data-field="dish_status">
+            <option value="liked" ${dish.dish_status === "liked" ? "selected" : ""}>Liked</option>
+            <option value="tried" ${dish.dish_status === "tried" ? "selected" : ""}>Tried</option>
+          </select>
+          <input data-field="rating" type="number" min="0" max="5" step="0.1" value="${Number(dish.rating || 0)}" />
+          <input class="detail-dish-image-input" type="file" accept="image/jpeg,image/png,image/webp" />
+        </div>
+        <textarea data-field="notes" rows="3" placeholder="这道菜的感想">${escapeHtml(dish.notes || "")}</textarea>
+        <div class="detail-dish-actions">
+          <button class="secondary-button" type="button" data-detail-dish-action="save">Save Menu</button>
+          <button class="secondary-button danger" type="button" data-detail-dish-action="delete">Delete</button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+async function handleDetailDishAction(button) {
+  if (!requireLogin()) return;
+  const item = button.closest(".detail-dish-card");
+  const dishId = item.dataset.dishId;
+  if (button.dataset.detailDishAction === "delete") {
+    if (!confirm("删除这道菜吗？")) return;
+    await api(`/api/dishes/${dishId}`, { method: "DELETE" });
+    removeDish(dishId);
+    elements.detailStatus.textContent = "已删除菜单。";
+    return;
+  }
+  const body = {
+    name: item.querySelector('[data-field="name"]').value.trim(),
+    dish_status: item.querySelector('[data-field="dish_status"]').value,
+    rating: clampRating(Number(item.querySelector('[data-field="rating"]').value || 0)),
+    notes: item.querySelector('[data-field="notes"]').value.trim(),
+  };
+  if (!body.name) {
+    elements.detailStatus.textContent = "菜品名称不能为空。";
+    return;
+  }
+  const data = await api(`/api/dishes/${dishId}`, { method: "PATCH", body: JSON.stringify(body) });
+  replaceDish(data.dish);
+  elements.detailStatus.textContent = "已保存菜单。";
+}
+
+async function uploadDetailDishImage(input) {
+  if (!requireLogin()) return;
+  const item = input.closest(".detail-dish-card");
+  const file = input.files?.[0];
+  if (!file) return;
+  try {
+    elements.detailStatus.textContent = "正在上传图片...";
+    const compressed = await compressImage(file);
+    const form = new FormData();
+    form.append("image", compressed, compressed.name);
+    const data = await api(`/api/dishes/${item.dataset.dishId}/image`, { method: "POST", body: form });
+    replaceDish(data.dish);
+    elements.detailStatus.textContent = "已上传图片。";
+  } catch (error) {
+    elements.detailStatus.textContent = error.message;
+  }
 }
 
 async function pasteAndAddFromClipboard() {
@@ -1020,6 +1244,7 @@ function renderRecentList() {
       selectedRestaurantId = item.dataset.id;
       isSpotCardOpen = true;
       render();
+      openSpotDetail();
     });
   });
 }
@@ -1046,6 +1271,7 @@ function renderMarkers() {
       selectedRestaurantId = restaurant.id;
       isSpotCardOpen = true;
       render();
+      openSpotDetail();
     });
     elements.markersLayer.appendChild(marker);
   });
@@ -1070,6 +1296,7 @@ function renderSpotCard() {
   elements.spotDishes.innerHTML = renderSpotDishes(selected);
   elements.openGoogleMaps.href = selected.google_url || `https://www.google.com/maps?q=${selected.lat},${selected.lng}`;
   const ownedMode = Boolean(currentUser && !shareToken);
+  elements.openSpotDetail.disabled = false;
   elements.editSpot.disabled = !ownedMode;
   elements.shareSpot.disabled = !ownedMode;
   elements.deleteSpot.disabled = !ownedMode;
@@ -1189,6 +1416,7 @@ function systemSpotItemTemplate(restaurant) {
 }
 
 function bindSystemListDetailActions(definition) {
+  bindRestaurantRows(elements.myListDetail);
   elements.myListDetail.querySelector("[data-view-system-map]")?.addEventListener("click", () => {
     activeFilter = definition.filter;
     syncFilterButtons();
@@ -1350,12 +1578,27 @@ async function ensureDiscoveryDetail(listId) {
 
 function bindMyListDetailActions(list) {
   if (!list) return;
+  bindRestaurantRows(elements.myListDetail);
   elements.myListDetail.querySelector('[data-list-action="edit"]')?.addEventListener("click", () => openEditListDialog(list));
   elements.myListDetail.querySelector('[data-list-action="publish"]')?.addEventListener("click", () => toggleListVisibility(list));
   elements.myListDetail.querySelector('[data-list-action="add"]')?.addEventListener("click", () => openAddSpotsDialog(list.id));
   elements.myListDetail.querySelector('[data-list-action="delete"]')?.addEventListener("click", () => deleteList(list));
   elements.myListDetail.querySelectorAll("[data-remove-list-spot]").forEach((button) => {
     button.addEventListener("click", () => removeSpotFromList(list.id, button.dataset.removeListSpot));
+  });
+}
+
+function bindRestaurantRows(container) {
+  container.querySelectorAll("[data-restaurant-id]").forEach((row) => {
+    row.addEventListener("click", (event) => {
+      if (event.target.closest("a, button, input, select, textarea")) return;
+      const restaurantId = row.dataset.restaurantId;
+      if (!restaurants.some((restaurant) => restaurant.id === restaurantId)) return;
+      selectedRestaurantId = restaurantId;
+      isSpotCardOpen = true;
+      render();
+      openSpotDetail();
+    });
   });
 }
 
@@ -1566,6 +1809,16 @@ function upsertRestaurant(restaurant) {
   const index = restaurants.findIndex((item) => item.id === normalized.id);
   if (index >= 0) restaurants[index] = normalized;
   else restaurants = [normalized, ...restaurants];
+  syncRestaurantReferences(normalized);
+}
+
+function syncRestaurantReferences(restaurant) {
+  lists = lists.map((list) => ({
+    ...list,
+    items: Array.isArray(list.items)
+      ? list.items.map((item) => (item.restaurant_id === restaurant.id ? { ...item, restaurant: normalizeRestaurant(restaurant) } : item))
+      : list.items,
+  }));
 }
 
 function findDuplicateRestaurant(candidate) {
@@ -1633,6 +1886,10 @@ function normalizeDish(item) {
     image_url: String(item.image_url || ""),
     notes: String(item.notes || ""),
   };
+}
+
+function clampRating(value) {
+  return Math.max(0, Math.min(5, Number.isFinite(value) ? value : 0));
 }
 
 function normalizeList(item) {

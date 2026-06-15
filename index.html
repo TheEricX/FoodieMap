@@ -127,6 +127,7 @@
             <p id="spotNotes">点击地图上的餐厅图标查看详情。</p>
             <div class="dish-list" id="spotDishes"></div>
             <div class="card-actions">
+              <button class="outline-button" id="openSpotDetail" type="button">Details</button>
               <button class="outline-button" id="editSpot" type="button">Edit</button>
               <button class="outline-button" id="shareSpot" type="button">Share</button>
               <button class="outline-button danger" id="deleteSpot" type="button">Delete</button>
@@ -172,6 +173,74 @@
           </div>
         </section>
       </section>
+
+      <dialog class="detail-drawer" id="spotDetailDialog">
+        <form class="detail-drawer-card" id="spotDetailForm" method="dialog">
+          <div class="detail-drawer-head">
+            <button class="icon-button" type="button" id="closeSpotDetail" title="关闭详情">×</button>
+            <div>
+              <p class="eyebrow">RESTAURANT JOURNAL</p>
+              <h2 id="detailSpotName">Restaurant</h2>
+              <div class="detail-meta-row" id="detailSpotMeta"></div>
+            </div>
+          </div>
+
+          <section class="detail-paper-panel">
+            <div class="detail-section-head">
+              <div>
+                <p class="eyebrow">MY REVIEW</p>
+                <strong>餐厅评价</strong>
+              </div>
+              <button class="secondary-button compact-action" id="saveDetailSpot" type="submit">Save</button>
+            </div>
+            <input name="restaurantId" type="hidden" />
+            <div class="detail-form-grid">
+              <label>
+                状态
+                <select name="status">
+                  <option value="visited">Visited</option>
+                  <option value="want_to_go">Want to Go</option>
+                  <option value="favorite">Favorite</option>
+                </select>
+              </label>
+              <label>
+                评分
+                <input name="personalRating" type="number" min="0" max="5" step="0.1" />
+              </label>
+              <label>
+                去过次数
+                <input name="visitCount" type="number" min="0" step="1" />
+              </label>
+            </div>
+            <label>
+              我的想法
+              <textarea name="notes" rows="5" placeholder="写下这家店适合什么场景、想再点什么、有没有避雷。"></textarea>
+            </label>
+            <p class="form-help" id="detailStatus">点击 Save 保存餐厅评价。</p>
+          </section>
+
+          <section class="detail-paper-panel">
+            <div class="detail-section-head">
+              <div>
+                <p class="eyebrow">MENU NOTES</p>
+                <strong>菜单记录</strong>
+              </div>
+            </div>
+            <div class="detail-add-dish">
+              <input id="detailDishName" placeholder="菜品名称" />
+              <select id="detailDishStatus">
+                <option value="liked">Liked</option>
+                <option value="tried">Tried</option>
+              </select>
+              <input id="detailDishRating" type="number" min="0" max="5" step="0.1" value="4.5" />
+              <input id="detailDishImage" type="file" accept="image/jpeg,image/png,image/webp" />
+              <textarea id="detailDishNotes" rows="2" placeholder="这道菜的感想"></textarea>
+              <button class="secondary-button" id="detailAddDish" type="button">Add Menu</button>
+            </div>
+            <div class="detail-menu-grid" id="detailDishList"></div>
+          </section>
+        </form>
+      </dialog>
 
       <dialog class="modal" id="addDialog">
         <form class="modal-card" id="restaurantForm" method="dialog">
