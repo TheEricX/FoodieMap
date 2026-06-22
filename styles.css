@@ -359,13 +359,13 @@ body.is-topbar-elevated .layout::before {
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
   min-width: 0;
   border-right: 1px solid rgba(217, 197, 183, 0.78);
   background:
     radial-gradient(circle, rgba(150, 105, 76, 0.11) 1px, transparent 1.2px) 0 0 / 16px 16px,
     rgba(255, 250, 244, 0.92);
-  padding: clamp(16px, 1.5vw, 24px);
+  padding: clamp(14px, 1.3vw, 20px);
   scrollbar-color: rgba(150, 105, 76, 0.34) transparent;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
@@ -392,27 +392,27 @@ body.is-topbar-elevated .layout::before {
 .profile-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
 .pixel-badge {
   display: grid;
-  width: 54px;
-  height: 54px;
+  width: 46px;
+  height: 46px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 16px;
+  border-radius: 15px;
   background: var(--primary);
   color: #fff;
-  font-size: 25px;
+  font-size: 22px;
   box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.12), var(--soft-shadow);
 }
 
 .profile-card strong {
   display: block;
   color: var(--primary-dark);
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .eyebrow {
@@ -442,16 +442,16 @@ body.is-topbar-elevated .layout::before {
 }
 
 .primary-button {
-  min-height: 52px;
+  min-height: 46px;
   background: var(--primary);
   color: white;
-  padding: 14px 20px;
-  box-shadow: 0 8px 0 var(--primary-dark), var(--soft-shadow);
+  padding: 11px 18px;
+  box-shadow: 0 6px 0 var(--primary-dark), var(--soft-shadow);
 }
 
 .primary-button.alt {
   background: var(--secondary);
-  box-shadow: 0 8px 0 var(--secondary-dark), var(--soft-shadow);
+  box-shadow: 0 6px 0 var(--secondary-dark), var(--soft-shadow);
 }
 
 .primary-button:hover,
@@ -467,10 +467,10 @@ body.is-topbar-elevated .layout::before {
 }
 
 .action-status {
-  margin: -8px 0 0;
+  margin: -5px 0 0;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .secondary-button,
@@ -493,9 +493,8 @@ body.is-topbar-elevated .layout::before {
   display: grid;
   gap: 8px;
   border-top: 1px dashed rgba(139, 106, 87, 0.24);
-  border-bottom: 1px dashed rgba(139, 106, 87, 0.16);
-  margin-top: -4px;
-  padding: 4px 0;
+  margin-top: auto;
+  padding: 8px 0 0;
 }
 
 .data-tools summary {
@@ -550,25 +549,27 @@ body.is-topbar-elevated .layout::before {
 
 .filter-list {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .sidebar-index-panel,
 .sidebar-lists-panel {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   min-height: 0;
 }
 
 .sidebar-index-panel {
-  padding-top: 4px;
-  padding-bottom: 10px;
+  padding-top: 2px;
+  padding-bottom: 4px;
 }
 
 .sidebar-lists-panel {
-  margin-top: 2px;
+  flex: 1 1 auto;
+  margin-top: 0;
   border-top: 1px dashed rgba(139, 106, 87, 0.22);
-  padding-top: 12px;
+  padding-top: 9px;
+  overflow: hidden;
 }
 
 .sidebar-section-head {
@@ -598,8 +599,8 @@ body.is-topbar-elevated .layout::before {
 
 .sidebar-list-filters {
   display: grid;
-  gap: 7px;
-  max-height: min(240px, 30vh);
+  gap: 6px;
+  max-height: 168px;
   overflow: auto;
   padding-right: 2px;
   scrollbar-color: rgba(150, 105, 76, 0.34) transparent;
@@ -612,12 +613,13 @@ body.is-topbar-elevated .layout::before {
   grid-template-columns: 16px minmax(0, 1fr);
   gap: 7px;
   align-items: center;
-  min-height: 44px;
-  border: 1px solid rgba(217, 197, 183, 0.9);
-  border-radius: 18px;
+  height: 52px;
+  min-height: 38px;
+  border: 1px solid rgba(217, 197, 183, 0.86);
+  border-radius: 16px;
   background: rgba(255, 250, 244, 0.86);
   color: var(--primary-dark);
-  padding: 7px 9px;
+  padding: 5px 8px;
   text-align: left;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
@@ -640,7 +642,7 @@ body.is-topbar-elevated .layout::before {
 .drag-handle {
   color: rgba(104, 68, 45, 0.55);
   cursor: grab;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -674,12 +676,12 @@ body.is-topbar-elevated .layout::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 38px;
+  min-height: 34px;
   border: 1px solid transparent;
-  border-radius: 18px;
+  border-radius: 16px;
   background: rgba(255, 250, 244, 0.52);
   color: var(--primary-dark);
-  padding: 7px 9px 7px 12px;
+  padding: 6px 8px 6px 10px;
   font-weight: 700;
   line-height: 1.15;
   text-align: left;
@@ -688,13 +690,13 @@ body.is-topbar-elevated .layout::before {
 
 .filter-item span {
   display: grid;
-  min-width: 28px;
-  height: 24px;
+  min-width: 26px;
+  height: 22px;
   place-items: center;
   border-radius: 999px;
   background: rgba(150, 105, 76, 0.12);
   color: var(--primary);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .filter-item.active {
@@ -728,8 +730,18 @@ body.is-topbar-elevated .layout::before {
 }
 
 .map-nearest-panel .section-head strong {
+  display: block;
   font-size: 16px;
   line-height: 1.15;
+}
+
+.map-nearest-panel .section-head small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .map-nearest-list {
@@ -1188,7 +1200,7 @@ body.is-topbar-elevated .layout::before {
 
 .detail-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
   gap: 10px;
   margin: 18px 0;
 }
@@ -3181,8 +3193,8 @@ body.is-topbar-elevated .layout::before {
   }
 
   .sidebar-list-filters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-height: 220px;
+    grid-template-columns: 1fr;
+    max-height: 168px;
   }
 
   .filter-item {
@@ -3211,6 +3223,7 @@ body.is-topbar-elevated .layout::before {
 
   .data-tools {
     grid-column: 1 / -1;
+    margin-top: 0;
   }
 
   .map-stage {
@@ -3423,6 +3436,11 @@ body.is-topbar-elevated .layout::before {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .sidebar-list-filters {
+    grid-template-columns: 1fr;
+    max-height: 168px;
+  }
+
   .map-nearest-panel {
     padding: 9px;
   }
@@ -3622,6 +3640,7 @@ body.is-topbar-elevated .layout::before {
 
   .data-tools {
     grid-column: 1;
+    margin-top: 0;
   }
 
   .restaurant-marker {

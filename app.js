@@ -137,6 +137,9 @@ const elements = {
   markersLayer: document.querySelector("#markersLayer"),
   emptyMap: document.querySelector("#emptyMap"),
   locationStatus: document.querySelector("#locationStatus"),
+  mapCategoryEyebrow: document.querySelector("#mapCategoryEyebrow"),
+  mapCategoryTitle: document.querySelector("#mapCategoryTitle"),
+  mapCategorySummary: document.querySelector("#mapCategorySummary"),
   recentList: document.querySelector("#recentList"),
   placeCount: document.querySelector("#placeCount"),
   countAll: document.querySelector("#countAll"),
@@ -307,11 +310,9 @@ function bindEvents() {
 
   document.querySelectorAll(".filter-item").forEach((button) => {
     button.addEventListener("click", () => {
-      activeFilter = button.dataset.filter;
-      if (activeView === "my-lists") {
-        activeMyListKey = `system:${activeFilter}`;
-      }
+      setActiveCategory(`system:${button.dataset.filter}`);
       syncFilterButtons();
+      selectFirstVisibleRestaurant();
       render();
     });
   });
@@ -319,8 +320,7 @@ function bindEvents() {
 
 function syncFilterButtons() {
   document.querySelectorAll(".filter-item").forEach((item) => {
-    const isActive = activeView === "my-lists" ? activeMyListKey === `system:${item.dataset.filter}` : item.dataset.filter === activeFilter;
-    item.classList.toggle("active", isActive);
+    item.classList.toggle("active", activeMyListKey === `system:${item.dataset.filter}`);
   });
 }
 
@@ -372,6 +372,7 @@ async function handleLoginButton() {
   lists = [];
   selectedListId = null;
   activeMyListKey = "system:all";
+  activeFilter = "all";
   selectedRestaurantId = restaurants[0]?.id ?? null;
   renderAuth();
   render();
@@ -399,7 +400,7 @@ async function loadLists() {
   lists = data.lists.map(normalizeList);
   selectedListId = selectedListId && lists.some((list) => list.id === selectedListId) ? selectedListId : lists[0]?.id ?? null;
   if (activeMyListKey.startsWith("custom:") && !lists.some((list) => `custom:${list.id}` === activeMyListKey)) {
-    activeMyListKey = "system:all";
+    setActiveCategory("system:all");
   }
 }
 
@@ -408,8 +409,7 @@ async function loadListDetail(listId) {
   const list = normalizeList(data.list);
   lists = lists.map((item) => (item.id === list.id ? list : item));
   if (!lists.some((item) => item.id === list.id)) lists = [list, ...lists];
-  selectedListId = list.id;
-  activeMyListKey = `custom:${list.id}`;
+  setActiveCategory(`custom:${list.id}`);
   return list;
 }
 
@@ -1403,7 +1403,9 @@ function setFallbackLocation(message) {
 
 function render() {
   renderViewShell();
+  renderMapContext();
   renderCounts();
+  syncFilterButtons();
   renderSidebarListFilters();
   renderRecentList();
   renderMarkers();
@@ -1450,19 +1452,99 @@ function renderViewShell() {
   });
   elements.navLinks.forEach((link) => link.classList.toggle("active", link.dataset.view === activeView));
   elements.searchInput.placeholder = {
-    "my-map": "Search for tasty treats...",
-    "my-lists": "Search your lists...",
+    "my-map": "Search spots in this category...",
+    "my-lists": "Search spots in this category...",
     discovery: "Search curated lists...",
   }[activeView];
 }
 
+function setActiveCategory(key) {
+  activeMyListKey = key || "system:all";
+  if (activeMyListKey.startsWith("system:")) {
+    const systemKey = activeMyListKey.replace("system:", "");
+    const definition = systemLists.find((list) => list.key === systemKey) ?? systemLists[0];
+    activeMyListKey = `system:${definition.key}`;
+    activeFilter = definition.filter;
+    return;
+  }
+  if (activeMyListKey.startsWith("custom:")) {
+    selectedListId = activeMyListKey.replace("custom:", "");
+  }
+}
+
+function activeSystemListDefinition() {
+  if (!activeMyListKey.startsWith("system:")) return null;
+  const systemKey = activeMyListKey.replace("system:", "");
+  return systemLists.find((list) => list.key === systemKey) ?? systemLists[0];
+}
+
+function activeCustomList() {
+  if (!activeMyListKey.startsWith("custom:")) return null;
+  return lists.find((list) => `custom:${list.id}` === activeMyListKey) ?? lists.find((list) => list.id === selectedListId) ?? null;
+}
+
+function activeCategoryMeta() {
+  const systemDefinition = activeSystemListDefinition();
+  if (systemDefinition) {
+    return {
+      eyebrow: "SMART LIST",
+      title: systemDefinition.title,
+      description: systemDefinition.description,
+      count: restaurantsForSystemList(systemDefinition).length,
+    };
+  }
+
+  const list = activeCustomList();
+  if (list) {
+    return {
+      eyebrow: list.visibility === "public" ? "PUBLIC CUSTOM LIST" : "CUSTOM LIST",
+      title: list.title,
+      description: list.description || "Custom category from your saved restaurants.",
+      count: list.item_count || list.items?.length || 0,
+    };
+  }
+
+  return {
+    eyebrow: "CUSTOM LIST",
+    title: "Choose a list",
+    description: "Select a custom list on the left to view its spots.",
+    count: 0,
+  };
+}
+
+function renderMapContext() {
+  if (!elements.mapCategoryTitle) return;
+  const meta = activeCategoryMeta();
+  elements.mapCategoryEyebrow.textContent = "MAP VIEW · " + meta.eyebrow;
+  elements.mapCategoryTitle.textContent = meta.title;
+  elements.mapCategorySummary.textContent = `${meta.count} spots · sorted by distance from you`;
+}
+
+function restaurantsForActiveCategory() {
+  const systemDefinition = activeSystemListDefinition();
+  if (systemDefinition) return restaurantsForSystemList(systemDefinition);
+
+  const list = activeCustomList();
+  const ids = new Set((list?.items ?? []).map((item) => item.restaurant_id));
+  return restaurants.filter((restaurant) => ids.has(restaurant.id));
+}
+
+function selectFirstVisibleRestaurant() {
+  const visible = getVisibleRestaurants();
+  if (!visible.length) {
+    selectedRestaurantId = null;
+    isSpotCardOpen = false;
+    return;
+  }
+  if (!visible.some((restaurant) => restaurant.id === selectedRestaurantId)) {
+    selectedRestaurantId = visible[0].id;
+    isSpotCardOpen = true;
+  }
+}
+
 function getVisibleRestaurants() {
   const term = activeView === "my-map" ? elements.searchInput.value.trim().toLowerCase() : "";
-  return restaurants.filter((restaurant) => {
-    const matchesFilter = activeFilter === "all" || restaurant.status === activeFilter;
-    const haystack = [restaurant.name, restaurant.address, restaurant.notes, ...(restaurant.dishes ?? []).map((dish) => dish.name)].join(" ").toLowerCase();
-    return matchesFilter && (!term || haystack.includes(term));
-  });
+  return restaurantsForActiveCategory().filter((restaurant) => !term || restaurantSearchText(restaurant).includes(term));
 }
 
 function renderCounts() {
@@ -1482,7 +1564,7 @@ function renderSidebarListFilters() {
   const ordered = orderedLists();
   elements.sidebarListFilters.innerHTML = ordered.length
     ? ordered.map((list) => `
-        <button class="list-filter-item ${activeView === "my-lists" && activeMyListKey === `custom:${list.id}` ? "active" : ""}" type="button" draggable="true" data-sidebar-list-id="${list.id}">
+        <button class="list-filter-item ${activeMyListKey === `custom:${list.id}` ? "active" : ""}" type="button" draggable="true" data-sidebar-list-id="${list.id}">
           <span class="drag-handle" aria-hidden="true">⋮⋮</span>
           <span class="list-filter-text">
             <strong>${escapeHtml(list.title)}</strong>
@@ -1493,10 +1575,11 @@ function renderSidebarListFilters() {
     : '<p class="sidebar-empty">No custom lists yet.</p>';
   elements.sidebarListFilters.querySelectorAll("[data-sidebar-list-id]").forEach((button) => {
     button.addEventListener("click", async () => {
-      selectedListId = button.dataset.sidebarListId;
-      activeMyListKey = `custom:${selectedListId}`;
+      setActiveCategory(`custom:${button.dataset.sidebarListId}`);
+      syncFilterButtons();
       await ensureListDetail(selectedListId);
-      setActiveView("my-lists");
+      selectFirstVisibleRestaurant();
+      render();
     });
     button.addEventListener("dragstart", (event) => {
       event.dataTransfer.effectAllowed = "move";
@@ -1633,7 +1716,7 @@ function renderListsView() {
     elements.myListDetail.innerHTML = loadingPanel("Loading list...");
     return;
   }
-  elements.myListDetail.innerHTML = selected ? myListDetailTemplate(selected) : emptyStateTemplate("Create a list, then add spots from your map.", "");
+  elements.myListDetail.innerHTML = selected ? myListDetailTemplate(selected, term) : emptyStateTemplate("Create a list, then add spots from your map.", "");
   bindMyListDetailActions(selected);
 }
 
@@ -1747,8 +1830,13 @@ function listCardTemplate(list, selected, mode) {
   `;
 }
 
-function myListDetailTemplate(list) {
+function myListDetailTemplate(list, term = "") {
   const isPublic = list.visibility === "public";
+  const items = sortListItemsByDistance((list.items ?? []).filter((item) => {
+    if (!term) return true;
+    const restaurant = item.restaurant;
+    return restaurant && (restaurantSearchText(restaurant).includes(term) || String(item.note || "").toLowerCase().includes(term));
+  }));
   return `
     <div class="detail-head">
       ${coverTemplate(list)}
@@ -1764,13 +1852,14 @@ function myListDetailTemplate(list) {
       </div>
     </div>
     <div class="detail-actions">
+      <button class="outline-button" type="button" data-list-action="map">Open on Map</button>
       <button class="outline-button" type="button" data-list-action="edit">Edit</button>
       <button class="outline-button" type="button" data-list-action="publish">${isPublic ? "Unpublish" : "Publish"}</button>
       <button class="outline-button" type="button" data-list-action="add">Add Spots</button>
       <button class="outline-button danger" type="button" data-list-action="delete">Delete List</button>
     </div>
     <div class="spot-row-list">
-      ${(list.items ?? []).length ? sortListItemsByDistance(list.items).map((item) => ownedListItemTemplate(item)).join("") : emptyStateTemplate("This list is empty. Add spots from your map.", "")}
+      ${items.length ? items.map((item) => ownedListItemTemplate(item)).join("") : emptyStateTemplate((list.items ?? []).length ? "No spots match this search." : "This list is empty. Add spots from your map.", "")}
     </div>
   `;
 }
@@ -1804,7 +1893,7 @@ function ownedListItemTemplate(item) {
     body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits`,
     note: item.note,
     actions: `
-      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Map</a>
+      <button class="icon-link" type="button" data-open-list-spot="${restaurant.id}">Map</button>
       <button class="icon-link danger-text" type="button" data-remove-list-spot="${restaurant.id}">Remove</button>
     `,
   });
@@ -1884,12 +1973,25 @@ async function ensureDiscoveryDetail(listId) {
 function bindMyListDetailActions(list) {
   if (!list) return;
   bindRestaurantRows(elements.myListDetail);
+  elements.myListDetail.querySelector('[data-list-action="map"]')?.addEventListener("click", () => {
+    setActiveCategory(`custom:${list.id}`);
+    selectFirstVisibleRestaurant();
+    setActiveView("my-map");
+  });
   elements.myListDetail.querySelector('[data-list-action="edit"]')?.addEventListener("click", () => openEditListDialog(list));
   elements.myListDetail.querySelector('[data-list-action="publish"]')?.addEventListener("click", () => toggleListVisibility(list));
   elements.myListDetail.querySelector('[data-list-action="add"]')?.addEventListener("click", () => openAddSpotsDialog(list.id));
   elements.myListDetail.querySelector('[data-list-action="delete"]')?.addEventListener("click", () => deleteList(list));
   elements.myListDetail.querySelectorAll("[data-remove-list-spot]").forEach((button) => {
     button.addEventListener("click", () => removeSpotFromList(list.id, button.dataset.removeListSpot));
+  });
+  elements.myListDetail.querySelectorAll("[data-open-list-spot]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedRestaurantId = button.dataset.openListSpot;
+      isSpotCardOpen = true;
+      setActiveCategory(`custom:${list.id}`);
+      setActiveView("my-map");
+    });
   });
 }
 

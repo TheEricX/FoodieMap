@@ -20,8 +20,8 @@
           <span>Gourmet Map</span>
         </div>
         <nav class="top-nav" aria-label="Primary navigation">
-          <a class="active" href="#my-map" data-view="my-map">My Map</a>
-          <a href="#my-lists" data-view="my-lists">My Lists</a>
+          <a class="active" href="#my-map" data-view="my-map">Map View</a>
+          <a href="#my-lists" data-view="my-lists">List View</a>
           <a href="#discovery" data-view="discovery">Discovery</a>
         </nav>
         <label class="search-box">
@@ -49,15 +49,6 @@
           <button class="primary-button" id="openAddPanel">＋ New Spot</button>
           <button class="primary-button alt" id="pasteAddButton" type="button">Paste & Add</button>
           <p class="action-status" id="pasteStatus">复制 Google Maps 链接后点 Paste & Add。</p>
-          <details class="data-tools">
-            <summary>Data tools</summary>
-            <div class="data-actions" aria-label="Data actions">
-              <button class="secondary-button" id="exportButton" type="button">Export</button>
-              <button class="secondary-button" id="importButton" type="button">Import</button>
-              <button class="secondary-button danger" id="resetButton" type="button">Reset Demo</button>
-              <input id="importFile" type="file" accept="application/json" hidden />
-            </div>
-          </details>
 
           <section class="sidebar-index-panel" aria-label="Pantry index">
             <div class="sidebar-section-head compact">
@@ -85,14 +76,25 @@
             <div class="sidebar-list-filters" id="sidebarListFilters"></div>
           </section>
 
+          <details class="data-tools">
+            <summary>Data tools</summary>
+            <div class="data-actions" aria-label="Data actions">
+              <button class="secondary-button" id="exportButton" type="button">Export</button>
+              <button class="secondary-button" id="importButton" type="button">Import</button>
+              <button class="secondary-button danger" id="resetButton" type="button">Reset Demo</button>
+              <input id="importFile" type="file" accept="application/json" hidden />
+            </div>
+          </details>
+
         </aside>
 
         <section class="map-stage app-view" id="mapView" data-view-panel="my-map">
           <section class="map-nearest-panel">
             <div class="section-head">
               <div>
-                <p class="eyebrow">NEAREST SPOTS</p>
-                <strong>Sorted by distance from you</strong>
+                <p class="eyebrow" id="mapCategoryEyebrow">MAP VIEW</p>
+                <strong id="mapCategoryTitle">All Spots</strong>
+                <small id="mapCategorySummary">Sorted by distance from you</small>
               </div>
             </div>
             <div id="recentList" class="recent-list map-nearest-list"></div>
