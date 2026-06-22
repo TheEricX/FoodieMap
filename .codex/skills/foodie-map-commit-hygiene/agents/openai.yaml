@@ -1,0 +1,4 @@
+interface:
+  display_name: "FoodieMap Commit Hygiene"
+  short_description: "Pre-commit docs and changelog checks"
+  default_prompt: "Use $foodie-map-commit-hygiene before committing FoodieMap changes."

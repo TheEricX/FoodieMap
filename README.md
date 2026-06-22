@@ -151,12 +151,14 @@ docker compose down
 
 ## 项目文件
 
+- `CHANGELOG.md`：按 `Unreleased` 记录功能、修复、文档和开发流程变更
 - `index.html`：页面结构
 - `styles.css`：响应式 UI 样式
 - `app.js`：前端交互、分类状态、Map/List 展示模式、Discovery、API 数据层
 - `server.py`：FastAPI 后端、SQLite、OAuth、上传、分享、list API
 - `requirements.txt`：Python 依赖
 - `Dockerfile` / `compose.yaml`：Docker 运行配置
+- `.codex/skills/foodie-map-commit-hygiene/`：项目内 Codex skill；提交前检查 README、CHANGELOG 和已有 agenda/roadmap 文档是否需要同步
 
 ## 当前限制
 
