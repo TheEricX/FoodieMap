@@ -1163,6 +1163,84 @@ body.is-topbar-elevated .layout::before {
   font-weight: 700;
 }
 
+.list-view-tools {
+  display: grid;
+  flex: 0 0 min(520px, 42%);
+  gap: 10px;
+  justify-items: end;
+  min-width: 260px;
+}
+
+.manage-list-menu {
+  position: relative;
+}
+
+.manage-list-menu summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 250, 244, 0.9);
+  color: var(--primary-dark);
+  cursor: pointer;
+  list-style: none;
+  padding: 9px 18px;
+  box-shadow: 0 3px 0 rgba(139, 106, 87, 0.2);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.manage-list-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.manage-list-menu summary::after {
+  margin-left: 8px;
+  color: rgba(104, 68, 45, 0.7);
+  content: "+";
+  font-size: 16px;
+  line-height: 1;
+}
+
+.manage-list-menu[open] summary::after {
+  content: "-";
+}
+
+.manage-list-actions {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  width: min(220px, 70vw);
+  overflow: hidden;
+  border: 1px solid rgba(217, 197, 183, 0.9);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 250, 244, 0.98);
+  box-shadow: var(--soft-shadow);
+}
+
+.manage-list-actions button {
+  min-height: 42px;
+  border: 0;
+  border-bottom: 1px solid rgba(217, 197, 183, 0.68);
+  background: transparent;
+  color: var(--primary-dark);
+  padding: 10px 14px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.manage-list-actions button:last-child {
+  border-bottom: 0;
+}
+
+.manage-list-actions button:hover {
+  background: rgba(244, 238, 231, 0.92);
+}
+
 .detail-head h2 {
   margin: 0 0 8px;
   color: var(--ink);
@@ -3501,6 +3579,26 @@ body.is-topbar-elevated .layout::before {
 
   .list-view-meta {
     justify-content: flex-start;
+  }
+
+  .list-view-tools {
+    justify-items: start;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .manage-list-menu {
+    width: 100%;
+  }
+
+  .manage-list-menu summary {
+    width: 100%;
+  }
+
+  .manage-list-actions {
+    left: 0;
+    right: auto;
+    width: min(260px, 100%);
   }
 
   .view-toolbar {

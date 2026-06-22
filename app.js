@@ -1838,27 +1838,34 @@ function myListDetailTemplate(list, term = "") {
     return restaurant && (restaurantSearchText(restaurant).includes(term) || String(item.note || "").toLowerCase().includes(term));
   }));
   return `
-    <div class="detail-head">
-      ${coverTemplate(list)}
+    <div class="list-view-head">
       <div>
         <p class="eyebrow">${isPublic ? "PUBLIC LIST" : "PRIVATE LIST"}</p>
         <h2>${escapeHtml(list.title)}</h2>
         <p>${escapeHtml(list.description || "No description yet.")}</p>
-        <div class="meta-row compact-meta">
-          <span>${list.item_count || 0} spots</span>
+      </div>
+      <div class="list-view-tools">
+        <div class="list-view-meta">
+          <span>${items.length} spots</span>
+          <span>Nearest first</span>
           <span>${visibilityLabel(list.visibility)}</span>
           <span>Updated ${formatDate(list.updated_at)}</span>
         </div>
+        <details class="manage-list-menu">
+          <summary>Manage</summary>
+          <div class="manage-list-actions">
+            <button type="button" data-list-action="edit">Edit</button>
+            <button type="button" data-list-action="publish">${isPublic ? "Unpublish" : "Publish"}</button>
+            <button type="button" data-list-action="add">Add Spots</button>
+            <button class="danger-text" type="button" data-list-action="delete">Delete List</button>
+          </div>
+        </details>
       </div>
     </div>
-    <div class="detail-actions">
+    <div class="detail-actions system-actions compact-actions">
       <button class="outline-button" type="button" data-list-action="map">Open on Map</button>
-      <button class="outline-button" type="button" data-list-action="edit">Edit</button>
-      <button class="outline-button" type="button" data-list-action="publish">${isPublic ? "Unpublish" : "Publish"}</button>
-      <button class="outline-button" type="button" data-list-action="add">Add Spots</button>
-      <button class="outline-button danger" type="button" data-list-action="delete">Delete List</button>
     </div>
-    <div class="spot-row-list">
+    <div class="spot-row-list restaurant-list-mode">
       ${items.length ? items.map((item) => ownedListItemTemplate(item)).join("") : emptyStateTemplate((list.items ?? []).length ? "No spots match this search." : "This list is empty. Add spots from your map.", "")}
     </div>
   `;
@@ -1889,14 +1896,7 @@ function discoveryDetailTemplate(list) {
 function ownedListItemTemplate(item) {
   const restaurant = item.restaurant;
   if (!restaurant) return "";
-  return restaurantRowTemplate(restaurant, {
-    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits`,
-    note: item.note,
-    actions: `
-      <button class="icon-link" type="button" data-open-list-spot="${restaurant.id}">Map</button>
-      <button class="icon-link danger-text" type="button" data-remove-list-spot="${restaurant.id}">Remove</button>
-    `,
-  });
+  return systemSpotItemTemplate(restaurant);
 }
 
 function publicListItemTemplate(item) {
@@ -1982,12 +1982,9 @@ function bindMyListDetailActions(list) {
   elements.myListDetail.querySelector('[data-list-action="publish"]')?.addEventListener("click", () => toggleListVisibility(list));
   elements.myListDetail.querySelector('[data-list-action="add"]')?.addEventListener("click", () => openAddSpotsDialog(list.id));
   elements.myListDetail.querySelector('[data-list-action="delete"]')?.addEventListener("click", () => deleteList(list));
-  elements.myListDetail.querySelectorAll("[data-remove-list-spot]").forEach((button) => {
-    button.addEventListener("click", () => removeSpotFromList(list.id, button.dataset.removeListSpot));
-  });
-  elements.myListDetail.querySelectorAll("[data-open-list-spot]").forEach((button) => {
+  elements.myListDetail.querySelectorAll("[data-open-spot]").forEach((button) => {
     button.addEventListener("click", () => {
-      selectedRestaurantId = button.dataset.openListSpot;
+      selectedRestaurantId = button.dataset.openSpot;
       isSpotCardOpen = true;
       setActiveCategory(`custom:${list.id}`);
       setActiveView("my-map");
@@ -2123,16 +2120,19 @@ function renderAddSpotsDialog() {
           ${restaurantThumbTemplate(restaurant)}
           <div>
             <strong>${escapeHtml(restaurant.name)}</strong>
-            <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)}</small>
+            <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)}${added.has(restaurant.id) ? " · In this list" : ""}</small>
           </div>
-          <button class="secondary-button" type="button" data-add-list-spot="${restaurant.id}" ${added.has(restaurant.id) ? "disabled" : ""}>
-            ${added.has(restaurant.id) ? "Added" : "Add"}
+          <button class="secondary-button ${added.has(restaurant.id) ? "danger" : ""}" type="button" ${added.has(restaurant.id) ? `data-remove-list-spot="${restaurant.id}"` : `data-add-list-spot="${restaurant.id}"`}>
+            ${added.has(restaurant.id) ? "Remove" : "Add"}
           </button>
         </article>
       `).join("")
     : emptyStateTemplate("No restaurants match this search.", "");
   elements.addSpotsList.querySelectorAll("[data-add-list-spot]").forEach((button) => {
     button.addEventListener("click", () => addSpotToList(list.id, button.dataset.addListSpot));
+  });
+  elements.addSpotsList.querySelectorAll("[data-remove-list-spot]").forEach((button) => {
+    button.addEventListener("click", () => removeSpotFromList(list.id, button.dataset.removeListSpot));
   });
 }
 
@@ -2155,6 +2155,7 @@ async function removeSpotFromList(listId, restaurantId) {
   lists = lists.map((item) => (item.id === updated.id ? updated : item));
   selectedListId = updated.id;
   activeMyListKey = `custom:${updated.id}`;
+  if (elements.addSpotsDialog.open) renderAddSpotsDialog();
   render();
 }
 
