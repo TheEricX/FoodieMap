@@ -744,10 +744,25 @@ async function deleteSelectedRestaurant() {
   if (!requireLogin()) return;
   const selected = selectedRestaurant();
   if (!selected) return;
-  if (!confirm(`确定删除「${selected.name}」吗？\n\n这会同时删除这家店的菜单和图片记录。`)) return;
-  await api(`/api/restaurants/${selected.id}`, { method: "DELETE" });
-  restaurants = restaurants.filter((restaurant) => restaurant.id !== selected.id);
-  selectedRestaurantId = restaurants[0]?.id ?? null;
+  await deleteRestaurantById(selected.id);
+}
+
+async function deleteRestaurantById(restaurantId) {
+  if (!requireLogin()) return;
+  const restaurant = restaurants.find((item) => item.id === restaurantId);
+  if (!restaurant) return;
+  if (!confirm(`确定删除「${restaurant.name}」吗？\n\n这会同时删除这家店的菜单和图片记录。`)) return;
+  await api(`/api/restaurants/${restaurant.id}`, { method: "DELETE" });
+  restaurants = restaurants.filter((item) => item.id !== restaurant.id);
+  lists = lists.map((list) => ({
+    ...list,
+    item_count: Math.max(0, Number(list.item_count || 0) - (list.items?.some((item) => item.restaurant_id === restaurant.id) ? 1 : 0)),
+    items: Array.isArray(list.items) ? list.items.filter((item) => item.restaurant_id !== restaurant.id) : list.items,
+  }));
+  if (selectedRestaurantId === restaurant.id) {
+    selectedRestaurantId = null;
+    selectFirstVisibleRestaurant();
+  }
   isSpotCardOpen = Boolean(selectedRestaurantId);
   closeSpotDetail();
   render();
@@ -1730,7 +1745,7 @@ function renderDiscoveryView() {
   const visible = sorted.filter((list) => listSearchText(list).includes(term));
   elements.discoveryGrid.innerHTML = visible.length
     ? visible.map((list) => listCardTemplate(list, list.id === selectedDiscoveryListId, "public")).join("")
-    : emptyStateTemplate("No public lists yet. Publish a list from My Lists to seed Discovery.", "");
+    : discoveryEmptyStateTemplate(term).grid;
   elements.discoveryGrid.querySelectorAll("[data-list-id]").forEach((card) => {
     card.addEventListener("click", async () => {
       selectedDiscoveryListId = card.dataset.listId;
@@ -1738,14 +1753,83 @@ function renderDiscoveryView() {
       render();
     });
   });
-  const selected = discoveryLists.find((list) => list.id === selectedDiscoveryListId) ?? visible[0] ?? discoveryLists[0];
+  bindDiscoveryEmptyAction(term);
+  const selected = visible.find((list) => list.id === selectedDiscoveryListId) ?? visible[0] ?? (term ? null : discoveryLists[0]);
   if (selected && !selected.items) {
     ensureDiscoveryDetail(selected.id).then(render).catch((error) => (elements.discoveryDetail.innerHTML = errorPanel(error.message)));
     elements.discoveryDetail.innerHTML = loadingPanel("Loading public list...");
     return;
   }
-  elements.discoveryDetail.innerHTML = selected ? discoveryDetailTemplate(selected) : emptyStateTemplate("Published lists will open here.", "");
+  elements.discoveryDetail.innerHTML = selected ? discoveryDetailTemplate(selected) : discoveryEmptyStateTemplate(term).detail;
   elements.discoveryDetail.querySelector("[data-copy-public]")?.addEventListener("click", copyPublicList);
+}
+
+function discoveryEmptyStateTemplate(term = "") {
+  if (discoveryLists.length && term) {
+    return {
+      grid: emptyStateTemplate("No public lists match this search.", ""),
+      detail: emptyStateTemplate("Try another search to open a public list here.", ""),
+    };
+  }
+
+  if (!currentUser) {
+    return {
+      grid: emptyStateTemplate("Discovery only shows public lists. Sign in to publish your own.", "Sign in"),
+      detail: emptyStateTemplate("Private lists stay hidden until their owner publishes them.", ""),
+    };
+  }
+
+  if (!lists.length) {
+    return {
+      grid: emptyStateTemplate("No public lists yet. Create a custom list, add spots, then publish it.", "Create List"),
+      detail: emptyStateTemplate("Published lists will open here after someone shares one.", ""),
+    };
+  }
+
+  const publishCandidate = publishableListCandidate();
+  if (publishCandidate) {
+    return {
+      grid: emptyStateTemplate(`No public lists yet. "${publishCandidate.title}" is ready to publish.`, "Publish a list"),
+      detail: emptyStateTemplate("Open your list, then use Manage > Publish when you are ready to share it.", ""),
+    };
+  }
+
+  return {
+    grid: emptyStateTemplate("No public lists yet. Add spots to a custom list before publishing.", "Open Lists"),
+    detail: emptyStateTemplate("A list needs at least one spot before it can appear in Discovery.", ""),
+  };
+}
+
+function publishableListCandidate() {
+  const ordered = typeof orderedLists === "function" ? orderedLists() : lists;
+  return ordered.find((list) => list.visibility !== "public" && Number(list.item_count || list.items?.length || 0) > 0) ?? null;
+}
+
+function bindDiscoveryEmptyAction(term = "") {
+  const action = elements.discoveryGrid.querySelector("[data-empty-action]");
+  if (!action) return;
+  action.addEventListener("click", async () => {
+    if (discoveryLists.length && term) {
+      return;
+    }
+    if (!currentUser) {
+      requireLogin();
+      return;
+    }
+    if (!lists.length) {
+      openCreateListDialog();
+      return;
+    }
+    const publishCandidate = publishableListCandidate();
+    if (publishCandidate) {
+      setActiveCategory(`custom:${publishCandidate.id}`);
+      await ensureListDetail(publishCandidate.id);
+      setActiveView("my-lists");
+      return;
+    }
+    setActiveCategory(lists[0]?.id ? `custom:${lists[0].id}` : "system:all");
+    setActiveView("my-lists");
+  });
 }
 
 function systemListCardTemplate(list, selected) {
@@ -1791,6 +1875,7 @@ function systemSpotItemTemplate(restaurant) {
     actions: `
       <button class="icon-link" type="button" data-open-spot="${restaurant.id}">Map</button>
       <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Google</a>
+      <button class="icon-link danger-text" type="button" data-delete-spot="${restaurant.id}">Delete</button>
     `,
   });
 }
@@ -1811,6 +1896,9 @@ function bindSystemListDetailActions(definition) {
       isSpotCardOpen = true;
       setActiveView("my-map");
     });
+  });
+  elements.myListDetail.querySelectorAll("[data-delete-spot]").forEach((button) => {
+    button.addEventListener("click", () => deleteRestaurantById(button.dataset.deleteSpot));
   });
 }
 
@@ -1896,7 +1984,14 @@ function discoveryDetailTemplate(list) {
 function ownedListItemTemplate(item) {
   const restaurant = item.restaurant;
   if (!restaurant) return "";
-  return systemSpotItemTemplate(restaurant);
+  return restaurantRowTemplate(restaurant, {
+    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits`,
+    actions: `
+      <button class="icon-link" type="button" data-open-spot="${restaurant.id}">Map</button>
+      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Google</a>
+      <button class="icon-link danger-text" type="button" data-remove-list-spot="${restaurant.id}">Remove</button>
+    `,
+  });
 }
 
 function publicListItemTemplate(item) {
@@ -1924,7 +2019,7 @@ function restaurantRowTemplate(restaurant, options = {}) {
         <small>${options.body || ""}</small>
         ${options.note ? `<p>${escapeHtml(options.note)}</p>` : ""}
       </div>
-      ${options.actions || ""}
+      ${options.actions ? `<div class="spot-row-actions">${options.actions}</div>` : ""}
     </article>
   `;
 }
@@ -1989,6 +2084,9 @@ function bindMyListDetailActions(list) {
       setActiveCategory(`custom:${list.id}`);
       setActiveView("my-map");
     });
+  });
+  elements.myListDetail.querySelectorAll("[data-remove-list-spot]").forEach((button) => {
+    button.addEventListener("click", () => removeSpotFromList(list.id, button.dataset.removeListSpot));
   });
 }
 

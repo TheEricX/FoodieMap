@@ -1300,7 +1300,7 @@ body.is-topbar-elevated .layout::before {
 .add-spot-row {
   position: relative;
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) auto auto;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
   overflow: visible;
@@ -1323,7 +1323,7 @@ body.is-topbar-elevated .layout::before {
 .spot-row::after {
   position: absolute;
   top: 50%;
-  right: clamp(136px, 9vw, 176px);
+  right: clamp(220px, 16vw, 280px);
   color: rgba(104, 68, 45, 0.58);
   content: "Open details";
   font-size: 11px;
@@ -1457,6 +1457,14 @@ body.is-topbar-elevated .layout::before {
   margin: 5px 0 0;
   color: #594a42;
   font-size: 13px;
+}
+
+.spot-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  justify-self: end;
 }
 
 .icon-link {
@@ -3628,11 +3636,14 @@ body.is-topbar-elevated .layout::before {
     display: none;
   }
 
-  .spot-row .icon-link,
-  .spot-row button.icon-link,
+  .spot-row-actions,
   .add-spot-row .secondary-button {
     grid-column: 2;
     justify-self: start;
+  }
+
+  .spot-row-actions {
+    justify-content: flex-start;
   }
 }
 
