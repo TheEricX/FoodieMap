@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260614-topbar-elevation" />
+    <link rel="stylesheet" href="/styles.css?v=20260621-topbar-cap-soft" />
   </head>
   <body>
     <main class="app-shell">
@@ -99,6 +99,12 @@
           </section>
 
           <div class="cute-map" id="cuteMap" aria-label="Relative restaurant map">
+            <div class="map-zoom-controls" aria-label="Map zoom controls">
+              <button class="map-zoom-button" id="mapZoomOut" type="button" title="Zoom out">−</button>
+              <span id="mapZoomLabel">100%</span>
+              <button class="map-zoom-button" id="mapZoomIn" type="button" title="Zoom in">＋</button>
+              <button class="map-zoom-button reset" id="mapZoomReset" type="button" title="Reset zoom">1×</button>
+            </div>
             <div class="grid-overlay"></div>
             <div class="range-ring ring-1"><span>1 km</span></div>
             <div class="range-ring ring-2"><span>5 km</span></div>

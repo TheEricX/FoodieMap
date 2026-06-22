@@ -1,6 +1,17 @@
 const GOOGLE_MAPS_HELP = "推荐复制 Google Maps 浏览器地址栏里的完整链接；短分享链接会由本地服务自动展开。";
 const LOCATION_DENIED_HELP = "定位权限已被浏览器拒绝。请点地址栏左侧图标 > 定位 > 允许或询问，然后再点 Use My Location。";
 const LIST_FILTER_ORDER_KEY = "foodiemap:list-filter-order";
+const MAP_ZOOM_MIN = 0.65;
+const MAP_ZOOM_MAX = 2.8;
+const MAP_ZOOM_STEP = 0.18;
+const FOOD_PLACEHOLDERS = [
+  { icon: "🍜", top: "#f4c49d", bottom: "#fff7ed", accent: "#96694c" },
+  { icon: "🥘", top: "#dce6af", bottom: "#fffaf4", accent: "#7a8450" },
+  { icon: "🍰", top: "#f7d8cd", bottom: "#fff8f0", accent: "#b58a6b" },
+  { icon: "🥗", top: "#cfe5cf", bottom: "#fffdf8", accent: "#556030" },
+  { icon: "🍣", top: "#f4dfb8", bottom: "#fffaf4", accent: "#d4a373" },
+  { icon: "☕", top: "#ead8c9", bottom: "#fff8f0", accent: "#68442d" },
+];
 
 const demoRestaurants = [
   {
@@ -73,6 +84,7 @@ let selectedDiscoveryListId = null;
 let editingListId = null;
 let addSpotsListId = null;
 let discoverySort = "popular";
+let mapZoom = 1;
 
 const elements = {
   topbar: document.querySelector(".topbar"),
@@ -107,6 +119,11 @@ const elements = {
   settingsForm: document.querySelector("#settingsForm"),
   closeSettings: document.querySelector("#closeSettings"),
   googleApiKey: document.querySelector("#googleApiKey"),
+  cuteMap: document.querySelector("#cuteMap"),
+  mapZoomOut: document.querySelector("#mapZoomOut"),
+  mapZoomIn: document.querySelector("#mapZoomIn"),
+  mapZoomReset: document.querySelector("#mapZoomReset"),
+  mapZoomLabel: document.querySelector("#mapZoomLabel"),
   markersLayer: document.querySelector("#markersLayer"),
   emptyMap: document.querySelector("#emptyMap"),
   locationStatus: document.querySelector("#locationStatus"),
@@ -232,6 +249,10 @@ function bindEvents() {
   elements.listForm.addEventListener("submit", saveListFromForm);
   elements.closeAddSpotsDialog.addEventListener("click", () => elements.addSpotsDialog.close());
   elements.addSpotsSearch.addEventListener("input", renderAddSpotsDialog);
+  elements.cuteMap.addEventListener("wheel", handleMapWheel, { passive: false });
+  elements.mapZoomOut.addEventListener("click", () => setMapZoom(mapZoom - MAP_ZOOM_STEP));
+  elements.mapZoomIn.addEventListener("click", () => setMapZoom(mapZoom + MAP_ZOOM_STEP));
+  elements.mapZoomReset.addEventListener("click", () => setMapZoom(1));
   document.querySelectorAll("[data-discovery-sort]").forEach((button) => {
     button.addEventListener("click", () => {
       discoverySort = button.dataset.discoverySort;
@@ -693,7 +714,8 @@ async function copyShareLink() {
 async function deleteSelectedRestaurant() {
   if (!requireLogin()) return;
   const selected = selectedRestaurant();
-  if (!selected || !confirm(`删除「${selected.name}」吗？`)) return;
+  if (!selected) return;
+  if (!confirm(`确定删除「${selected.name}」吗？\n\n这会同时删除这家店的菜单和图片记录。`)) return;
   await api(`/api/restaurants/${selected.id}`, { method: "DELETE" });
   restaurants = restaurants.filter((restaurant) => restaurant.id !== selected.id);
   selectedRestaurantId = restaurants[0]?.id ?? null;
@@ -1231,7 +1253,7 @@ function renderRecentList() {
   elements.recentList.innerHTML = recent.length
     ? recent.map((restaurant) => `
         <button class="recent-item" data-id="${restaurant.id}">
-          <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
+          ${restaurantThumbTemplate(restaurant)}
           <span>
             <strong>${escapeHtml(restaurant.name)}</strong>
             <small>${distanceLabel(restaurant)} · ${statusLabel(restaurant.status)}</small>
@@ -1253,25 +1275,31 @@ function renderMarkers() {
   const visible = getVisibleRestaurants();
   elements.emptyMap.style.display = visible.length ? "none" : "grid";
   elements.markersLayer.innerHTML = "";
+  updateMapZoomUi();
   if (!currentLocation) return;
-  visible.forEach((restaurant, index) => {
+  const layout = layoutMapMarkers(visible);
+  visible.forEach((restaurant) => {
     const distance = haversineDistance(currentLocation, restaurant);
-    const point = mapPoint(distance, getBearing(currentLocation, restaurant), index);
+    const point = layout.get(restaurant.id) ?? { x: 50, y: 50 };
     const marker = document.createElement("button");
     marker.className = `restaurant-marker ${restaurant.status}${restaurant.id === selectedRestaurantId ? " selected" : ""}`;
     marker.style.left = `${point.x}%`;
     marker.style.top = `${point.y}%`;
+    if (restaurant.id === selectedRestaurantId) marker.style.zIndex = "9";
     marker.innerHTML = `
-      <span class="marker-icon">${statusIcon(restaurant.status)}</span>
-      <small>${escapeHtml(shortName(restaurant.name))}</small>
-      <small class="marker-distance">${formatDistance(distance)}</small>
+      <span class="marker-photo">
+        <img src="${escapeAttribute(restaurantImageUrl(restaurant))}" alt="">
+      </span>
+      <span class="marker-caption">
+        <strong>${escapeHtml(shortMapName(restaurant.name))}</strong>
+        <small>${formatDistance(distance)}</small>
+      </span>
     `;
     marker.title = `${restaurant.name} - ${formatDistance(distance)}`;
     marker.addEventListener("click", () => {
       selectedRestaurantId = restaurant.id;
       isSpotCardOpen = true;
       render();
-      openSpotDetail();
     });
     elements.markersLayer.appendChild(marker);
   });
@@ -1529,7 +1557,7 @@ function restaurantRowTemplate(restaurant, options = {}) {
   return `
     <article class="spot-row accent-${accent}" data-restaurant-id="${restaurant.id}">
       <span class="row-tape" aria-hidden="true"></span>
-      <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
+      ${restaurantThumbTemplate(restaurant)}
       <div class="spot-row-main">
         <div class="spot-row-title">
           <strong>${escapeHtml(restaurant.name)}</strong>
@@ -1540,6 +1568,14 @@ function restaurantRowTemplate(restaurant, options = {}) {
       </div>
       ${options.actions || ""}
     </article>
+  `;
+}
+
+function restaurantThumbTemplate(restaurant) {
+  return `
+    <span class="recent-thumb ${restaurant.status}">
+      <img src="${escapeAttribute(restaurantImageUrl(restaurant))}" alt="">
+    </span>
   `;
 }
 
@@ -1713,7 +1749,7 @@ function renderAddSpotsDialog() {
   elements.addSpotsList.innerHTML = visible.length
     ? visible.map((restaurant) => `
         <article class="add-spot-row">
-          <span class="recent-thumb">${statusIcon(restaurant.status)}</span>
+          ${restaurantThumbTemplate(restaurant)}
           <div>
             <strong>${escapeHtml(restaurant.name)}</strong>
             <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)}</small>
@@ -2017,9 +2053,106 @@ function shortName(name) {
   return name.length > 9 ? `${name.slice(0, 8)}...` : name;
 }
 
+function shortMapName(name) {
+  return name.length > 18 ? `${name.slice(0, 17)}...` : name;
+}
+
 function formatDistance(distanceKm) {
   if (distanceKm < 1) return `${Math.round(distanceKm * 1000)} m`;
   return `${Math.round(distanceKm)} km`;
+}
+
+function handleMapWheel(event) {
+  if (event.target.closest(".spot-card, .spot-card-tab, .map-zoom-controls")) return;
+  event.preventDefault();
+  const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+  const factor = Math.exp(-delta * 0.0018);
+  setMapZoom(mapZoom * factor);
+}
+
+function setMapZoom(value) {
+  const next = Math.max(MAP_ZOOM_MIN, Math.min(MAP_ZOOM_MAX, value));
+  if (Math.abs(next - mapZoom) < 0.005) return;
+  mapZoom = next;
+  renderMarkers();
+}
+
+function updateMapZoomUi() {
+  elements.cuteMap?.style.setProperty("--map-zoom", mapZoom.toFixed(2));
+  if (elements.mapZoomLabel) elements.mapZoomLabel.textContent = `${Math.round(mapZoom * 100)}%`;
+}
+
+function layoutMapMarkers(items) {
+  const bounds = elements.cuteMap?.getBoundingClientRect();
+  const mapWidth = Math.max(320, bounds?.width || 900);
+  const mapHeight = Math.max(320, bounds?.height || 560);
+  const markerWidth = mapWidth < 720 ? 86 : 104;
+  const markerHeight = mapWidth < 720 ? 104 : 126;
+  const minDx = (markerWidth / mapWidth) * 100;
+  const minDy = (markerHeight / mapHeight) * 100;
+  const points = items.map((restaurant, index) => {
+    const distance = currentLocation ? haversineDistance(currentLocation, restaurant) : 0;
+    const bearing = currentLocation ? getBearing(currentLocation, restaurant) : index * 137;
+    return {
+      id: restaurant.id,
+      ...mapPoint(distance, bearing, index),
+    };
+  });
+
+  for (let pass = 0; pass < 10; pass += 1) {
+    for (let a = 0; a < points.length; a += 1) {
+      for (let b = a + 1; b < points.length; b += 1) {
+        const first = points[a];
+        const second = points[b];
+        const dx = second.x - first.x;
+        const dy = second.y - first.y;
+        if (Math.abs(dx) >= minDx || Math.abs(dy) >= minDy) continue;
+        const length = Math.hypot(dx, dy) || 1;
+        const fallbackX = a % 2 ? 1 : -1;
+        const fallbackY = b % 2 ? 1 : -1;
+        const pushX = ((minDx - Math.abs(dx)) / 2 + 0.8) * (dx ? dx / length : fallbackX);
+        const pushY = ((minDy - Math.abs(dy)) / 2 + 0.8) * (dy ? dy / length : fallbackY);
+        first.x -= pushX;
+        first.y -= pushY;
+        second.x += pushX;
+        second.y += pushY;
+      }
+    }
+    points.forEach((point) => {
+      point.x = Math.max(7, Math.min(93, point.x));
+      point.y = Math.max(10, Math.min(90, point.y));
+    });
+  }
+
+  return new Map(points.map((point) => [point.id, { x: point.x, y: point.y }]));
+}
+
+function restaurantImageUrl(restaurant) {
+  const dishImage = (restaurant.dishes ?? []).find((dish) => dish.image_url)?.image_url;
+  return dishImage || foodPlaceholderUrl(restaurant);
+}
+
+function foodPlaceholderUrl(restaurant) {
+  const preset = FOOD_PLACEHOLDERS[accentVariant(restaurant.id) % FOOD_PLACEHOLDERS.length];
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180">
+      <defs>
+        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stop-color="${preset.top}"/>
+          <stop offset="1" stop-color="${preset.bottom}"/>
+        </linearGradient>
+        <pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="${preset.accent}" opacity=".16"/>
+        </pattern>
+      </defs>
+      <rect width="240" height="180" rx="28" fill="url(#g)"/>
+      <rect width="240" height="180" fill="url(#dots)"/>
+      <circle cx="120" cy="92" r="54" fill="#fffaf4" opacity=".72"/>
+      <text x="120" y="111" text-anchor="middle" font-size="62">${preset.icon}</text>
+      <path d="M38 148 C80 132 148 168 202 143" fill="none" stroke="${preset.accent}" stroke-width="8" stroke-linecap="round" opacity=".28"/>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
 function haversineDistance(origin, destination) {
@@ -2043,8 +2176,8 @@ function getBearing(origin, destination) {
 
 function mapPoint(distanceKm, bearing, index) {
   const maxDistance = 15;
-  const radius = Math.min(distanceKm / maxDistance, 1) * 43;
-  const jitter = ((index % 5) - 2) * 1.4;
+  const radius = Math.min((distanceKm / maxDistance) * 38 * mapZoom, 44);
+  const jitter = ((index % 5) - 2) * 1.1;
   const angle = toRad(bearing);
   return {
     x: 50 + Math.sin(angle) * radius + jitter,

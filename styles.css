@@ -46,6 +46,10 @@ body {
   font-family: "Quicksand", system-ui, sans-serif;
 }
 
+body::before {
+  content: none;
+}
+
 body:has(.modal[open]),
 body:has(.detail-drawer[open]) {
   overflow: hidden;
@@ -104,7 +108,7 @@ a {
   border: 1px solid rgba(217, 197, 183, 0.82);
   border-radius: var(--radius-lg);
   overflow: visible;
-  background: linear-gradient(180deg, #fffdf8 0%, #fff7ef 100%);
+  background: linear-gradient(180deg, rgba(255, 253, 248, 0.96) 0%, rgba(255, 248, 240, 0.94) 100%);
   padding: 12px clamp(16px, 2vw, 28px);
   box-shadow: none;
   backdrop-filter: blur(10px);
@@ -124,15 +128,18 @@ a {
 
 .topbar::after {
   position: absolute;
-  right: 20px;
-  bottom: -22px;
-  left: 20px;
+  right: 16px;
+  bottom: -34px;
+  left: 16px;
   z-index: 0;
-  height: 22px;
-  border-radius: 0 0 999px 999px;
-  background: linear-gradient(180deg, rgba(255, 248, 240, 0.72), rgba(255, 248, 240, 0));
+  height: 34px;
+  border-radius: 0 0 18px 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 244, 0.58) 0%, rgba(255, 250, 244, 0.24) 52%, rgba(255, 250, 244, 0) 100%);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.38) 52%, transparent 100%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.38) 52%, transparent 100%);
+  backdrop-filter: blur(5px) saturate(1.02);
   content: "";
-  filter: blur(0.4px);
   opacity: 0;
   pointer-events: none;
   transition: opacity 160ms ease;
@@ -144,6 +151,17 @@ a {
 }
 
 @media (min-width: 901px) {
+  body::before {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 29;
+    height: calc(var(--shell-edge) + 3px);
+    background: linear-gradient(180deg, #fffefa 0%, #fffaf4 100%);
+    box-shadow: 0 6px 18px rgba(255, 254, 250, 0.92);
+    content: "";
+    pointer-events: none;
+  }
+
   .app-shell {
     padding-top: calc(var(--shell-edge) + 88px);
   }
@@ -155,7 +173,7 @@ a {
     left: max(var(--shell-edge), calc((100vw - var(--app-max-width)) / 2 + var(--shell-edge)));
     z-index: 30;
     min-height: 70px;
-    background: linear-gradient(180deg, #fffdf9 0%, #fff8f0 100%);
+    background: linear-gradient(180deg, rgba(255, 253, 249, 0.97) 0%, rgba(255, 248, 240, 0.95) 100%);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
     backdrop-filter: blur(14px);
   }
@@ -750,9 +768,32 @@ body.is-topbar-elevated .layout::before {
   width: 42px;
   height: 42px;
   place-items: center;
-  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(217, 197, 183, 0.82);
+  border-radius: 14px;
   background: var(--paper);
-  box-shadow: inset 0 0 0 2px rgba(217, 197, 183, 0.68);
+  box-shadow:
+    0 5px 10px rgba(82, 61, 48, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.recent-thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.recent-thumb.favorite {
+  border-color: rgba(180, 105, 82, 0.42);
+}
+
+.recent-thumb.want_to_go {
+  border-color: rgba(122, 132, 80, 0.42);
+}
+
+.recent-thumb.visited {
+  border-color: rgba(150, 105, 76, 0.46);
 }
 
 .recent-item strong,
@@ -1224,8 +1265,9 @@ body.is-topbar-elevated .layout::before {
 .spot-row:focus-within .recent-thumb {
   background: #fffdf8;
   box-shadow:
-    inset 0 0 0 2px rgba(150, 105, 76, 0.7),
-    0 5px 12px rgba(82, 61, 48, 0.1);
+    0 6px 14px rgba(82, 61, 48, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+  border-color: rgba(150, 105, 76, 0.7);
 }
 
 .row-tape {
@@ -1523,6 +1565,7 @@ body.is-topbar-elevated .layout::before {
 
 .cute-map {
   position: relative;
+  isolation: isolate;
   min-height: 520px;
   height: clamp(520px, calc(100dvh - 250px), 760px);
   overflow: hidden;
@@ -1532,6 +1575,54 @@ body.is-topbar-elevated .layout::before {
     radial-gradient(circle at 50% 48%, rgba(255, 255, 250, 0.94) 0 7%, rgba(235, 240, 201, 0.72) 24%, rgba(122, 132, 80, 0.22) 72%),
     linear-gradient(135deg, #f8f1df 0%, #e9e3c2 100%);
   box-shadow: inset 0 0 80px rgba(150, 105, 76, 0.1), var(--soft-shadow);
+  touch-action: none;
+  user-select: none;
+}
+
+.map-zoom-controls {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 12;
+  display: inline-grid;
+  grid-template-columns: 38px minmax(58px, auto) 38px 42px;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid rgba(139, 106, 87, 0.32);
+  border-radius: 999px;
+  background: rgba(255, 250, 244, 0.88);
+  padding: 5px;
+  box-shadow: 0 10px 22px rgba(82, 61, 48, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.map-zoom-controls span {
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.map-zoom-button {
+  display: grid;
+  min-width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid rgba(217, 197, 183, 0.86);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--primary-dark);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.map-zoom-button:hover {
+  border-color: var(--primary-soft);
+  background: var(--paper-warm);
+}
+
+.map-zoom-button.reset {
+  font-size: 12px;
 }
 
 @media (min-width: 901px) {
@@ -1932,14 +2023,22 @@ body.is-topbar-elevated .layout::before {
     radial-gradient(circle, rgba(150, 105, 76, 0.18) 1px, transparent 1.2px) 0 0 / 22px 22px;
 }
 
+#markersLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+}
+
 .range-ring {
   position: absolute;
   left: 50%;
   top: 50%;
   border: 1px dashed rgba(104, 68, 45, 0.26);
   border-radius: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(var(--map-zoom, 1));
+  transform-origin: center;
   pointer-events: none;
+  transition: transform 120ms ease;
 }
 
 .range-ring span {
@@ -1975,9 +2074,11 @@ body.is-topbar-elevated .layout::before {
   border: 0;
   color: var(--ink);
   transform: translate(-50%, -50%);
+  transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
 }
 
 .me-marker {
+  z-index: 6;
   left: 50%;
   top: 50%;
   width: 76px;
@@ -2009,41 +2110,108 @@ body.is-topbar-elevated .layout::before {
 }
 
 .restaurant-marker {
-  width: 62px;
-  height: 62px;
+  width: clamp(88px, calc(82px + var(--map-zoom, 1) * 14px), 126px);
+  min-height: clamp(104px, calc(96px + var(--map-zoom, 1) * 22px), 146px);
+  grid-template-rows: minmax(62px, 1fr) auto;
+  gap: 5px;
+  align-content: start;
+  overflow: visible;
+  border: 2px solid rgba(139, 106, 87, 0.42);
+  border-radius: 18px;
+  background: rgba(255, 250, 244, 0.96);
   padding: 7px;
-  overflow: hidden;
-  border-radius: 50%;
-  background: var(--paper);
-  box-shadow: 0 10px 22px rgba(82, 61, 48, 0.2), inset 0 0 0 3px rgba(104, 68, 45, 0.24);
+  box-shadow:
+    0 12px 22px rgba(82, 61, 48, 0.18),
+    0 2px 0 rgba(139, 106, 87, 0.22);
+}
+
+.restaurant-marker::before {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 38px;
+  height: 14px;
+  border: 1px solid rgba(150, 105, 76, 0.1);
+  background: rgba(244, 196, 157, 0.7);
+  content: "";
+  opacity: 0.86;
+  transform: translateX(-50%) rotate(-3deg);
 }
 
 .restaurant-marker.favorite {
-  background: #f6e4d8;
+  border-color: rgba(180, 105, 82, 0.48);
 }
 
 .restaurant-marker.want_to_go {
-  background: #edf0cd;
+  border-color: rgba(122, 132, 80, 0.48);
 }
 
 .restaurant-marker.visited {
-  background: #fff7ed;
+  border-color: rgba(150, 105, 76, 0.5);
 }
 
 .restaurant-marker.selected {
-  box-shadow: 0 12px 24px rgba(82, 61, 48, 0.22), 0 0 0 5px rgba(150, 105, 76, 0.26), inset 0 0 0 4px var(--primary);
+  border-color: var(--primary);
+  box-shadow:
+    0 16px 30px rgba(82, 61, 48, 0.22),
+    0 0 0 5px rgba(150, 105, 76, 0.24),
+    0 2px 0 rgba(104, 68, 45, 0.34);
+  transform: translate(-50%, -50%) scale(1.08);
 }
 
-.restaurant-marker .marker-icon {
-  position: relative;
-  z-index: 1;
-  font-size: 21px;
-  line-height: 1;
+.restaurant-marker:hover,
+.restaurant-marker:focus-visible {
+  filter: saturate(1.05);
+  transform: translate(-50%, -50%) scale(1.1);
 }
 
-.restaurant-marker .marker-distance {
+.marker-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.28;
+  overflow: hidden;
+  border: 1px solid rgba(139, 106, 87, 0.24);
+  border-radius: 12px;
+  background: var(--paper-warm);
+}
+
+.marker-photo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.marker-caption {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+}
+
+.marker-caption strong {
+  display: block;
+  overflow: hidden;
+  color: var(--primary-dark);
+  font-size: clamp(10px, calc(9px + var(--map-zoom, 1) * 1px), 12px);
+  font-weight: 700;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.marker-caption small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 18px;
+  border-radius: 999px;
+  background: rgba(122, 132, 80, 0.17);
   color: var(--secondary-dark);
-  font-size: 9px;
+  padding: 3px 7px;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .empty-map {
@@ -3156,9 +3324,10 @@ body.is-topbar-elevated .layout::before {
   }
 
   .restaurant-marker {
-    width: 48px;
-    height: 48px;
-    padding: 5px;
+    width: 78px;
+    min-height: 94px;
+    padding: 6px;
+    border-radius: 15px;
   }
 
   .me-marker {
@@ -3170,12 +3339,17 @@ body.is-topbar-elevated .layout::before {
     font-size: 22px;
   }
 
-  .restaurant-marker .marker-icon {
-    font-size: 18px;
+  .marker-caption strong {
+    font-size: 9px;
   }
 
-  .me-marker small,
-  .restaurant-marker small {
+  .me-marker small {
+    font-size: 8px;
+  }
+
+  .marker-caption small {
+    min-height: 16px;
+    padding: 2px 6px;
     font-size: 8px;
   }
 
