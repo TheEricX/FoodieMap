@@ -1,5 +1,4 @@
-const GOOGLE_MAPS_HELP = "推荐复制 Google Maps 浏览器地址栏里的完整链接；短分享链接会由本地服务自动展开。";
-const LOCATION_DENIED_HELP = "定位权限已被浏览器拒绝。请点地址栏左侧图标 > 定位 > 允许或询问，然后再点 Use My Location。";
+const LANGUAGE_KEY = "foodiemap:language";
 const LIST_FILTER_ORDER_KEY = "foodiemap:list-filter-order";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
@@ -13,6 +12,550 @@ const FOOD_PLACEHOLDERS = [
   { icon: "☕", top: "#ead8c9", bottom: "#fff8f0", accent: "#68442d" },
 ];
 
+const translations = {
+  en: {
+    "app.brand": "Gourmet Map",
+    "app.sharedBrand": "Shared Bite",
+    "nav.map": "Map View",
+    "nav.lists": "List View",
+    "nav.discovery": "Discovery",
+    "search.default": "Search for tasty treats...",
+    "search.category": "Search spots in this category...",
+    "search.discovery": "Search curated lists...",
+    "language.label": "Language",
+    "language.english": "English",
+    "language.chinese": "中文",
+    "language.short": "EN",
+    "location.waiting": "Location pending",
+    "location.fetching": "Getting current location...",
+    "location.current": "Current location {lat}, {lng}",
+    "location.denied": "Location permission is blocked. Use the browser address bar permissions menu, allow location, then click Use My Location.",
+    "location.fallback": "Current location is unavailable. Using downtown Toronto for now.",
+    "location.unsupported": "This browser does not support location. Using downtown Toronto for now.",
+    "location.button": "Get current location",
+    "settings.button": "Google API settings",
+    "auth.signIn": "Sign in",
+    "auth.signOutTitle": "{email}, click to sign out",
+    "auth.signInTitle": "Sign in with Google",
+    "auth.signOutConfirm": "Sign out of {email}?",
+    "auth.required": "This action requires Google sign-in. Sign in now?",
+    "api.loginRequired": "Please sign in with Google first.",
+    "api.requestFailed": "Request failed.",
+    "paste.help": "Copy a Google Maps link, then click Paste & Add.",
+    "paste.demo": "Demo mode. Sign in to save cloud data, upload photos, and share spots.",
+    "paste.shared": "A spot shared with you. Preview it here, then sign in to add it to your list.",
+    "paste.noGoogleUrl": "No Google Maps link found in the clipboard.",
+    "paste.duplicateConfirm": "A similar spot already exists:\n\n\"{name}\"\n{address}\nAbout {distance} from the new link coordinates.\n\nCreate a duplicate spot anyway?",
+    "paste.noAddress": "No address",
+    "paste.cancelledDuplicate": "Creation cancelled. Selected existing spot: {name}",
+    "paste.addConfirm": "Add \"{name}\" to Want to Go?",
+    "paste.added": "Added: {name}",
+    "paste.backendOffline": "Backend service is not connected. Start it with python3 server.py 5174.",
+    "google.help": "Copy the full Google Maps browser URL. Short share links will be expanded by the local service.",
+    "google.shortExpanding": "Expanding Google Maps short link...",
+    "google.shortExpanded": "Short link expanded and coordinates filled.",
+    "google.coordsFound": "Coordinates detected from the Google Maps link.",
+    "google.noCoords": "No coordinates found in the link. Open the short link, then copy the full Google Maps address bar URL.",
+    "sidebar.myPantry": "MY PANTRY",
+    "sidebar.smartLists": "SMART LISTS",
+    "sidebar.builtFromMap": "Built from your map",
+    "sidebar.customLists": "CUSTOM LISTS",
+    "sidebar.savedRoutes": "Your saved routes",
+    "sidebar.signInLists": "Sign in to manage lists.",
+    "sidebar.noLists": "No custom lists yet.",
+    "sidebar.dataTools": "Data tools",
+    "button.newSpot": "+ New Spot",
+    "button.addToMyList": "+ Add to My List",
+    "button.pasteAdd": "Paste & Add",
+    "button.export": "Export",
+    "button.import": "Import",
+    "button.resetDemo": "Reset Demo",
+    "button.details": "Details",
+    "button.edit": "Edit",
+    "button.share": "Share",
+    "button.delete": "Delete",
+    "button.remove": "Remove",
+    "button.save": "Save",
+    "button.cancel": "Cancel",
+    "button.copy": "Copy",
+    "button.copied": "Copied",
+    "button.map": "Map",
+    "button.google": "Google",
+    "button.add": "Add",
+    "button.done": "Done",
+    "button.close": "Close",
+    "button.openMap": "Open on Map",
+    "button.createList": "Create List",
+    "button.updateList": "Update List",
+    "button.publish": "Publish",
+    "button.unpublish": "Unpublish",
+    "button.addSpots": "Add Spots",
+    "button.deleteList": "Delete List",
+    "button.copyToMyLists": "Copy to My Lists",
+    "button.createShareLink": "Create Share Link",
+    "button.saveSettings": "Save Settings",
+    "button.addMenu": "+ Add Menu",
+    "button.closeAddMenu": "Close",
+    "button.addDish": "Add Dish",
+    "button.replacePhoto": "Replace photo",
+    "map.view": "MAP VIEW",
+    "map.summary": "{count} spots · sorted by distance from you",
+    "map.sorted": "Sorted by distance from you",
+    "map.emptyTitle": "Add your first restaurant",
+    "map.emptyBody": "Save an address or Google Maps link, and it will appear on this playful relative map.",
+    "map.selectedSpot": "SELECTED SPOT",
+    "map.selected": "Selected",
+    "map.chooseSpot": "Choose a restaurant",
+    "map.spotHint": "Click a restaurant marker to view details.",
+    "map.noNotes": "No notes yet.",
+    "map.openGoogle": "Open Google Maps ›",
+    "map.noMatches": "No matching restaurants",
+    "map.zoomOut": "Zoom out",
+    "map.zoomIn": "Zoom in",
+    "map.zoomReset": "Reset zoom",
+    "count.places": "{count} places",
+    "count.spots": "{count} spots",
+    "count.copies": "{count} copies",
+    "count.visits": "{count} visits",
+    "sort.nearest": "Nearest first",
+    "status.visited": "Visited",
+    "status.want_to_go": "Want to Go",
+    "status.favorite": "Favorite",
+    "status.unknown": "Unknown",
+    "status.liked": "Liked",
+    "status.tried": "Tried",
+    "visibility.public": "Public",
+    "visibility.private": "Private",
+    "distance.pending": "Distance pending",
+    "system.all.title": "All Spots",
+    "system.all.eyebrow": "EVERYTHING",
+    "system.all.description": "Every restaurant saved on your map.",
+    "system.visited.title": "Visited",
+    "system.visited.eyebrow": "BEEN THERE",
+    "system.visited.description": "Places you have already tried.",
+    "system.want_to_go.title": "Want to Go",
+    "system.want_to_go.eyebrow": "NEXT UP",
+    "system.want_to_go.description": "Restaurants waiting for a first visit.",
+    "system.favorite.title": "Favorites",
+    "system.favorite.eyebrow": "LOVED",
+    "system.favorite.description": "Your favorite spots in one quick list.",
+    "list.smart": "SMART LIST",
+    "list.custom": "CUSTOM LIST",
+    "list.publicCustom": "PUBLIC CUSTOM LIST",
+    "list.public": "PUBLIC LIST",
+    "list.private": "PRIVATE LIST",
+    "list.choose": "Choose a list",
+    "list.chooseDescription": "Select a custom list on the left to view its spots.",
+    "list.customDescription": "Custom category from your saved restaurants.",
+    "list.noDescription": "No description yet.",
+    "list.updated": "Updated {date}",
+    "list.manage": "Manage",
+    "list.noSmartSpots": "No spots in this smart list yet.",
+    "list.noSearchResults": "No spots match this search.",
+    "list.empty": "This list is empty. Add spots from your map.",
+    "list.needSignIn": "Choose a smart list on the left, or sign in to manage custom lists.",
+    "list.createThenAdd": "Create a list, then add spots from your map.",
+    "list.newMode": "NEW_LIST",
+    "list.editMode": "EDIT_LIST",
+    "list.createTitle": "Create List",
+    "list.editTitle": "Edit List",
+    "list.defaultPrivate": "Lists are private by default. Publish when you want them to appear in Discovery.",
+    "list.editHelp": "Changes affect My Lists immediately. Public lists also update in Discovery.",
+    "list.titleRequired": "Enter a list title.",
+    "list.saving": "Saving...",
+    "list.publishNeedsSpot": "Add at least one restaurant before publishing.",
+    "list.deleteConfirm": "Delete list \"{title}\"? Restaurant records will not be deleted.",
+    "list.selectFirst": "Select a list first.",
+    "list.inThisList": "In this list",
+    "list.noRestaurantMatches": "No restaurants match this search.",
+    "discovery.communityPicks": "COMMUNITY PICKS",
+    "discovery.title": "Pantry Discovery",
+    "discovery.body": "Explore public taste maps shared by the Gourmet Map community.",
+    "discovery.sortLabel": "Discovery sort",
+    "discovery.popular": "Popular",
+    "discovery.recent": "Recent",
+    "discovery.publicLists": "PUBLIC LISTS",
+    "discovery.publishedBy": "Published by food explorers",
+    "discovery.noSearch": "No public lists match this search.",
+    "discovery.trySearch": "Try another search to open a public list here.",
+    "discovery.signIn": "Discovery only shows public lists. Sign in to publish your own.",
+    "discovery.privateHidden": "Private lists stay hidden until their owner publishes them.",
+    "discovery.createList": "No public lists yet. Create a custom list, add spots, then publish it.",
+    "discovery.publishedOpen": "Published lists will open here after someone shares one.",
+    "discovery.readyToPublish": "No public lists yet. \"{title}\" is ready to publish.",
+    "discovery.publishHelp": "Open your list, then use Manage > Publish when you are ready to share it.",
+    "discovery.addSpots": "No public lists yet. Add spots to a custom list before publishing.",
+    "discovery.needsSpot": "A list needs at least one spot before it can appear in Discovery.",
+    "discovery.publicPick": "PUBLIC PICK",
+    "discovery.byOwner": "by {name}",
+    "discovery.foodie": "Foodie",
+    "discovery.noVisible": "This public list has no visible spots.",
+    "discovery.addressHidden": "Address not shared",
+    "discovery.loading": "Loading public list...",
+    "modal.closeDetails": "Close details",
+    "detail.journal": "RESTAURANT JOURNAL",
+    "detail.restaurant": "Restaurant",
+    "detail.review": "MY REVIEW",
+    "detail.reviewTitle": "Restaurant review",
+    "detail.status": "Status",
+    "detail.rating": "Rating",
+    "detail.visitCount": "Visit count",
+    "detail.notes": "My notes",
+    "detail.notesPlaceholder": "Write when this place works best, what to order again, or what to avoid.",
+    "detail.autosave": "Changes autosave to your restaurant review.",
+    "detail.demo": "Demo mode is view-only. Sign in to save reviews, menu notes, and photos.",
+    "detail.signInAutosave": "Sign in to autosave restaurant reviews.",
+    "detail.autosavingReview": "Autosaving restaurant review...",
+    "detail.reviewSaved": "Restaurant review saved.",
+    "detail.menuNotes": "MENU NOTES",
+    "detail.menuTitle": "Menu notes",
+    "detail.dishName": "Dish name",
+    "detail.dishNotes": "Dish notes",
+    "detail.dishNotesPlaceholder": "What did you think of this dish?",
+    "detail.uploadPhoto": "Upload photo",
+    "detail.uploadHint": "Click to upload or drag image here",
+    "detail.noMenu": "No menu notes yet. Add the first dish to rate it, upload a photo, and write notes.",
+    "detail.noDishNotes": "No notes for this dish yet.",
+    "detail.cancelledDish": "New menu item cancelled.",
+    "detail.deletedDish": "Menu item deleted.",
+    "detail.dishRequired": "Dish name is required.",
+    "detail.addingMenu": "Adding menu item...",
+    "detail.addedMenu": "Menu item added.",
+    "detail.savingMenu": "Saving menu item...",
+    "detail.menuSaved": "Menu item saved.",
+    "detail.uploading": "Uploading image...",
+    "detail.uploaded": "Image uploaded.",
+    "detail.deleteDishConfirm": "Delete this dish?",
+    "spot.newMode": "NEW_SPOT",
+    "spot.editMode": "EDIT_SPOT",
+    "spot.saveTitle": "Save a Bite",
+    "spot.editTitle": "Edit Bite",
+    "spot.saveButton": "Save Spot",
+    "spot.updateButton": "Update Spot",
+    "spot.editHelp": "Update the restaurant record, menu notes, and photos below.",
+    "spot.name": "Name",
+    "spot.namePlaceholder": "Auto-detected, or enter a restaurant name",
+    "spot.address": "Address",
+    "spot.addressPlaceholder": "Optional: record the address manually",
+    "spot.googleUrl": "Google Maps link",
+    "spot.googleUrlPlaceholder": "Paste a full Google Maps link to detect name and coordinates",
+    "spot.lat": "Latitude",
+    "spot.lng": "Longitude",
+    "spot.coordPlaceholder": "Auto-filled",
+    "spot.notes": "Notes",
+    "spot.notesPlaceholder": "Rich broth, good for a slow dinner after work.",
+    "spot.dishes": "DISHES",
+    "spot.dishRecords": "Dish records",
+    "spot.dishPlaceholder": "Dish name, e.g. Black Garlic Tonkotsu",
+    "spot.noDishes": "No dish records yet.",
+    "spot.dishNameRequired": "Enter a dish name.",
+    "spot.deleteDishConfirm": "Delete this dish?",
+    "spot.deleteConfirm": "Delete \"{name}\"?\n\nThis will also delete its menu notes and photos.",
+    "spot.untitled": "Untitled Spot",
+    "share.mode": "SHARE",
+    "share.title": "Share This Spot",
+    "share.help": "Choose the dishes you want to recommend, then create a share link.",
+    "share.noDishes": "This spot has no dishes yet. Edit the spot and add dishes before sharing.",
+    "share.link": "Share link",
+    "share.linkPlaceholder": "Link appears after creation",
+    "listForm.titleLabel": "Title",
+    "listForm.descriptionLabel": "Description",
+    "listForm.descriptionPlaceholder": "Describe the occasion or theme for this restaurant group.",
+    "listForm.coverLabel": "Cover URL (optional)",
+    "listForm.coverPlaceholder": "Leave blank to use a dish photo from the list",
+    "manageSpots.mode": "MANAGE_SPOTS",
+    "manageSpots.title": "Manage Spots",
+    "manageSpots.search": "Search restaurants",
+    "manageSpots.searchPlaceholder": "Search your map...",
+    "manageSpots.help": "Restaurants already in the list can be removed here. Restaurant records are not deleted.",
+    "settings.mode": "SETTINGS",
+    "settings.title": "Google API",
+    "settings.keyLabel": "Google Geocoding API Key",
+    "settings.help": "The MVP prefers Google Maps links and manual coordinates. A Google Geocoding API key is only needed when you enter an address without coordinates.",
+    "import.cloudOnly": "Cloud data does not import local JSON yet.",
+    "reset.cloudOnly": "After sign-in, data is stored in the cloud. Reset Demo is not used.",
+  },
+  zh: {
+    "app.brand": "美食地图",
+    "app.sharedBrand": "分享餐厅",
+    "nav.map": "地图视图",
+    "nav.lists": "列表视图",
+    "nav.discovery": "发现",
+    "search.default": "搜索好吃的...",
+    "search.category": "搜索当前分类里的餐厅...",
+    "search.discovery": "搜索公开清单...",
+    "language.label": "语言",
+    "language.english": "English",
+    "language.chinese": "中文",
+    "language.short": "中",
+    "location.waiting": "等待定位",
+    "location.fetching": "正在获取当前位置...",
+    "location.current": "当前位置 {lat}, {lng}",
+    "location.denied": "定位权限已被浏览器拒绝。请点地址栏左侧图标 > 定位 > 允许或询问，然后再点 Use My Location。",
+    "location.fallback": "暂时无法获取当前位置，使用多伦多市中心作为临时位置。",
+    "location.unsupported": "浏览器不支持定位，使用多伦多市中心作为临时位置。",
+    "location.button": "获取当前位置",
+    "settings.button": "Google API 设置",
+    "auth.signIn": "登录",
+    "auth.signOutTitle": "{email}，点击退出登录",
+    "auth.signInTitle": "使用 Google 登录",
+    "auth.signOutConfirm": "退出 {email} 吗？",
+    "auth.required": "这个操作需要 Google 登录。现在登录吗？",
+    "api.loginRequired": "请先使用 Google 登录。",
+    "api.requestFailed": "请求失败。",
+    "paste.help": "复制 Google Maps 链接后点 Paste & Add。",
+    "paste.demo": "当前是演示模式。登录后可保存云端数据、上传图片和分享。",
+    "paste.shared": "朋友分享给你的店铺。可以预览，登录后一键加入自己的列表。",
+    "paste.noGoogleUrl": "剪贴板里没有 Google Maps 链接。",
+    "paste.duplicateConfirm": "已经找到很像的餐厅：\n\n「{name}」\n{address}\n距离新链接坐标约 {distance}\n\n还要继续创建一个新的重复记录吗？",
+    "paste.noAddress": "没有地址",
+    "paste.cancelledDuplicate": "已取消创建，已选中现有餐厅：{name}",
+    "paste.addConfirm": "添加「{name}」到想去吗？",
+    "paste.added": "已添加：{name}",
+    "paste.backendOffline": "后端服务未连接。请用 python3 server.py 5174 启动。",
+    "google.help": "推荐复制 Google Maps 浏览器地址栏里的完整链接；短分享链接会由本地服务自动展开。",
+    "google.shortExpanding": "正在展开 Google Maps 短链接...",
+    "google.shortExpanded": "短链接已展开并填入坐标。",
+    "google.coordsFound": "已从 Google Maps 链接识别坐标。",
+    "google.noCoords": "没有从链接识别到坐标。请打开短链接后复制完整 Google Maps 地址栏链接。",
+    "sidebar.myPantry": "我的美食库",
+    "sidebar.smartLists": "智能分类",
+    "sidebar.builtFromMap": "根据你的地图生成",
+    "sidebar.customLists": "自定义清单",
+    "sidebar.savedRoutes": "你的收藏路线",
+    "sidebar.signInLists": "登录后可管理清单。",
+    "sidebar.noLists": "还没有自定义清单。",
+    "sidebar.dataTools": "数据工具",
+    "button.newSpot": "+ 新餐厅",
+    "button.addToMyList": "+ 加入我的列表",
+    "button.pasteAdd": "粘贴并添加",
+    "button.export": "导出",
+    "button.import": "导入",
+    "button.resetDemo": "重置演示",
+    "button.details": "详情",
+    "button.edit": "编辑",
+    "button.share": "分享",
+    "button.delete": "删除",
+    "button.remove": "移除",
+    "button.save": "保存",
+    "button.cancel": "取消",
+    "button.copy": "复制",
+    "button.copied": "已复制",
+    "button.map": "地图",
+    "button.google": "Google",
+    "button.add": "添加",
+    "button.done": "完成",
+    "button.close": "关闭",
+    "button.openMap": "在地图打开",
+    "button.createList": "创建清单",
+    "button.updateList": "更新清单",
+    "button.publish": "发布",
+    "button.unpublish": "取消发布",
+    "button.addSpots": "添加餐厅",
+    "button.deleteList": "删除清单",
+    "button.copyToMyLists": "复制到我的清单",
+    "button.createShareLink": "生成分享链接",
+    "button.saveSettings": "保存设置",
+    "button.addMenu": "+ 添加菜品",
+    "button.closeAddMenu": "关闭",
+    "button.addDish": "添加菜品",
+    "button.replacePhoto": "替换照片",
+    "map.view": "地图视图",
+    "map.summary": "{count} 个餐厅 · 按距离排序",
+    "map.sorted": "按与你的距离排序",
+    "map.emptyTitle": "添加第一家餐厅",
+    "map.emptyBody": "保存地址或 Google Maps 链接后，它会出现在这张 Q 版相对地图上。",
+    "map.selectedSpot": "选中餐厅",
+    "map.selected": "已选中",
+    "map.chooseSpot": "选择一家餐厅",
+    "map.spotHint": "点击地图上的餐厅图标查看详情。",
+    "map.noNotes": "还没有记录想法。",
+    "map.openGoogle": "打开 Google Maps ›",
+    "map.noMatches": "没有匹配餐厅",
+    "map.zoomOut": "缩小",
+    "map.zoomIn": "放大",
+    "map.zoomReset": "重置缩放",
+    "count.places": "{count} 个地点",
+    "count.spots": "{count} 个餐厅",
+    "count.copies": "{count} 次复制",
+    "count.visits": "{count} 次访问",
+    "sort.nearest": "距离最近",
+    "status.visited": "去过",
+    "status.want_to_go": "想去",
+    "status.favorite": "最爱",
+    "status.unknown": "未知",
+    "status.liked": "喜欢",
+    "status.tried": "尝过",
+    "visibility.public": "公开",
+    "visibility.private": "私密",
+    "distance.pending": "等待定位",
+    "system.all.title": "全部餐厅",
+    "system.all.eyebrow": "全部",
+    "system.all.description": "地图上保存的所有餐厅。",
+    "system.visited.title": "去过",
+    "system.visited.eyebrow": "已经吃过",
+    "system.visited.description": "已经尝试过的餐厅。",
+    "system.want_to_go.title": "想去",
+    "system.want_to_go.eyebrow": "下一站",
+    "system.want_to_go.description": "等待第一次拜访的餐厅。",
+    "system.favorite.title": "最爱",
+    "system.favorite.eyebrow": "喜欢",
+    "system.favorite.description": "你最喜欢的餐厅合集。",
+    "list.smart": "智能分类",
+    "list.custom": "自定义清单",
+    "list.publicCustom": "公开自定义清单",
+    "list.public": "公开清单",
+    "list.private": "私密清单",
+    "list.choose": "选择清单",
+    "list.chooseDescription": "从左侧选择一个自定义清单来查看餐厅。",
+    "list.customDescription": "由你保存的餐厅组成的自定义分类。",
+    "list.noDescription": "还没有描述。",
+    "list.updated": "更新于 {date}",
+    "list.manage": "管理",
+    "list.noSmartSpots": "这个智能分类里还没有餐厅。",
+    "list.noSearchResults": "没有匹配的餐厅。",
+    "list.empty": "这个清单还是空的。请从你的地图添加餐厅。",
+    "list.needSignIn": "从左侧选择智能分类，或登录后管理自定义清单。",
+    "list.createThenAdd": "先创建一个清单，再从地图添加餐厅。",
+    "list.newMode": "新清单",
+    "list.editMode": "编辑清单",
+    "list.createTitle": "创建清单",
+    "list.editTitle": "编辑清单",
+    "list.defaultPrivate": "清单默认私密；发布后才会出现在 Discovery。",
+    "list.editHelp": "修改会立即影响我的清单；公开清单会同步更新发现页展示。",
+    "list.titleRequired": "请输入清单标题。",
+    "list.saving": "正在保存...",
+    "list.publishNeedsSpot": "至少添加一家餐厅后才能发布。",
+    "list.deleteConfirm": "删除清单「{title}」吗？餐厅记录不会被删除。",
+    "list.selectFirst": "请先选择一个清单。",
+    "list.inThisList": "已在此清单",
+    "list.noRestaurantMatches": "没有匹配餐厅。",
+    "discovery.communityPicks": "社区精选",
+    "discovery.title": "美食发现",
+    "discovery.body": "探索 Gourmet Map 社区分享的公开口味地图。",
+    "discovery.sortLabel": "Discovery 排序",
+    "discovery.popular": "热门",
+    "discovery.recent": "最新",
+    "discovery.publicLists": "公开清单",
+    "discovery.publishedBy": "由美食探索者发布",
+    "discovery.noSearch": "没有匹配的公开清单。",
+    "discovery.trySearch": "换个搜索词，在这里打开公开清单。",
+    "discovery.signIn": "发现页只展示公开清单。登录后可以发布你的清单。",
+    "discovery.privateHidden": "私密清单会保持隐藏，直到拥有者发布。",
+    "discovery.createList": "还没有公开清单。先创建自定义清单、添加餐厅，然后发布。",
+    "discovery.publishedOpen": "有人分享公开清单后会显示在这里。",
+    "discovery.readyToPublish": "还没有公开清单。「{title}」已经可以发布。",
+    "discovery.publishHelp": "打开你的清单，准备好后用 管理 > 发布 进行发布。",
+    "discovery.addSpots": "还没有公开清单。发布前请先给自定义清单添加餐厅。",
+    "discovery.needsSpot": "清单至少需要一家餐厅才会出现在 Discovery。",
+    "discovery.publicPick": "公开精选",
+    "discovery.byOwner": "来自 {name}",
+    "discovery.foodie": "美食用户",
+    "discovery.noVisible": "这个公开清单没有可见餐厅。",
+    "discovery.addressHidden": "地址未分享",
+    "discovery.loading": "正在加载公开清单...",
+    "modal.closeDetails": "关闭详情",
+    "detail.journal": "餐厅日志",
+    "detail.restaurant": "餐厅",
+    "detail.review": "我的评价",
+    "detail.reviewTitle": "餐厅评价",
+    "detail.status": "状态",
+    "detail.rating": "评分",
+    "detail.visitCount": "去过次数",
+    "detail.notes": "我的想法",
+    "detail.notesPlaceholder": "写下这家店适合什么场景、想再点什么、有没有避雷。",
+    "detail.autosave": "修改后会自动保存餐厅评价。",
+    "detail.demo": "演示模式可查看；登录后可以保存评价、菜单和图片。",
+    "detail.signInAutosave": "登录后会自动保存餐厅评价。",
+    "detail.autosavingReview": "正在自动保存餐厅评价...",
+    "detail.reviewSaved": "已自动保存餐厅评价。",
+    "detail.menuNotes": "菜单记录",
+    "detail.menuTitle": "菜单记录",
+    "detail.dishName": "菜品名称",
+    "detail.dishNotes": "菜品想法",
+    "detail.dishNotesPlaceholder": "这道菜的感想",
+    "detail.uploadPhoto": "上传照片",
+    "detail.uploadHint": "点击上传或拖拽图片到这里",
+    "detail.noMenu": "还没有菜单记录。添加第一道菜后，可以给它评分、上传图片、写感想。",
+    "detail.noDishNotes": "还没有记录这道菜的感想。",
+    "detail.cancelledDish": "已取消新增菜单。",
+    "detail.deletedDish": "已删除菜单。",
+    "detail.dishRequired": "菜品名称不能为空。",
+    "detail.addingMenu": "正在添加菜单...",
+    "detail.addedMenu": "已添加菜单。",
+    "detail.savingMenu": "正在保存菜单...",
+    "detail.menuSaved": "已自动保存菜单。",
+    "detail.uploading": "正在上传图片...",
+    "detail.uploaded": "已上传图片。",
+    "detail.deleteDishConfirm": "删除这道菜吗？",
+    "spot.newMode": "新餐厅",
+    "spot.editMode": "编辑餐厅",
+    "spot.saveTitle": "保存餐厅",
+    "spot.editTitle": "编辑餐厅",
+    "spot.saveButton": "保存餐厅",
+    "spot.updateButton": "更新餐厅",
+    "spot.editHelp": "可以更新店铺记录，也可以在下方维护菜品和图片。",
+    "spot.name": "店名",
+    "spot.namePlaceholder": "自动识别，或手动输入店名",
+    "spot.address": "地址",
+    "spot.addressPlaceholder": "可选：手动记录地址",
+    "spot.googleUrl": "Google Maps 链接",
+    "spot.googleUrlPlaceholder": "粘贴 Google Maps 完整链接，自动识别店名和坐标",
+    "spot.lat": "纬度",
+    "spot.lng": "经度",
+    "spot.coordPlaceholder": "自动填入",
+    "spot.notes": "想法",
+    "spot.notesPlaceholder": "汤底浓郁，适合下班后一个人慢慢吃。",
+    "spot.dishes": "菜品",
+    "spot.dishRecords": "菜品记录",
+    "spot.dishPlaceholder": "菜品名称，例如 Black Garlic Tonkotsu",
+    "spot.noDishes": "还没有菜品记录。",
+    "spot.dishNameRequired": "请输入菜品名称。",
+    "spot.deleteDishConfirm": "删除这个菜品吗？",
+    "spot.deleteConfirm": "确定删除「{name}」吗？\n\n这会同时删除这家店的菜单和图片记录。",
+    "spot.untitled": "未命名餐厅",
+    "share.mode": "分享",
+    "share.title": "分享这家餐厅",
+    "share.help": "选择这次要推荐给朋友的菜品，然后生成分享链接。",
+    "share.noDishes": "这家店还没有菜品。可以先编辑店铺添加菜品，再分享。",
+    "share.link": "分享链接",
+    "share.linkPlaceholder": "生成后显示链接",
+    "listForm.titleLabel": "标题",
+    "listForm.descriptionLabel": "描述",
+    "listForm.descriptionPlaceholder": "记录这组餐厅适合什么场景。",
+    "listForm.coverLabel": "封面 URL（可选）",
+    "listForm.coverPlaceholder": "不填时自动使用清单内菜品图片",
+    "manageSpots.mode": "管理餐厅",
+    "manageSpots.title": "管理餐厅",
+    "manageSpots.search": "搜索餐厅",
+    "manageSpots.searchPlaceholder": "搜索你的地图...",
+    "manageSpots.help": "已加入的餐厅可从这里移除；餐厅记录本身不会被删除。",
+    "settings.mode": "设置",
+    "settings.title": "Google API",
+    "settings.keyLabel": "Google Geocoding API Key",
+    "settings.help": "MVP 默认优先解析 Google Maps 链接和手动经纬度；只有只填地址时才需要 Google Geocoding API。",
+    "import.cloudOnly": "云端版本暂不导入本地 JSON。",
+    "reset.cloudOnly": "登录后数据保存在云端，不使用 Reset Demo。",
+  },
+};
+
+let currentLanguage = getInitialLanguage();
+
+function getInitialLanguage() {
+  try {
+    const stored = localStorage.getItem(LANGUAGE_KEY);
+    return stored === "zh" ? "zh" : "en";
+  } catch {
+    return "en";
+  }
+}
+
+function t(key, params = {}) {
+  const dictionary = translations[currentLanguage] || translations.en;
+  const fallback = translations.en[key] || key;
+  return String(dictionary[key] || fallback).replace(/\{(\w+)\}/g, (_, name) => params[name] ?? "");
+}
+
 const demoRestaurants = [
   {
     id: "demo-hachi",
@@ -24,7 +567,7 @@ const demoRestaurants = [
     status: "visited",
     visit_count: 3,
     personal_rating: 4.9,
-    notes: "汤底浓郁，适合寒冷晚上。队伍可能有点久。",
+    notes: "Rich broth, good for cold evenings. The line can be a little long.",
     dishes: [
       { id: "demo-dish-1", name: "Tonkotsu", dish_status: "liked", rating: 4.9, image_url: "", notes: "" },
       { id: "demo-dish-2", name: "Gyoza", dish_status: "tried", rating: 4.4, image_url: "", notes: "" },
@@ -40,7 +583,7 @@ const demoRestaurants = [
     status: "want_to_go",
     visit_count: 0,
     personal_rating: 4.5,
-    notes: "想试明太子饭团和抹茶。",
+    notes: "Want to try the mentaiko rice ball and matcha.",
     dishes: [{ id: "demo-dish-3", name: "Mentaiko", dish_status: "liked", rating: 4.5, image_url: "", notes: "" }],
   },
   {
@@ -53,16 +596,16 @@ const demoRestaurants = [
     status: "favorite",
     visit_count: 2,
     personal_rating: 4.8,
-    notes: "甜品稳定，适合周末下午。",
+    notes: "Reliable desserts, good for a weekend afternoon.",
     dishes: [{ id: "demo-dish-4", name: "Matcha Latte", dish_status: "liked", rating: 4.8, image_url: "", notes: "" }],
   },
 ];
 
 const systemLists = [
-  { key: "all", title: "All Spots", eyebrow: "EVERYTHING", icon: "◎", description: "Every restaurant saved on your map.", filter: "all" },
-  { key: "visited", title: "Visited", eyebrow: "BEEN THERE", icon: "🍴", description: "Places you have already tried.", filter: "visited" },
-  { key: "want_to_go", title: "Want to Go", eyebrow: "NEXT UP", icon: "⌑", description: "Restaurants waiting for a first visit.", filter: "want_to_go" },
-  { key: "favorite", title: "Favorites", eyebrow: "LOVED", icon: "♥", description: "Your favorite spots in one quick list.", filter: "favorite" },
+  { key: "all", icon: "◎", filter: "all" },
+  { key: "visited", icon: "🍴", filter: "visited" },
+  { key: "want_to_go", icon: "⌑", filter: "want_to_go" },
+  { key: "favorite", icon: "♥", filter: "favorite" },
 ];
 
 let restaurants = [];
@@ -103,6 +646,9 @@ const elements = {
   locateButton: document.querySelector("#locateButton"),
   mapLocateButton: document.querySelector("#mapLocateButton"),
   settingsButton: document.querySelector("#settingsButton"),
+  languageMenu: document.querySelector("#languageMenu"),
+  languageLabel: document.querySelector("#languageLabel"),
+  languageOptions: document.querySelectorAll("[data-language-option]"),
   loginButton: document.querySelector("#loginButton"),
   openAddPanel: document.querySelector("#openAddPanel"),
   pasteAddButton: document.querySelector("#pasteAddButton"),
@@ -211,6 +757,7 @@ const elements = {
 boot();
 
 async function boot() {
+  translateStaticDom();
   bindEvents();
   await loadMe();
   if (shareToken) {
@@ -299,13 +846,16 @@ function bindEvents() {
   elements.shareForm.addEventListener("submit", createShareLink);
   elements.copyShareButton.addEventListener("click", copyShareLink);
   elements.exportButton.addEventListener("click", exportRestaurants);
-  elements.importButton.addEventListener("click", () => alert("云端版本暂不导入本地 JSON。"));
+  elements.importButton.addEventListener("click", () => alert(t("import.cloudOnly")));
   elements.resetButton.addEventListener("click", resetDemoData);
   elements.settingsButton.addEventListener("click", () => elements.settingsDialog.showModal());
   elements.closeSettings.addEventListener("click", () => elements.settingsDialog.close());
   elements.settingsForm.addEventListener("submit", (event) => {
     event.preventDefault();
     elements.settingsDialog.close();
+  });
+  elements.languageOptions.forEach((button) => {
+    button.addEventListener("click", () => setLanguage(button.dataset.languageOption));
   });
 
   document.querySelectorAll(".filter-item").forEach((button) => {
@@ -315,6 +865,65 @@ function bindEvents() {
       selectFirstVisibleRestaurant();
       render();
     });
+  });
+}
+
+function setLanguage(language) {
+  const nextLanguage = language === "zh" ? "zh" : "en";
+  if (nextLanguage === currentLanguage) {
+    elements.languageMenu?.removeAttribute("open");
+    return;
+  }
+  currentLanguage = nextLanguage;
+  try {
+    localStorage.setItem(LANGUAGE_KEY, currentLanguage);
+  } catch {
+    // Ignore storage failures; the current page can still switch language.
+  }
+  translateStaticDom();
+  renderShareChrome();
+  renderAuth();
+  render();
+  refreshOpenDialogLanguage();
+  if (elements.spotDetailDialog.open) renderSpotDetail(selectedRestaurant());
+  if (elements.addSpotsDialog.open) renderAddSpotsDialog();
+  elements.languageMenu?.removeAttribute("open");
+}
+
+function refreshOpenDialogLanguage() {
+  if (elements.addDialog.open) {
+    elements.formModeLabel.textContent = editingRestaurantId ? t("spot.editMode") : t("spot.newMode");
+    elements.formTitle.textContent = editingRestaurantId ? t("spot.editTitle") : t("spot.saveTitle");
+    elements.saveSpotButton.textContent = editingRestaurantId ? t("spot.updateButton") : t("spot.saveButton");
+    elements.formHelp.textContent = editingRestaurantId ? t("spot.editHelp") : t("google.help");
+  }
+  if (elements.listDialog.open) {
+    elements.listFormMode.textContent = editingListId ? t("list.editMode") : t("list.newMode");
+    elements.listFormTitle.textContent = editingListId ? t("list.editTitle") : t("list.createTitle");
+    elements.saveListButton.textContent = editingListId ? t("button.updateList") : t("button.createList");
+    elements.listFormHelp.textContent = editingListId ? t("list.editHelp") : t("list.defaultPrivate");
+  }
+}
+
+function translateStaticDom() {
+  document.documentElement.lang = currentLanguage === "zh" ? "zh-CN" : "en";
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    node.textContent = t(node.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+    node.setAttribute("placeholder", t(node.dataset.i18nPlaceholder));
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+    node.setAttribute("title", t(node.dataset.i18nTitle));
+  });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((node) => {
+    node.setAttribute("aria-label", t(node.dataset.i18nAriaLabel));
+  });
+  if (elements.languageLabel) elements.languageLabel.textContent = t("language.short");
+  elements.languageOptions?.forEach((button) => {
+    const active = button.dataset.languageOption === currentLanguage;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
   });
 }
 
@@ -333,11 +942,11 @@ async function api(path, options = {}) {
     },
   });
   if (response.status === 401) {
-    throw new Error("请先使用 Google 登录。");
+    throw new Error(t("api.loginRequired"));
   }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.detail || data.error || "请求失败。");
+    throw new Error(data.detail || data.error || t("api.requestFailed"));
   }
   return data;
 }
@@ -353,11 +962,13 @@ async function loadMe() {
 }
 
 function renderAuth() {
-  elements.loginButton.textContent = currentUser ? shortUserName(currentUser) : "Sign in";
-  elements.loginButton.title = currentUser ? `${currentUser.email}，点击退出登录` : "使用 Google 登录";
-  elements.pasteStatus.textContent = currentUser
-    ? "复制 Google Maps 链接后点 Paste & Add。"
-    : "当前是演示模式。登录后可保存云端数据、上传图片和分享。";
+  elements.loginButton.textContent = currentUser ? shortUserName(currentUser) : t("auth.signIn");
+  elements.loginButton.title = currentUser ? t("auth.signOutTitle", { email: currentUser.email }) : t("auth.signInTitle");
+  elements.pasteStatus.textContent = shareToken
+    ? t("paste.shared")
+    : currentUser
+    ? t("paste.help")
+    : t("paste.demo");
 }
 
 async function handleLoginButton() {
@@ -365,7 +976,7 @@ async function handleLoginButton() {
     window.location.href = `/auth/google/login?next=${encodeURIComponent(location.pathname + location.search)}`;
     return;
   }
-  if (!confirm(`退出 ${currentUser.email} 吗？`)) return;
+  if (!confirm(t("auth.signOutConfirm", { email: currentUser.email }))) return;
   await api("/auth/logout", { method: "POST" });
   currentUser = null;
   restaurants = demoRestaurants.map(cloneRestaurant);
@@ -437,20 +1048,26 @@ async function loadSharePage(token) {
   restaurants = [normalizeRestaurant({ ...shareData.restaurant, dishes: shareData.dishes })];
   selectedRestaurantId = restaurants[0].id;
   isSpotCardOpen = true;
-  document.querySelector(".brand span:last-child").textContent = "Shared Bite";
-  elements.openAddPanel.textContent = "＋ Add to My List";
+  renderShareChrome();
   elements.openAddPanel.onclick = addSharedRestaurant;
   elements.pasteAddButton.hidden = true;
   elements.shareSpot.disabled = true;
   elements.editSpot.disabled = true;
   elements.deleteSpot.disabled = true;
-  elements.pasteStatus.textContent = "朋友分享给你的店铺。可以预览，登录后一键加入自己的列表。";
+  elements.pasteStatus.textContent = t("paste.shared");
   render();
+}
+
+function renderShareChrome() {
+  if (!shareToken) return;
+  document.querySelector(".brand span:last-child").textContent = t("app.sharedBrand");
+  elements.openAddPanel.textContent = t("button.addToMyList");
+  elements.pasteStatus.textContent = t("paste.shared");
 }
 
 function requireLogin() {
   if (currentUser) return true;
-  if (confirm("这个操作需要 Google 登录。现在登录吗？")) {
+  if (confirm(t("auth.required"))) {
     window.location.href = `/auth/google/login?next=${encodeURIComponent(location.pathname + location.search)}`;
   }
   return false;
@@ -480,10 +1097,10 @@ function openEditDialog() {
   if (!selected) return;
 
   editingRestaurantId = selected.id;
-  elements.formModeLabel.textContent = "EDIT_SPOT";
-  elements.formTitle.textContent = "Edit Bite";
-  elements.saveSpotButton.textContent = "Update Spot";
-  elements.formHelp.textContent = "可以更新店铺记录，也可以在下方维护菜品和图片。";
+  elements.formModeLabel.textContent = t("spot.editMode");
+  elements.formTitle.textContent = t("spot.editTitle");
+  elements.saveSpotButton.textContent = t("spot.updateButton");
+  elements.formHelp.textContent = t("spot.editHelp");
   fillRestaurantForm(selected);
   renderDishEditor(selected);
   elements.dishEditor.hidden = false;
@@ -512,10 +1129,10 @@ function closeRestaurantDialog() {
 function resetRestaurantForm() {
   editingRestaurantId = null;
   elements.restaurantForm.reset();
-  elements.formModeLabel.textContent = "NEW_SPOT";
-  elements.formTitle.textContent = "Save a Bite";
-  elements.saveSpotButton.textContent = "Save Spot";
-  elements.formHelp.textContent = GOOGLE_MAPS_HELP;
+  elements.formModeLabel.textContent = t("spot.newMode");
+  elements.formTitle.textContent = t("spot.saveTitle");
+  elements.saveSpotButton.textContent = t("spot.saveButton");
+  elements.formHelp.textContent = t("google.help");
   elements.dishEditor.hidden = true;
   elements.dishEditorList.innerHTML = "";
 }
@@ -525,7 +1142,7 @@ async function saveRestaurantFromForm(event) {
   if (!requireLogin()) return;
   const payload = getRestaurantPayload();
   try {
-    elements.formHelp.textContent = "正在保存...";
+    elements.formHelp.textContent = t("list.saving");
     const coordinates = await resolveCoordinates(payload);
     const body = {
       name: payload.name,
@@ -551,7 +1168,7 @@ async function saveRestaurantFromForm(event) {
       editingRestaurantId = data.restaurant.id;
       fillRestaurantForm(data.restaurant);
       renderDishEditor(data.restaurant);
-      elements.formHelp.textContent = "已保存。";
+      elements.formHelp.textContent = t("detail.menuSaved");
     }
     render();
   } catch (error) {
@@ -580,7 +1197,7 @@ async function addDishFromEditor() {
   if (!editingRestaurantId || !requireLogin()) return;
   const name = elements.dishNameInput.value.trim();
   if (!name) {
-    elements.formHelp.textContent = "请输入菜品名称。";
+    elements.formHelp.textContent = t("spot.dishNameRequired");
     return;
   }
   const data = await api(`/api/restaurants/${editingRestaurantId}/dishes`, {
@@ -602,7 +1219,7 @@ async function addDishFromEditor() {
 function renderDishEditor(restaurant) {
   const dishes = restaurant.dishes ?? [];
   if (!dishes.length) {
-    elements.dishEditorList.innerHTML = '<p class="form-help">还没有菜品记录。</p>';
+    elements.dishEditorList.innerHTML = `<p class="form-help">${escapeHtml(t("spot.noDishes"))}</p>`;
     return;
   }
   elements.dishEditorList.innerHTML = dishes.map(dishEditorTemplate).join("");
@@ -622,17 +1239,17 @@ function dishEditorTemplate(dish) {
         <input data-field="name" value="${escapeAttribute(dish.name)}" />
         <div class="dish-form-grid compact">
           <select data-field="dish_status">
-            <option value="liked" ${dish.dish_status === "liked" ? "selected" : ""}>Liked</option>
-            <option value="tried" ${dish.dish_status === "tried" ? "selected" : ""}>Tried</option>
+            <option value="liked" ${dish.dish_status === "liked" ? "selected" : ""}>${t("status.liked")}</option>
+            <option value="tried" ${dish.dish_status === "tried" ? "selected" : ""}>${t("status.tried")}</option>
           </select>
           <input data-field="rating" type="number" min="0" max="5" step="0.1" value="${Number(dish.rating || 0)}" />
           <input class="dish-image-input" type="file" accept="image/jpeg,image/png,image/webp" />
         </div>
-        <textarea data-field="notes" rows="2" placeholder="这道菜的想法">${escapeHtml(dish.notes || "")}</textarea>
+        <textarea data-field="notes" rows="2" placeholder="${escapeAttribute(t("detail.dishNotesPlaceholder"))}">${escapeHtml(dish.notes || "")}</textarea>
       </div>
       <div class="dish-editor-actions">
-        <button class="secondary-button" type="button" data-dish-action="save">Save</button>
-        <button class="secondary-button danger" type="button" data-dish-action="delete">Delete</button>
+        <button class="secondary-button" type="button" data-dish-action="save">${t("button.save")}</button>
+        <button class="secondary-button danger" type="button" data-dish-action="delete">${t("button.delete")}</button>
       </div>
     </article>
   `;
@@ -642,7 +1259,7 @@ async function handleDishAction(button) {
   const item = button.closest(".dish-editor-item");
   const dishId = item.dataset.dishId;
   if (button.dataset.dishAction === "delete") {
-    if (!confirm("删除这个菜品吗？")) return;
+    if (!confirm(t("spot.deleteDishConfirm"))) return;
     await api(`/api/dishes/${dishId}`, { method: "DELETE" });
     removeDish(dishId);
     return;
@@ -714,10 +1331,10 @@ function openShareDialog() {
         <label class="share-dish-item">
           <input type="checkbox" value="${dish.id}" ${dish.dish_status === "liked" ? "checked" : ""} />
           <span>${escapeHtml(dish.name)}</span>
-          <small>☆ ${Number(dish.rating || 0).toFixed(1)} · ${dish.dish_status === "liked" ? "Liked" : "Tried"}</small>
+          <small>☆ ${Number(dish.rating || 0).toFixed(1)} · ${dishStatusLabel(dish.dish_status)}</small>
         </label>
       `).join("")
-    : '<p class="form-help">这家店还没有菜品。可以先编辑店铺添加菜品，再分享。</p>';
+    : `<p class="form-help">${escapeHtml(t("share.noDishes"))}</p>`;
   elements.createShareButton.disabled = !dishes.length;
   elements.shareDialog.showModal();
 }
@@ -736,8 +1353,8 @@ async function createShareLink(event) {
 async function copyShareLink() {
   if (!elements.shareUrlInput.value) return;
   await navigator.clipboard.writeText(elements.shareUrlInput.value);
-  elements.copyShareButton.textContent = "Copied";
-  window.setTimeout(() => (elements.copyShareButton.textContent = "Copy"), 1200);
+  elements.copyShareButton.textContent = t("button.copied");
+  window.setTimeout(() => (elements.copyShareButton.textContent = t("button.copy")), 1200);
 }
 
 async function deleteSelectedRestaurant() {
@@ -751,7 +1368,7 @@ async function deleteRestaurantById(restaurantId) {
   if (!requireLogin()) return;
   const restaurant = restaurants.find((item) => item.id === restaurantId);
   if (!restaurant) return;
-  if (!confirm(`确定删除「${restaurant.name}」吗？\n\n这会同时删除这家店的菜单和图片记录。`)) return;
+  if (!confirm(t("spot.deleteConfirm", { name: restaurant.name }))) return;
   await api(`/api/restaurants/${restaurant.id}`, { method: "DELETE" });
   restaurants = restaurants.filter((item) => item.id !== restaurant.id);
   lists = lists.map((list) => ({
@@ -819,7 +1436,7 @@ function renderSpotDetail(restaurant = selectedRestaurant()) {
   form.visitCount.value = restaurant.visit_count || 0;
   form.notes.value = restaurant.notes || "";
   renderDetailHeader(restaurant);
-  elements.detailStatus.textContent = currentUser ? "修改后会自动保存餐厅评价。" : "演示模式可查看；登录后可以保存评价、菜单和图片。";
+  elements.detailStatus.textContent = currentUser ? t("detail.autosave") : t("detail.demo");
   renderDetailAddDishState();
   renderDetailDishList(restaurant);
   isRenderingSpotDetail = false;
@@ -831,7 +1448,7 @@ function renderDetailHeader(restaurant = selectedRestaurant()) {
   elements.detailSpotMeta.innerHTML = `
     <span>${statusLabel(restaurant.status)}</span>
     <span>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}</span>
-    <span>${restaurant.visit_count || 0} visits</span>
+    <span>${t("count.visits", { count: restaurant.visit_count || 0 })}</span>
     <span>${distanceLabel(restaurant)}</span>
   `;
 }
@@ -865,11 +1482,11 @@ function setDetailReviewStatus(status, { autosave = true } = {}) {
 function scheduleDetailReviewAutosave() {
   if (isRenderingSpotDetail) return;
   if (!currentUser) {
-    elements.detailStatus.textContent = "登录后会自动保存餐厅评价。";
+    elements.detailStatus.textContent = t("detail.signInAutosave");
     return;
   }
   clearReviewAutosaveTimer();
-  elements.detailStatus.textContent = "正在自动保存餐厅评价...";
+  elements.detailStatus.textContent = t("detail.autosavingReview");
   reviewAutosaveTimer = window.setTimeout(() => {
     saveDetailRestaurantReview({ rerenderDetail: false }).catch(() => {});
   }, REVIEW_AUTOSAVE_DELAY);
@@ -886,10 +1503,10 @@ async function saveDetailRestaurantReview({ rerenderDetail = false } = {}) {
   if (!restaurant) return;
   const body = getDetailReviewPayload();
   try {
-    elements.detailStatus.textContent = "正在自动保存餐厅评价...";
+    elements.detailStatus.textContent = t("detail.autosavingReview");
     const data = await api(`/api/restaurants/${restaurant.id}`, { method: "PATCH", body: JSON.stringify(body) });
     upsertRestaurant(data.restaurant);
-    elements.detailStatus.textContent = "已自动保存餐厅评价。";
+    elements.detailStatus.textContent = t("detail.reviewSaved");
     render();
     if (rerenderDetail) renderSpotDetail(selectedRestaurant());
     else renderDetailHeader(selectedRestaurant());
@@ -904,11 +1521,11 @@ async function addDishFromDetail() {
   if (!restaurant || !requireLogin()) return;
   const name = elements.detailDishName.value.trim();
   if (!name) {
-    elements.detailStatus.textContent = "请输入菜品名称。";
+    elements.detailStatus.textContent = t("detail.dishRequired");
     return;
   }
   try {
-    elements.detailStatus.textContent = "正在添加菜单...";
+    elements.detailStatus.textContent = t("detail.addingMenu");
     const data = await api(`/api/restaurants/${restaurant.id}/dishes`, {
       method: "POST",
       body: JSON.stringify({
@@ -923,7 +1540,7 @@ async function addDishFromDetail() {
     syncRestaurantReferences(restaurant);
     clearDetailDishInputs();
     setDetailAddDishOpen(false);
-    elements.detailStatus.textContent = "已添加菜单。";
+    elements.detailStatus.textContent = t("detail.addedMenu");
     render();
     renderSpotDetail(restaurant);
   } catch (error) {
@@ -951,7 +1568,7 @@ function clearDetailDishInputs() {
 
 function updateDetailDishImageName() {
   const file = elements.detailDishImage.files?.[0];
-  elements.detailDishImageName.textContent = file ? file.name : "Click to upload or drag image here";
+  elements.detailDishImageName.textContent = file ? file.name : t("detail.uploadHint");
 }
 
 function bindDetailFileDropzone(zone, input, options = {}) {
@@ -998,14 +1615,14 @@ function setDetailAddDishOpen(isOpen) {
 }
 
 function renderDetailAddDishState() {
-  elements.detailAddDishToggle.textContent = isDetailAddDishOpen ? "Close" : "+ Add Menu";
+  elements.detailAddDishToggle.textContent = isDetailAddDishOpen ? t("button.closeAddMenu") : t("button.addMenu");
   elements.detailAddDishPanel.hidden = !isDetailAddDishOpen;
 }
 
 function cancelDetailDishAdd() {
   clearDetailDishInputs();
   setDetailAddDishOpen(false);
-  elements.detailStatus.textContent = "已取消新增菜单。";
+  elements.detailStatus.textContent = t("detail.cancelledDish");
 }
 
 function resetDetailDishUi() {
@@ -1021,7 +1638,7 @@ function renderDetailDishList(restaurant) {
   const dishes = restaurant.dishes ?? [];
   elements.detailDishList.innerHTML = dishes.length
     ? dishes.map(detailDishTemplate).join("")
-    : emptyStateTemplate("还没有菜单记录。添加第一道菜后，可以给它评分、上传图片、写感想。", "");
+    : emptyStateTemplate(t("detail.noMenu"), "");
   elements.detailDishList.querySelectorAll("[data-detail-dish-action]").forEach((button) => {
     button.addEventListener("click", () => handleDetailDishAction(button));
   });
@@ -1053,16 +1670,16 @@ function detailDishPreviewTemplate(dish) {
           <div>
             <strong>${escapeHtml(dish.name)}</strong>
             <div class="detail-dish-meta">
-              <span class="dish-status-pill">${dish.dish_status === "tried" ? "Tried" : "Liked"}</span>
+              <span class="dish-status-pill">${dishStatusLabel(dish.dish_status)}</span>
               <span>☆ ${Number(dish.rating || 0).toFixed(1)}</span>
             </div>
           </div>
           <div class="detail-dish-actions">
-            <button class="secondary-button compact-action" type="button" data-detail-dish-action="edit">Edit</button>
-            <button class="secondary-button compact-action danger" type="button" data-detail-dish-action="delete">Delete</button>
+            <button class="secondary-button compact-action" type="button" data-detail-dish-action="edit">${t("button.edit")}</button>
+            <button class="secondary-button compact-action danger" type="button" data-detail-dish-action="delete">${t("button.delete")}</button>
           </div>
         </div>
-        <p class="detail-dish-notes-preview">${notes ? escapeHtml(notes) : "还没有记录这道菜的感想。"}</p>
+        <p class="detail-dish-notes-preview">${notes ? escapeHtml(notes) : t("detail.noDishNotes")}</p>
       </div>
     </article>
   `;
@@ -1078,23 +1695,23 @@ function detailDishEditTemplate(dish) {
         <input data-field="name" data-detail-dish-autosave value="${escapeAttribute(dish.name)}" />
         <div class="detail-dish-controls">
           <select data-field="dish_status" data-detail-dish-autosave>
-            <option value="liked" ${dish.dish_status === "liked" ? "selected" : ""}>Liked</option>
-            <option value="tried" ${dish.dish_status === "tried" ? "selected" : ""}>Tried</option>
+            <option value="liked" ${dish.dish_status === "liked" ? "selected" : ""}>${t("status.liked")}</option>
+            <option value="tried" ${dish.dish_status === "tried" ? "selected" : ""}>${t("status.tried")}</option>
           </select>
           <input data-field="rating" data-detail-dish-autosave type="number" min="0" max="5" step="0.1" value="${Number(dish.rating || 0)}" />
           <label class="detail-file-dropzone compact" data-detail-file-dropzone>
             <input class="detail-dish-image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden />
             <span class="detail-file-mark" aria-hidden="true">＋</span>
             <span>
-              <strong>Replace photo</strong>
-              <small>Click to upload or drag image here</small>
+              <strong>${t("button.replacePhoto")}</strong>
+              <small>${t("detail.uploadHint")}</small>
             </span>
           </label>
         </div>
-        <textarea data-field="notes" data-detail-dish-autosave rows="3" placeholder="这道菜的感想">${escapeHtml(dish.notes || "")}</textarea>
+        <textarea data-field="notes" data-detail-dish-autosave rows="3" placeholder="${escapeAttribute(t("detail.dishNotesPlaceholder"))}">${escapeHtml(dish.notes || "")}</textarea>
         <div class="detail-dish-actions">
-          <button class="secondary-button" type="button" data-detail-dish-action="done">Done</button>
-          <button class="secondary-button danger" type="button" data-detail-dish-action="delete">Delete</button>
+          <button class="secondary-button" type="button" data-detail-dish-action="done">${t("button.done")}</button>
+          <button class="secondary-button danger" type="button" data-detail-dish-action="delete">${t("button.delete")}</button>
         </div>
       </div>
     </article>
@@ -1116,12 +1733,12 @@ async function handleDetailDishAction(button) {
     return;
   }
   if (action === "delete") {
-    if (!confirm("删除这道菜吗？")) return;
+    if (!confirm(t("detail.deleteDishConfirm"))) return;
     clearDishAutosaveTimer(dishId);
     await api(`/api/dishes/${dishId}`, { method: "DELETE" });
     editingDetailDishIds.delete(String(dishId));
     removeDish(dishId);
-    elements.detailStatus.textContent = "已删除菜单。";
+    elements.detailStatus.textContent = t("detail.deletedDish");
     return;
   }
 }
@@ -1141,10 +1758,10 @@ function scheduleDetailDishAutosave(item) {
   clearDishAutosaveTimer(dishId);
   const body = getDetailDishPayload(item);
   if (!body.name) {
-    elements.detailStatus.textContent = "菜品名称不能为空。";
+    elements.detailStatus.textContent = t("detail.dishRequired");
     return;
   }
-  elements.detailStatus.textContent = "正在保存菜单...";
+  elements.detailStatus.textContent = t("detail.savingMenu");
   dishAutosaveTimers.set(
     String(dishId),
     window.setTimeout(() => saveDetailDish(item).catch(() => {}), DISH_AUTOSAVE_DELAY),
@@ -1163,14 +1780,14 @@ async function saveDetailDish(item, { rerender = false } = {}) {
   clearDishAutosaveTimer(dishId);
   const body = getDetailDishPayload(item);
   if (!body.name) {
-    elements.detailStatus.textContent = "菜品名称不能为空。";
-    throw new Error("Dish name is required");
+    elements.detailStatus.textContent = t("detail.dishRequired");
+    throw new Error(t("detail.dishRequired"));
   }
   try {
-    elements.detailStatus.textContent = "正在保存菜单...";
+    elements.detailStatus.textContent = t("detail.savingMenu");
     const data = await api(`/api/dishes/${dishId}`, { method: "PATCH", body: JSON.stringify(body) });
     replaceDish(data.dish, { rerender });
-    elements.detailStatus.textContent = "已自动保存菜单。";
+    elements.detailStatus.textContent = t("detail.menuSaved");
   } catch (error) {
     elements.detailStatus.textContent = error.message;
     throw error;
@@ -1193,13 +1810,13 @@ async function uploadDetailDishImage(input) {
   const file = input.files?.[0];
   if (!file) return;
   try {
-    elements.detailStatus.textContent = "正在上传图片...";
+    elements.detailStatus.textContent = t("detail.uploading");
     const compressed = await compressImage(file);
     const form = new FormData();
     form.append("image", compressed, compressed.name);
     const data = await api(`/api/dishes/${item.dataset.dishId}/image`, { method: "POST", body: form });
     replaceDish(data.dish);
-    elements.detailStatus.textContent = "已上传图片。";
+    elements.detailStatus.textContent = t("detail.uploaded");
   } catch (error) {
     elements.detailStatus.textContent = error.message;
   }
@@ -1210,7 +1827,7 @@ async function pasteAndAddFromClipboard() {
   try {
     const text = (await navigator.clipboard.readText()).trim();
     const googleUrl = extractGoogleMapsUrl(text);
-    if (!googleUrl) throw new Error("剪贴板里没有 Google Maps 链接。");
+    if (!googleUrl) throw new Error(t("paste.noGoogleUrl"));
     const parsed = await parseAnyGoogleMapsLink(googleUrl);
     const name = parsed.name || "New Spot";
     const duplicate = findDuplicateRestaurant({
@@ -1226,14 +1843,14 @@ async function pasteAndAddFromClipboard() {
       render();
       const duplicateDistance = formatDistance(haversineDistance(duplicate, { lat: parsed.lat, lng: parsed.lng }));
       confirmedCreate = confirm(
-        `已经找到很像的餐厅：\n\n「${duplicate.name}」\n${duplicate.address || "没有地址"}\n距离新链接坐标约 ${duplicateDistance}\n\n还要继续创建一个新的重复记录吗？`,
+        t("paste.duplicateConfirm", { name: duplicate.name, address: duplicate.address || t("paste.noAddress"), distance: duplicateDistance }),
       );
       if (!confirmedCreate) {
-        setPasteStatus(`已取消创建，已选中现有餐厅：${duplicate.name}`);
+        setPasteStatus(t("paste.cancelledDuplicate", { name: duplicate.name }));
         return;
       }
     }
-    if (!confirmedCreate && !confirm(`添加「${name}」到 Want to Go 吗？`)) return;
+    if (!confirmedCreate && !confirm(t("paste.addConfirm", { name }))) return;
     const body = {
       name,
       address: "",
@@ -1249,7 +1866,7 @@ async function pasteAndAddFromClipboard() {
     upsertRestaurant(data.restaurant);
     selectedRestaurantId = data.restaurant.id;
     isSpotCardOpen = true;
-    setPasteStatus(`已添加：${data.restaurant.name}`);
+    setPasteStatus(t("paste.added", { name: data.restaurant.name }));
     render();
   } catch (error) {
     setPasteStatus(error.message);
@@ -1264,7 +1881,7 @@ async function autofillFromGoogleMapsUrl() {
   const form = elements.restaurantForm.elements;
   const googleUrl = elements.googleUrlInput.value.trim();
   if (isGoogleMapsShortLink(googleUrl)) {
-    elements.formHelp.textContent = "正在展开 Google Maps 短链接...";
+        elements.formHelp.textContent = t("google.shortExpanding");
     window.clearTimeout(shortLinkResolveTimer);
     shortLinkResolveTimer = window.setTimeout(async () => {
       try {
@@ -1273,7 +1890,7 @@ async function autofillFromGoogleMapsUrl() {
         form.name.value = parsed.name || form.name.value;
         form.lat.value = parsed.lat ?? form.lat.value;
         form.lng.value = parsed.lng ?? form.lng.value;
-        elements.formHelp.textContent = "短链接已展开并填入坐标。";
+        elements.formHelp.textContent = t("google.shortExpanded");
       } catch (error) {
         elements.formHelp.textContent = error.message;
       }
@@ -1283,14 +1900,14 @@ async function autofillFromGoogleMapsUrl() {
 
   const parsed = parseGoogleMapsUrl(googleUrl);
   if (!parsed) {
-    elements.formHelp.textContent = GOOGLE_MAPS_HELP;
+    elements.formHelp.textContent = t("google.help");
     return;
   }
   if (parsed.name && !form.name.value.trim()) form.name.value = parsed.name;
   if (parsed.lat != null && parsed.lng != null) {
     form.lat.value = parsed.lat;
     form.lng.value = parsed.lng;
-    elements.formHelp.textContent = "已从 Google Maps 链接识别坐标。";
+    elements.formHelp.textContent = t("google.coordsFound");
   }
 }
 
@@ -1303,7 +1920,7 @@ async function parseAnyGoogleMapsLink(url) {
   }
   const parsed = parseGoogleMapsUrl(url);
   if (!parsed?.lat || !parsed?.lng) {
-    throw new Error("没有从链接识别到坐标。请打开短链接后复制完整 Google Maps 地址栏链接。");
+    throw new Error(t("google.noCoords"));
   }
   return { ...parsed, url };
 }
@@ -1312,7 +1929,7 @@ async function checkShortLinkService() {
   try {
     await api("/api/health");
   } catch {
-    setPasteStatus("后端服务未连接。请用 python3 server.py 5174 启动。");
+    setPasteStatus(t("paste.backendOffline"));
   }
 }
 
@@ -1385,7 +2002,7 @@ function setLocationButtonState(label, disabled = false) {
 
 async function requestLocation() {
   if (!navigator.geolocation) {
-    setFallbackLocation("浏览器不支持定位，使用多伦多市中心作为临时位置。");
+    setFallbackLocation(t("location.unsupported"));
     return;
   }
   if ((await getLocationPermissionState()) === "denied") {
@@ -1394,17 +2011,17 @@ async function requestLocation() {
     return;
   }
   setLocationButtonState("Locating...", true);
-  elements.locationStatus.textContent = "正在获取当前位置...";
+  elements.locationStatus.textContent = t("location.fetching");
   navigator.geolocation.getCurrentPosition(
     (position) => {
       currentLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
-      elements.locationStatus.textContent = `当前位置 ${currentLocation.lat.toFixed(3)}, ${currentLocation.lng.toFixed(3)}`;
+      elements.locationStatus.textContent = t("location.current", { lat: currentLocation.lat.toFixed(3), lng: currentLocation.lng.toFixed(3) });
       setLocationButtonState("Use My Location");
       render();
     },
     (error) => {
       setLocationButtonState("Retry Location");
-      setFallbackLocation(error.code === error.PERMISSION_DENIED ? LOCATION_DENIED_HELP : "暂时无法获取当前位置，使用多伦多市中心作为临时位置。");
+      setFallbackLocation(error.code === error.PERMISSION_DENIED ? t("location.denied") : t("location.fallback"));
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
   );
@@ -1467,9 +2084,9 @@ function renderViewShell() {
   });
   elements.navLinks.forEach((link) => link.classList.toggle("active", link.dataset.view === activeView));
   elements.searchInput.placeholder = {
-    "my-map": "Search spots in this category...",
-    "my-lists": "Search spots in this category...",
-    discovery: "Search curated lists...",
+    "my-map": t("search.category"),
+    "my-lists": t("search.category"),
+    discovery: t("search.discovery"),
   }[activeView];
 }
 
@@ -1502,9 +2119,9 @@ function activeCategoryMeta() {
   const systemDefinition = activeSystemListDefinition();
   if (systemDefinition) {
     return {
-      eyebrow: "SMART LIST",
-      title: systemDefinition.title,
-      description: systemDefinition.description,
+      eyebrow: t("list.smart"),
+      title: systemListTitle(systemDefinition),
+      description: systemListDescription(systemDefinition),
       count: restaurantsForSystemList(systemDefinition).length,
     };
   }
@@ -1512,17 +2129,17 @@ function activeCategoryMeta() {
   const list = activeCustomList();
   if (list) {
     return {
-      eyebrow: list.visibility === "public" ? "PUBLIC CUSTOM LIST" : "CUSTOM LIST",
+      eyebrow: list.visibility === "public" ? t("list.publicCustom") : t("list.custom"),
       title: list.title,
-      description: list.description || "Custom category from your saved restaurants.",
+      description: list.description || t("list.customDescription"),
       count: list.item_count || list.items?.length || 0,
     };
   }
 
   return {
-    eyebrow: "CUSTOM LIST",
-    title: "Choose a list",
-    description: "Select a custom list on the left to view its spots.",
+    eyebrow: t("list.custom"),
+    title: t("list.choose"),
+    description: t("list.chooseDescription"),
     count: 0,
   };
 }
@@ -1530,9 +2147,9 @@ function activeCategoryMeta() {
 function renderMapContext() {
   if (!elements.mapCategoryTitle) return;
   const meta = activeCategoryMeta();
-  elements.mapCategoryEyebrow.textContent = "MAP VIEW · " + meta.eyebrow;
+  elements.mapCategoryEyebrow.textContent = `${t("map.view")} · ${meta.eyebrow}`;
   elements.mapCategoryTitle.textContent = meta.title;
-  elements.mapCategorySummary.textContent = `${meta.count} spots · sorted by distance from you`;
+  elements.mapCategorySummary.textContent = t("map.summary", { count: meta.count });
 }
 
 function restaurantsForActiveCategory() {
@@ -1563,7 +2180,7 @@ function getVisibleRestaurants() {
 }
 
 function renderCounts() {
-  elements.placeCount.textContent = `${restaurants.length} places`;
+  elements.placeCount.textContent = t("count.places", { count: restaurants.length });
   elements.countAll.textContent = restaurants.length;
   elements.countVisited.textContent = restaurants.filter((item) => item.status === "visited").length;
   elements.countWant.textContent = restaurants.filter((item) => item.status === "want_to_go").length;
@@ -1573,7 +2190,7 @@ function renderCounts() {
 function renderSidebarListFilters() {
   if (!elements.sidebarListFilters) return;
   if (!currentUser) {
-    elements.sidebarListFilters.innerHTML = '<p class="sidebar-empty">Sign in to manage lists.</p>';
+    elements.sidebarListFilters.innerHTML = `<p class="sidebar-empty">${escapeHtml(t("sidebar.signInLists"))}</p>`;
     return;
   }
   const ordered = orderedLists();
@@ -1583,11 +2200,11 @@ function renderSidebarListFilters() {
           <span class="drag-handle" aria-hidden="true">⋮⋮</span>
           <span class="list-filter-text">
             <strong>${escapeHtml(list.title)}</strong>
-            <small>${list.item_count || 0} spots · ${visibilityLabel(list.visibility)}</small>
+            <small>${t("count.spots", { count: list.item_count || 0 })} · ${visibilityLabel(list.visibility)}</small>
           </span>
         </button>
       `).join("")
-    : '<p class="sidebar-empty">No custom lists yet.</p>';
+    : `<p class="sidebar-empty">${escapeHtml(t("sidebar.noLists"))}</p>`;
   elements.sidebarListFilters.querySelectorAll("[data-sidebar-list-id]").forEach((button) => {
     button.addEventListener("click", async () => {
       setActiveCategory(`custom:${button.dataset.sidebarListId}`);
@@ -1627,7 +2244,7 @@ function renderRecentList() {
           </span>
         </button>
       `).join("")
-    : '<p class="empty-recent">没有匹配餐厅</p>';
+    : `<p class="empty-recent">${escapeHtml(t("map.noMatches"))}</p>`;
   elements.recentList.querySelectorAll(".recent-item").forEach((item) => {
     item.addEventListener("click", () => {
       selectedRestaurantId = item.dataset.id;
@@ -1684,10 +2301,10 @@ function renderSpotCard() {
   elements.spotCardTabName.textContent = selected.name;
   const distance = currentLocation ? haversineDistance(currentLocation, selected) : null;
   elements.spotName.textContent = selected.name;
-  elements.spotDistance.textContent = distance == null ? "等待定位" : formatDistance(distance);
+  elements.spotDistance.textContent = distance == null ? t("distance.pending") : formatDistance(distance);
   elements.spotRating.textContent = `☆ ${Number(selected.personal_rating || 0).toFixed(1)}`;
-  elements.spotStatus.textContent = `${statusLabel(selected.status)} · ${selected.visit_count || 0} visits`;
-  elements.spotNotes.textContent = selected.notes || selected.address || "还没有记录想法。";
+  elements.spotStatus.textContent = `${statusLabel(selected.status)} · ${t("count.visits", { count: selected.visit_count || 0 })}`;
+  elements.spotNotes.textContent = selected.notes || selected.address || t("map.noNotes");
   elements.spotDishes.innerHTML = renderSpotDishes(selected);
   elements.openGoogleMaps.href = selected.google_url || `https://www.google.com/maps?q=${selected.lat},${selected.lng}`;
   const ownedMode = Boolean(currentUser && !shareToken);
@@ -1721,17 +2338,17 @@ function renderListsView() {
   }
 
   if (!currentUser) {
-    elements.myListDetail.innerHTML = emptyStateTemplate("Choose a smart list on the left, or sign in to manage custom lists.", "Sign in");
+    elements.myListDetail.innerHTML = emptyStateTemplate(t("list.needSignIn"), t("auth.signIn"));
     elements.myListDetail.querySelector("[data-empty-action]")?.addEventListener("click", requireLogin);
     return;
   }
   const selected = lists.find((list) => `custom:${list.id}` === activeMyListKey) ?? lists.find((list) => list.id === selectedListId) ?? lists[0];
   if (selected && !selected.items) {
     ensureListDetail(selected.id).then(render).catch((error) => (elements.myListDetail.innerHTML = errorPanel(error.message)));
-    elements.myListDetail.innerHTML = loadingPanel("Loading list...");
+    elements.myListDetail.innerHTML = loadingPanel(t("discovery.loading").replace("public ", ""));
     return;
   }
-  elements.myListDetail.innerHTML = selected ? myListDetailTemplate(selected, term) : emptyStateTemplate("Create a list, then add spots from your map.", "");
+  elements.myListDetail.innerHTML = selected ? myListDetailTemplate(selected, term) : emptyStateTemplate(t("list.createThenAdd"), "");
   bindMyListDetailActions(selected);
 }
 
@@ -1757,7 +2374,7 @@ function renderDiscoveryView() {
   const selected = visible.find((list) => list.id === selectedDiscoveryListId) ?? visible[0] ?? (term ? null : discoveryLists[0]);
   if (selected && !selected.items) {
     ensureDiscoveryDetail(selected.id).then(render).catch((error) => (elements.discoveryDetail.innerHTML = errorPanel(error.message)));
-    elements.discoveryDetail.innerHTML = loadingPanel("Loading public list...");
+    elements.discoveryDetail.innerHTML = loadingPanel(t("discovery.loading"));
     return;
   }
   elements.discoveryDetail.innerHTML = selected ? discoveryDetailTemplate(selected) : discoveryEmptyStateTemplate(term).detail;
@@ -1767,36 +2384,36 @@ function renderDiscoveryView() {
 function discoveryEmptyStateTemplate(term = "") {
   if (discoveryLists.length && term) {
     return {
-      grid: emptyStateTemplate("No public lists match this search.", ""),
-      detail: emptyStateTemplate("Try another search to open a public list here.", ""),
+      grid: emptyStateTemplate(t("discovery.noSearch"), ""),
+      detail: emptyStateTemplate(t("discovery.trySearch"), ""),
     };
   }
 
   if (!currentUser) {
     return {
-      grid: emptyStateTemplate("Discovery only shows public lists. Sign in to publish your own.", "Sign in"),
-      detail: emptyStateTemplate("Private lists stay hidden until their owner publishes them.", ""),
+      grid: emptyStateTemplate(t("discovery.signIn"), t("auth.signIn")),
+      detail: emptyStateTemplate(t("discovery.privateHidden"), ""),
     };
   }
 
   if (!lists.length) {
     return {
-      grid: emptyStateTemplate("No public lists yet. Create a custom list, add spots, then publish it.", "Create List"),
-      detail: emptyStateTemplate("Published lists will open here after someone shares one.", ""),
+      grid: emptyStateTemplate(t("discovery.createList"), t("button.createList")),
+      detail: emptyStateTemplate(t("discovery.publishedOpen"), ""),
     };
   }
 
   const publishCandidate = publishableListCandidate();
   if (publishCandidate) {
     return {
-      grid: emptyStateTemplate(`No public lists yet. "${publishCandidate.title}" is ready to publish.`, "Publish a list"),
-      detail: emptyStateTemplate("Open your list, then use Manage > Publish when you are ready to share it.", ""),
+      grid: emptyStateTemplate(t("discovery.readyToPublish", { title: publishCandidate.title }), t("button.publish")),
+      detail: emptyStateTemplate(t("discovery.publishHelp"), ""),
     };
   }
 
   return {
-    grid: emptyStateTemplate("No public lists yet. Add spots to a custom list before publishing.", "Open Lists"),
-    detail: emptyStateTemplate("A list needs at least one spot before it can appear in Discovery.", ""),
+    grid: emptyStateTemplate(t("discovery.addSpots"), t("nav.lists")),
+    detail: emptyStateTemplate(t("discovery.needsSpot"), ""),
   };
 }
 
@@ -1838,8 +2455,8 @@ function systemListCardTemplate(list, selected) {
     <button class="system-list-card ${selected ? "selected" : ""}" type="button" data-system-list="${list.key}">
       <span class="system-list-icon">${list.icon}</span>
       <span>
-        <strong>${escapeHtml(list.title)}</strong>
-        <small>${escapeHtml(list.description)}</small>
+        <strong>${escapeHtml(systemListTitle(list))}</strong>
+        <small>${escapeHtml(systemListDescription(list))}</small>
       </span>
       <span class="system-list-count">${spots.length}</span>
     </button>
@@ -1851,31 +2468,31 @@ function systemListDetailTemplate(definition, term) {
   return `
     <div class="list-view-head">
       <div>
-        <p class="eyebrow">${escapeHtml(definition.eyebrow)}</p>
-        <h2>${escapeHtml(definition.title)}</h2>
-        <p>${escapeHtml(definition.description)} Sorted by distance from your current location.</p>
+        <p class="eyebrow">${escapeHtml(systemListEyebrow(definition))}</p>
+        <h2>${escapeHtml(systemListTitle(definition))}</h2>
+        <p>${escapeHtml(systemListDescription(definition))} ${escapeHtml(t("map.sorted"))}.</p>
       </div>
       <div class="list-view-meta">
-        <span>${spots.length} spots</span>
-        <span>Nearest first</span>
+        <span>${t("count.spots", { count: spots.length })}</span>
+        <span>${t("sort.nearest")}</span>
       </div>
     </div>
     <div class="detail-actions system-actions compact-actions">
-      <button class="outline-button" type="button" data-view-system-map>Open on Map</button>
+      <button class="outline-button" type="button" data-view-system-map>${t("button.openMap")}</button>
     </div>
     <div class="spot-row-list restaurant-list-mode">
-      ${spots.length ? spots.map(systemSpotItemTemplate).join("") : emptyStateTemplate("No spots in this smart list yet.", "")}
+      ${spots.length ? spots.map(systemSpotItemTemplate).join("") : emptyStateTemplate(t("list.noSmartSpots"), "")}
     </div>
   `;
 }
 
 function systemSpotItemTemplate(restaurant) {
   return restaurantRowTemplate(restaurant, {
-    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits`,
+    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${t("count.visits", { count: restaurant.visit_count || 0 })}`,
     actions: `
-      <button class="icon-link" type="button" data-open-spot="${restaurant.id}">Map</button>
-      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Google</a>
-      <button class="icon-link danger-text" type="button" data-delete-spot="${restaurant.id}">Delete</button>
+      <button class="icon-link" type="button" data-open-spot="${restaurant.id}">${t("button.map")}</button>
+      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">${t("button.google")}</a>
+      <button class="icon-link danger-text" type="button" data-delete-spot="${restaurant.id}">${t("button.delete")}</button>
     `,
   });
 }
@@ -1908,10 +2525,10 @@ function listCardTemplate(list, selected, mode) {
       ${coverTemplate(list)}
       <span class="list-card-body">
         <strong>${escapeHtml(list.title)}</strong>
-        <small>${escapeHtml(list.description || "No description yet.")}</small>
+        <small>${escapeHtml(list.description || t("list.noDescription"))}</small>
         <span class="list-meta-row">
-          <span>${list.item_count || 0} spots</span>
-          <span>${mode === "public" ? `${list.copy_count || 0} copies` : visibilityLabel(list.visibility)}</span>
+          <span>${t("count.spots", { count: list.item_count || 0 })}</span>
+          <span>${mode === "public" ? t("count.copies", { count: list.copy_count || 0 }) : visibilityLabel(list.visibility)}</span>
         </span>
       </span>
     </button>
@@ -1928,33 +2545,33 @@ function myListDetailTemplate(list, term = "") {
   return `
     <div class="list-view-head">
       <div>
-        <p class="eyebrow">${isPublic ? "PUBLIC LIST" : "PRIVATE LIST"}</p>
+        <p class="eyebrow">${isPublic ? t("list.public") : t("list.private")}</p>
         <h2>${escapeHtml(list.title)}</h2>
-        <p>${escapeHtml(list.description || "No description yet.")}</p>
+        <p>${escapeHtml(list.description || t("list.noDescription"))}</p>
       </div>
       <div class="list-view-tools">
         <div class="list-view-meta">
-          <span>${items.length} spots</span>
-          <span>Nearest first</span>
+          <span>${t("count.spots", { count: items.length })}</span>
+          <span>${t("sort.nearest")}</span>
           <span>${visibilityLabel(list.visibility)}</span>
-          <span>Updated ${formatDate(list.updated_at)}</span>
+          <span>${t("list.updated", { date: formatDate(list.updated_at) })}</span>
         </div>
         <details class="manage-list-menu">
-          <summary>Manage</summary>
+          <summary>${t("list.manage")}</summary>
           <div class="manage-list-actions">
-            <button type="button" data-list-action="edit">Edit</button>
-            <button type="button" data-list-action="publish">${isPublic ? "Unpublish" : "Publish"}</button>
-            <button type="button" data-list-action="add">Add Spots</button>
-            <button class="danger-text" type="button" data-list-action="delete">Delete List</button>
+            <button type="button" data-list-action="edit">${t("button.edit")}</button>
+            <button type="button" data-list-action="publish">${isPublic ? t("button.unpublish") : t("button.publish")}</button>
+            <button type="button" data-list-action="add">${t("button.addSpots")}</button>
+            <button class="danger-text" type="button" data-list-action="delete">${t("button.deleteList")}</button>
           </div>
         </details>
       </div>
     </div>
     <div class="detail-actions system-actions compact-actions">
-      <button class="outline-button" type="button" data-list-action="map">Open on Map</button>
+      <button class="outline-button" type="button" data-list-action="map">${t("button.openMap")}</button>
     </div>
     <div class="spot-row-list restaurant-list-mode">
-      ${items.length ? items.map((item) => ownedListItemTemplate(item)).join("") : emptyStateTemplate((list.items ?? []).length ? "No spots match this search." : "This list is empty. Add spots from your map.", "")}
+      ${items.length ? items.map((item) => ownedListItemTemplate(item)).join("") : emptyStateTemplate((list.items ?? []).length ? t("list.noSearchResults") : t("list.empty"), "")}
     </div>
   `;
 }
@@ -1964,19 +2581,19 @@ function discoveryDetailTemplate(list) {
     <div class="detail-head public-detail">
       ${coverTemplate(list)}
       <div>
-        <p class="eyebrow">PUBLIC PICK</p>
+        <p class="eyebrow">${t("discovery.publicPick")}</p>
         <h2>${escapeHtml(list.title)}</h2>
-        <p>${escapeHtml(list.description || "No description yet.")}</p>
+        <p>${escapeHtml(list.description || t("list.noDescription"))}</p>
         <div class="meta-row compact-meta">
-          <span>${list.item_count || 0} spots</span>
-          <span>${list.copy_count || 0} copies</span>
-          <span>by ${escapeHtml(list.owner?.name || "Foodie")}</span>
+          <span>${t("count.spots", { count: list.item_count || 0 })}</span>
+          <span>${t("count.copies", { count: list.copy_count || 0 })}</span>
+          <span>${t("discovery.byOwner", { name: escapeHtml(list.owner?.name || t("discovery.foodie")) })}</span>
         </div>
       </div>
     </div>
-    <button class="primary-button compact full" type="button" data-copy-public>Copy to My Lists</button>
+    <button class="primary-button compact full" type="button" data-copy-public>${t("button.copyToMyLists")}</button>
     <div class="spot-row-list">
-      ${(list.items ?? []).length ? sortListItemsByDistance(list.items).map((item) => publicListItemTemplate(item)).join("") : emptyStateTemplate("This public list has no visible spots.", "")}
+      ${(list.items ?? []).length ? sortListItemsByDistance(list.items).map((item) => publicListItemTemplate(item)).join("") : emptyStateTemplate(t("discovery.noVisible"), "")}
     </div>
   `;
 }
@@ -1985,11 +2602,11 @@ function ownedListItemTemplate(item) {
   const restaurant = item.restaurant;
   if (!restaurant) return "";
   return restaurantRowTemplate(restaurant, {
-    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${restaurant.visit_count || 0} visits`,
+    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${t("count.visits", { count: restaurant.visit_count || 0 })}`,
     actions: `
-      <button class="icon-link" type="button" data-open-spot="${restaurant.id}">Map</button>
-      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Google</a>
-      <button class="icon-link danger-text" type="button" data-remove-list-spot="${restaurant.id}">Remove</button>
+      <button class="icon-link" type="button" data-open-spot="${restaurant.id}">${t("button.map")}</button>
+      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">${t("button.google")}</a>
+      <button class="icon-link danger-text" type="button" data-remove-list-spot="${restaurant.id}">${t("button.remove")}</button>
     `,
   });
 }
@@ -1998,9 +2615,9 @@ function publicListItemTemplate(item) {
   const restaurant = item.restaurant;
   if (!restaurant) return "";
   return restaurantRowTemplate(restaurant, {
-    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${escapeHtml(restaurant.address || "Address not shared")}`,
+    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${escapeHtml(restaurant.address || t("discovery.addressHidden"))}`,
     actions: `
-      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">Map</a>
+      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">${t("button.map")}</a>
     `,
   });
 }
@@ -2109,10 +2726,10 @@ function openCreateListDialog() {
   editingListId = null;
   elements.listForm.reset();
   elements.listForm.elements.id.value = "";
-  elements.listFormMode.textContent = "NEW_LIST";
-  elements.listFormTitle.textContent = "Create List";
-  elements.saveListButton.textContent = "Create List";
-  elements.listFormHelp.textContent = "清单默认私密；发布后才会出现在 Discovery。";
+  elements.listFormMode.textContent = t("list.newMode");
+  elements.listFormTitle.textContent = t("list.createTitle");
+  elements.saveListButton.textContent = t("button.createList");
+  elements.listFormHelp.textContent = t("list.defaultPrivate");
   elements.listDialog.showModal();
 }
 
@@ -2123,10 +2740,10 @@ function openEditListDialog(list) {
   elements.listForm.elements.title.value = list.title;
   elements.listForm.elements.description.value = list.description || "";
   elements.listForm.elements.coverImageUrl.value = list.cover_image_url || "";
-  elements.listFormMode.textContent = "EDIT_LIST";
-  elements.listFormTitle.textContent = "Edit List";
-  elements.saveListButton.textContent = "Update List";
-  elements.listFormHelp.textContent = "修改会立即影响 My Lists；公开清单会同步更新 Discovery 展示。";
+  elements.listFormMode.textContent = t("list.editMode");
+  elements.listFormTitle.textContent = t("list.editTitle");
+  elements.saveListButton.textContent = t("button.updateList");
+  elements.listFormHelp.textContent = t("list.editHelp");
   elements.listDialog.showModal();
 }
 
@@ -2146,11 +2763,11 @@ async function saveListFromForm(event) {
     cover_image_url: String(form.get("coverImageUrl") ?? "").trim(),
   };
   if (!body.title) {
-    elements.listFormHelp.textContent = "请输入清单标题。";
+    elements.listFormHelp.textContent = t("list.titleRequired");
     return;
   }
   try {
-    elements.listFormHelp.textContent = "正在保存...";
+    elements.listFormHelp.textContent = t("list.saving");
     const data = editingListId
       ? await api(`/api/lists/${editingListId}`, { method: "PATCH", body: JSON.stringify(body) })
       : await api("/api/lists", { method: "POST", body: JSON.stringify(body) });
@@ -2169,7 +2786,7 @@ async function saveListFromForm(event) {
 async function toggleListVisibility(list) {
   if (!requireLogin()) return;
   if (list.visibility !== "public" && !list.item_count) {
-    alert("至少添加一家餐厅后才能发布。");
+    alert(t("list.publishNeedsSpot"));
     return;
   }
   const visibility = list.visibility === "public" ? "private" : "public";
@@ -2184,7 +2801,7 @@ async function toggleListVisibility(list) {
 }
 
 async function deleteList(list) {
-  if (!requireLogin() || !confirm(`删除清单「${list.title}」吗？餐厅记录不会被删除。`)) return;
+  if (!requireLogin() || !confirm(t("list.deleteConfirm", { title: list.title }))) return;
   await api(`/api/lists/${list.id}`, { method: "DELETE" });
   lists = lists.filter((item) => item.id !== list.id);
   selectedListId = lists[0]?.id ?? null;
@@ -2203,7 +2820,7 @@ function openAddSpotsDialog(listId) {
 function renderAddSpotsDialog() {
   const list = lists.find((item) => item.id === addSpotsListId);
   if (!list) {
-    elements.addSpotsList.innerHTML = emptyStateTemplate("Select a list first.", "");
+    elements.addSpotsList.innerHTML = emptyStateTemplate(t("list.selectFirst"), "");
     return;
   }
   const added = new Set((list.items ?? []).map((item) => item.restaurant_id));
@@ -2218,14 +2835,14 @@ function renderAddSpotsDialog() {
           ${restaurantThumbTemplate(restaurant)}
           <div>
             <strong>${escapeHtml(restaurant.name)}</strong>
-            <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)}${added.has(restaurant.id) ? " · In this list" : ""}</small>
+            <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)}${added.has(restaurant.id) ? ` · ${t("list.inThisList")}` : ""}</small>
           </div>
           <button class="secondary-button ${added.has(restaurant.id) ? "danger" : ""}" type="button" ${added.has(restaurant.id) ? `data-remove-list-spot="${restaurant.id}"` : `data-add-list-spot="${restaurant.id}"`}>
-            ${added.has(restaurant.id) ? "Remove" : "Add"}
+            ${added.has(restaurant.id) ? t("button.remove") : t("button.add")}
           </button>
         </article>
       `).join("")
-    : emptyStateTemplate("No restaurants match this search.", "");
+    : emptyStateTemplate(t("list.noRestaurantMatches"), "");
   elements.addSpotsList.querySelectorAll("[data-add-list-spot]").forEach((button) => {
     button.addEventListener("click", () => addSpotToList(list.id, button.dataset.addListSpot));
   });
@@ -2280,6 +2897,18 @@ function restaurantsForSystemList(definition) {
   return restaurants.filter((restaurant) => definition.filter === "all" || restaurant.status === definition.filter);
 }
 
+function systemListTitle(list) {
+  return t(`system.${list.key}.title`);
+}
+
+function systemListEyebrow(list) {
+  return t(`system.${list.key}.eyebrow`);
+}
+
+function systemListDescription(list) {
+  return t(`system.${list.key}.description`);
+}
+
 function sortRestaurantsByDistance(items) {
   if (!currentLocation) return [...items];
   return [...items].sort((a, b) => haversineDistance(currentLocation, a) - haversineDistance(currentLocation, b));
@@ -2294,7 +2923,7 @@ function sortListItemsByDistance(items) {
 }
 
 function distanceLabel(restaurant) {
-  return currentLocation ? formatDistance(haversineDistance(currentLocation, restaurant)) : "Distance pending";
+  return currentLocation ? formatDistance(haversineDistance(currentLocation, restaurant)) : t("distance.pending");
 }
 
 function accentVariant(value) {
@@ -2367,7 +2996,7 @@ function googleMapsPlaceKey(url) {
 function normalizeRestaurant(item) {
   return {
     id: String(item.id),
-    name: String(item.name || "Untitled Spot"),
+    name: String(item.name || t("spot.untitled")),
     address: String(item.address || ""),
     lat: Number(item.lat),
     lng: Number(item.lng),
@@ -2386,7 +3015,7 @@ function normalizeDish(item) {
   return {
     id: String(item.id),
     restaurant_id: String(item.restaurant_id || ""),
-    name: String(item.name || "Dish"),
+    name: String(item.name || t("detail.dishName")),
     dish_status: ["liked", "tried"].includes(item.dish_status) ? item.dish_status : "tried",
     rating: Math.max(0, Math.min(5, Number(item.rating || 0))),
     image_url: String(item.image_url || ""),
@@ -2403,7 +3032,7 @@ function normalizeList(item) {
     id: String(item.id),
     owner_user_id: String(item.owner_user_id || ""),
     owner: item.owner || null,
-    title: String(item.title || "Untitled List"),
+    title: String(item.title || t("list.choose")),
     description: String(item.description || ""),
     visibility: item.visibility === "public" ? "public" : "private",
     cover_image_url: String(item.cover_image_url || ""),
@@ -2469,12 +3098,12 @@ function listSearchText(list) {
 }
 
 function visibilityLabel(visibility) {
-  return visibility === "public" ? "Public" : "Private";
+  return visibility === "public" ? t("visibility.public") : t("visibility.private");
 }
 
 function formatDate(timestamp) {
   if (!timestamp) return "--";
-  return new Date(timestamp * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return new Date(timestamp * 1000).toLocaleDateString(currentLanguage === "zh" ? "zh-CN" : "en", { month: "short", day: "numeric" });
 }
 
 function cloneRestaurant(restaurant) {
@@ -2483,7 +3112,7 @@ function cloneRestaurant(restaurant) {
 
 function resetDemoData() {
   if (currentUser) {
-    alert("登录后数据保存在云端，不使用 Reset Demo。");
+    alert(t("reset.cloudOnly"));
     return;
   }
   restaurants = demoRestaurants.map(cloneRestaurant);
@@ -2516,7 +3145,11 @@ function statusIcon(status) {
 }
 
 function statusLabel(status) {
-  return { visited: "Visited", want_to_go: "Want to Go", favorite: "Favorite" }[status] || "Unknown";
+  return { visited: t("status.visited"), want_to_go: t("status.want_to_go"), favorite: t("status.favorite") }[status] || t("status.unknown");
+}
+
+function dishStatusLabel(status) {
+  return status === "tried" ? t("status.tried") : t("status.liked");
 }
 
 function shortName(name) {

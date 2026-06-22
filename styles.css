@@ -327,6 +327,81 @@ body.is-topbar-elevated .topbar::after {
   white-space: nowrap;
 }
 
+.language-menu {
+  position: relative;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  z-index: 4;
+}
+
+.language-menu summary {
+  width: 42px;
+  height: 42px;
+  list-style: none;
+}
+
+.language-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.language-trigger {
+  position: relative;
+  display: grid;
+  padding: 0;
+  border-color: transparent;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.language-trigger small {
+  position: absolute;
+  right: -2px;
+  bottom: 2px;
+  display: grid;
+  min-width: 18px;
+  height: 16px;
+  place-items: center;
+  border: 1px solid rgba(217, 197, 183, 0.9);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--primary-dark);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.language-options {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: grid;
+  gap: 4px;
+  min-width: 132px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: var(--soft-shadow);
+}
+
+.language-options button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--primary-dark);
+  font-weight: 700;
+  text-align: left;
+}
+
+.language-options button:hover,
+.language-options button.active {
+  border-color: var(--line);
+  background: var(--paper-warm);
+}
+
 .layout {
   position: relative;
   display: grid;
@@ -3488,7 +3563,7 @@ body.is-topbar-elevated .layout::before {
 
   .top-actions {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 42px 42px minmax(88px, auto);
+    grid-template-columns: minmax(0, 1fr) 42px 42px 42px minmax(88px, auto);
     justify-content: stretch;
   }
 
@@ -3498,7 +3573,8 @@ body.is-topbar-elevated .layout::before {
     max-width: none;
   }
 
-  .top-actions .icon-button {
+  .top-actions .icon-button,
+  .top-actions .language-trigger {
     width: 42px;
     min-width: 42px;
   }

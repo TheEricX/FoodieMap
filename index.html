@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,28 +10,38 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260621-topbar-cap-soft" />
+    <link rel="stylesheet" href="/styles.css?v=20260622-i18n" />
   </head>
   <body>
     <main class="app-shell">
       <header class="topbar">
         <div class="brand">
           <span class="brand-mark">◎</span>
-          <span>Gourmet Map</span>
+          <span data-i18n="app.brand">Gourmet Map</span>
         </div>
         <nav class="top-nav" aria-label="Primary navigation">
-          <a class="active" href="#my-map" data-view="my-map">Map View</a>
-          <a href="#my-lists" data-view="my-lists">List View</a>
-          <a href="#discovery" data-view="discovery">Discovery</a>
+          <a class="active" href="#my-map" data-view="my-map" data-i18n="nav.map">Map View</a>
+          <a href="#my-lists" data-view="my-lists" data-i18n="nav.lists">List View</a>
+          <a href="#discovery" data-view="discovery" data-i18n="nav.discovery">Discovery</a>
         </nav>
         <label class="search-box">
           <span>⌕</span>
-          <input id="searchInput" type="search" placeholder="Search for tasty treats..." />
+          <input id="searchInput" type="search" placeholder="Search for tasty treats..." data-i18n-placeholder="search.default" />
         </label>
         <div class="top-actions">
-          <div class="location-status top-location-status" id="locationStatus">等待定位</div>
-          <button class="icon-button" id="locateButton" title="获取当前位置">⌖</button>
-          <button class="icon-button" id="settingsButton" title="Google API 设置">⚙</button>
+          <div class="location-status top-location-status" id="locationStatus" data-i18n="location.waiting">Location pending</div>
+          <button class="icon-button" id="locateButton" title="Get current location" data-i18n-title="location.button">⌖</button>
+          <details class="language-menu" id="languageMenu">
+            <summary class="icon-button language-trigger" title="Language" data-i18n-title="language.label">
+              <span aria-hidden="true">🌐</span>
+              <small id="languageLabel">EN</small>
+            </summary>
+            <div class="language-options">
+              <button type="button" data-language-option="en" data-i18n="language.english">English</button>
+              <button type="button" data-language-option="zh" data-i18n="language.chinese">中文</button>
+            </div>
+          </details>
+          <button class="icon-button" id="settingsButton" title="Google API settings" data-i18n-title="settings.button">⚙</button>
           <button class="avatar" id="loginButton" type="button">Sign in</button>
         </div>
       </header>
@@ -41,47 +51,47 @@
           <section class="profile-card">
             <div class="pixel-badge">🍴</div>
             <div>
-              <p class="eyebrow">MY PANTRY</p>
+              <p class="eyebrow" data-i18n="sidebar.myPantry">MY PANTRY</p>
               <strong id="placeCount">0 places</strong>
             </div>
           </section>
 
-          <button class="primary-button" id="openAddPanel">＋ New Spot</button>
-          <button class="primary-button alt" id="pasteAddButton" type="button">Paste & Add</button>
-          <p class="action-status" id="pasteStatus">复制 Google Maps 链接后点 Paste & Add。</p>
+          <button class="primary-button" id="openAddPanel" data-i18n="button.newSpot">+ New Spot</button>
+          <button class="primary-button alt" id="pasteAddButton" type="button" data-i18n="button.pasteAdd">Paste & Add</button>
+          <p class="action-status" id="pasteStatus">Copy a Google Maps link, then click Paste & Add.</p>
 
           <section class="sidebar-index-panel" aria-label="Pantry index">
             <div class="sidebar-section-head compact">
               <div>
-                <p class="eyebrow">SMART LISTS</p>
-                <strong>Built from your map</strong>
+                <p class="eyebrow" data-i18n="sidebar.smartLists">SMART LISTS</p>
+                <strong data-i18n="sidebar.builtFromMap">Built from your map</strong>
               </div>
             </div>
             <nav class="filter-list" aria-label="Restaurant filters">
-              <button class="filter-item active" data-filter="all">All Spots <span id="countAll">0</span></button>
-              <button class="filter-item" data-filter="visited">Visited <span id="countVisited">0</span></button>
-              <button class="filter-item" data-filter="want_to_go">Want to Go <span id="countWant">0</span></button>
-              <button class="filter-item" data-filter="favorite">Favorites <span id="countFavorite">0</span></button>
+              <button class="filter-item active" data-filter="all"><span data-i18n="system.all.title">All Spots</span> <span id="countAll">0</span></button>
+              <button class="filter-item" data-filter="visited"><span data-i18n="system.visited.title">Visited</span> <span id="countVisited">0</span></button>
+              <button class="filter-item" data-filter="want_to_go"><span data-i18n="system.want_to_go.title">Want to Go</span> <span id="countWant">0</span></button>
+              <button class="filter-item" data-filter="favorite"><span data-i18n="system.favorite.title">Favorites</span> <span id="countFavorite">0</span></button>
             </nav>
           </section>
 
           <section class="sidebar-lists-panel" aria-label="Custom list filters">
             <div class="sidebar-section-head">
               <div>
-                <p class="eyebrow">CUSTOM LISTS</p>
-                <strong>Your saved routes</strong>
+                <p class="eyebrow" data-i18n="sidebar.customLists">CUSTOM LISTS</p>
+                <strong data-i18n="sidebar.savedRoutes">Your saved routes</strong>
               </div>
-              <button class="icon-button mini-action" id="createListButton" type="button" title="Create List">＋</button>
+              <button class="icon-button mini-action" id="createListButton" type="button" title="Create List" data-i18n-title="button.createList">＋</button>
             </div>
             <div class="sidebar-list-filters" id="sidebarListFilters"></div>
           </section>
 
           <details class="data-tools">
-            <summary>Data tools</summary>
+            <summary data-i18n="sidebar.dataTools">Data tools</summary>
             <div class="data-actions" aria-label="Data actions">
-              <button class="secondary-button" id="exportButton" type="button">Export</button>
-              <button class="secondary-button" id="importButton" type="button">Import</button>
-              <button class="secondary-button danger" id="resetButton" type="button">Reset Demo</button>
+              <button class="secondary-button" id="exportButton" type="button" data-i18n="button.export">Export</button>
+              <button class="secondary-button" id="importButton" type="button" data-i18n="button.import">Import</button>
+              <button class="secondary-button danger" id="resetButton" type="button" data-i18n="button.resetDemo">Reset Demo</button>
               <input id="importFile" type="file" accept="application/json" hidden />
             </div>
           </details>
@@ -102,48 +112,48 @@
 
           <div class="cute-map" id="cuteMap" aria-label="Relative restaurant map">
             <div class="map-zoom-controls" aria-label="Map zoom controls">
-              <button class="map-zoom-button" id="mapZoomOut" type="button" title="Zoom out">−</button>
+              <button class="map-zoom-button" id="mapZoomOut" type="button" title="Zoom out" data-i18n-title="map.zoomOut">−</button>
               <span id="mapZoomLabel">100%</span>
-              <button class="map-zoom-button" id="mapZoomIn" type="button" title="Zoom in">＋</button>
-              <button class="map-zoom-button reset" id="mapZoomReset" type="button" title="Reset zoom">1×</button>
+              <button class="map-zoom-button" id="mapZoomIn" type="button" title="Zoom in" data-i18n-title="map.zoomIn">＋</button>
+              <button class="map-zoom-button reset" id="mapZoomReset" type="button" title="Reset zoom" data-i18n-title="map.zoomReset">1×</button>
             </div>
             <div class="grid-overlay"></div>
             <div class="range-ring ring-1"><span>1 km</span></div>
             <div class="range-ring ring-2"><span>5 km</span></div>
             <div class="range-ring ring-3"><span>15 km+</span></div>
-            <button class="me-marker" id="meMarker" title="当前位置">
+            <button class="me-marker" id="meMarker" title="Current location" data-i18n-title="location.button">
               <span>🧑‍🍳</span>
               <small>YOU</small>
             </button>
             <div id="markersLayer"></div>
             <div class="empty-map" id="emptyMap">
-              <strong>添加第一家餐厅</strong>
-              <span>保存地址或 Google Maps 链接后，它会出现在这张 Q 版相对地图上。</span>
+              <strong data-i18n="map.emptyTitle">Add your first restaurant</strong>
+              <span data-i18n="map.emptyBody">Save an address or Google Maps link, and it will appear on this playful relative map.</span>
             </div>
           </div>
 
           <article class="spot-card" id="spotCard">
             <span class="tape"></span>
-            <button class="close-card" id="closeCard" type="button" title="收起详情">×</button>
-            <p class="eyebrow">SELECTED SPOT</p>
-            <h2 id="spotName">选择一家餐厅</h2>
+            <button class="close-card" id="closeCard" type="button" title="Close details" data-i18n-title="modal.closeDetails">×</button>
+            <p class="eyebrow" data-i18n="map.selectedSpot">SELECTED SPOT</p>
+            <h2 id="spotName">Choose a restaurant</h2>
             <div class="meta-row">
               <span id="spotDistance">-- km</span>
               <span id="spotRating">☆ --</span>
               <span id="spotStatus">--</span>
             </div>
-            <p id="spotNotes">点击地图上的餐厅图标查看详情。</p>
+            <p id="spotNotes">Click a restaurant marker to view details.</p>
             <div class="dish-list" id="spotDishes"></div>
             <div class="card-actions">
-              <button class="outline-button" id="openSpotDetail" type="button">Details</button>
-              <button class="outline-button" id="editSpot" type="button">Edit</button>
-              <button class="outline-button" id="shareSpot" type="button">Share</button>
-              <button class="outline-button danger" id="deleteSpot" type="button">Delete</button>
+              <button class="outline-button" id="openSpotDetail" type="button" data-i18n="button.details">Details</button>
+              <button class="outline-button" id="editSpot" type="button" data-i18n="button.edit">Edit</button>
+              <button class="outline-button" id="shareSpot" type="button" data-i18n="button.share">Share</button>
+              <button class="outline-button danger" id="deleteSpot" type="button" data-i18n="button.delete">Delete</button>
             </div>
-            <a class="outline-link" id="openGoogleMaps" href="#" target="_blank" rel="noreferrer">Open Google Maps ›</a>
+            <a class="outline-link" id="openGoogleMaps" href="#" target="_blank" rel="noreferrer" data-i18n="map.openGoogle">Open Google Maps ›</a>
           </article>
           <button class="spot-card-tab" id="spotCardTab" type="button" hidden>
-            <span>Selected</span>
+            <span data-i18n="map.selected">Selected</span>
             <strong id="spotCardTabName">Spot</strong>
           </button>
         </section>
@@ -155,24 +165,24 @@
         <section class="discovery-stage app-view" id="discoveryView" data-view-panel="discovery" hidden>
           <div class="discovery-hero">
             <div>
-              <span class="paper-label">COMMUNITY PICKS</span>
-              <h1>Pantry Discovery</h1>
-              <p>Explore public taste maps shared by the Gourmet Map community.</p>
+              <span class="paper-label" data-i18n="discovery.communityPicks">COMMUNITY PICKS</span>
+              <h1 data-i18n="discovery.title">Pantry Discovery</h1>
+              <p data-i18n="discovery.body">Explore public taste maps shared by the Gourmet Map community.</p>
             </div>
             <div class="hero-mascot" aria-hidden="true">🍜</div>
           </div>
           <div class="discovery-controls">
-            <div class="segmented-tabs" role="tablist" aria-label="Discovery sort">
-              <button class="active" type="button" data-discovery-sort="popular">Popular</button>
-              <button type="button" data-discovery-sort="recent">Recent</button>
+            <div class="segmented-tabs" role="tablist" aria-label="Discovery sort" data-i18n-aria-label="discovery.sortLabel">
+              <button class="active" type="button" data-discovery-sort="popular" data-i18n="discovery.popular">Popular</button>
+              <button type="button" data-discovery-sort="recent" data-i18n="discovery.recent">Recent</button>
             </div>
           </div>
           <div class="discovery-layout">
             <section class="panel-surface">
               <div class="section-head">
                 <div>
-                  <p class="eyebrow">PUBLIC LISTS</p>
-                  <strong>Published by food explorers</strong>
+                  <p class="eyebrow" data-i18n="discovery.publicLists">PUBLIC LISTS</p>
+                  <strong data-i18n="discovery.publishedBy">Published by food explorers</strong>
                 </div>
               </div>
               <div class="list-grid discovery-grid" id="discoveryGrid"></div>
@@ -185,9 +195,9 @@
       <dialog class="detail-drawer" id="spotDetailDialog">
         <form class="detail-drawer-card" id="spotDetailForm" method="dialog">
           <div class="detail-drawer-head">
-            <button class="icon-button" type="button" id="closeSpotDetail" title="关闭详情">×</button>
+            <button class="icon-button" type="button" id="closeSpotDetail" title="Close details" data-i18n-title="modal.closeDetails">×</button>
             <div>
-              <p class="eyebrow">RESTAURANT JOURNAL</p>
+              <p class="eyebrow" data-i18n="detail.journal">RESTAURANT JOURNAL</p>
               <h2 id="detailSpotName">Restaurant</h2>
               <div class="detail-meta-row" id="detailSpotMeta"></div>
             </div>
@@ -196,65 +206,65 @@
           <section class="detail-paper-panel">
             <div class="detail-section-head">
               <div>
-                <p class="eyebrow">MY REVIEW</p>
-                <strong>餐厅评价</strong>
+                <p class="eyebrow" data-i18n="detail.review">MY REVIEW</p>
+                <strong data-i18n="detail.reviewTitle">Restaurant review</strong>
               </div>
             </div>
             <input name="restaurantId" type="hidden" />
             <div class="detail-form-grid">
               <label>
-                状态
+                <span data-i18n="detail.status">Status</span>
                 <input name="status" type="hidden" value="want_to_go" />
-                <div class="detail-review-status-picker" role="group" aria-label="Restaurant status">
-                  <button type="button" data-detail-review-status="visited">Visited</button>
-                  <button class="active" type="button" data-detail-review-status="want_to_go">Want to Go</button>
-                  <button type="button" data-detail-review-status="favorite">Favorite</button>
+                <div class="detail-review-status-picker" role="group" aria-label="Restaurant status" data-i18n-aria-label="detail.status">
+                  <button type="button" data-detail-review-status="visited" data-i18n="status.visited">Visited</button>
+                  <button class="active" type="button" data-detail-review-status="want_to_go" data-i18n="status.want_to_go">Want to Go</button>
+                  <button type="button" data-detail-review-status="favorite" data-i18n="status.favorite">Favorite</button>
                 </div>
               </label>
               <label>
-                评分
+                <span data-i18n="detail.rating">Rating</span>
                 <input name="personalRating" type="number" min="0" max="5" step="0.1" data-detail-review-field />
               </label>
               <label>
-                去过次数
+                <span data-i18n="detail.visitCount">Visit count</span>
                 <input name="visitCount" type="number" min="0" step="1" data-detail-review-field />
               </label>
             </div>
             <label>
-              我的想法
-              <textarea name="notes" rows="5" placeholder="写下这家店适合什么场景、想再点什么、有没有避雷。" data-detail-review-field></textarea>
+              <span data-i18n="detail.notes">My notes</span>
+              <textarea name="notes" rows="5" placeholder="Write when this place works best, what to order again, or what to avoid." data-i18n-placeholder="detail.notesPlaceholder" data-detail-review-field></textarea>
             </label>
-            <p class="form-help" id="detailStatus">修改后会自动保存餐厅评价。</p>
+            <p class="form-help" id="detailStatus">Changes autosave to your restaurant review.</p>
           </section>
 
           <section class="detail-paper-panel">
             <div class="detail-section-head">
               <div>
-                <p class="eyebrow">MENU NOTES</p>
-                <strong>菜单记录</strong>
+                <p class="eyebrow" data-i18n="detail.menuNotes">MENU NOTES</p>
+                <strong data-i18n="detail.menuTitle">Menu notes</strong>
               </div>
               <button class="secondary-button compact-action detail-add-toggle" id="detailAddDishToggle" type="button">+ Add Menu</button>
             </div>
             <div class="detail-add-dish" id="detailAddDishPanel" hidden>
-              <input class="detail-dish-name-input" id="detailDishName" placeholder="菜品名称" />
+              <input class="detail-dish-name-input" id="detailDishName" placeholder="Dish name" data-i18n-placeholder="detail.dishName" />
               <input id="detailDishStatus" type="hidden" value="liked" />
-              <div class="detail-status-picker" role="group" aria-label="Dish status">
-                <button class="active" type="button" data-detail-dish-status="liked">Liked</button>
-                <button type="button" data-detail-dish-status="tried">Tried</button>
+              <div class="detail-status-picker" role="group" aria-label="Dish status" data-i18n-aria-label="detail.status">
+                <button class="active" type="button" data-detail-dish-status="liked" data-i18n="status.liked">Liked</button>
+                <button type="button" data-detail-dish-status="tried" data-i18n="status.tried">Tried</button>
               </div>
               <input id="detailDishRating" type="number" min="0" max="5" step="0.1" value="4.5" />
               <label class="detail-file-dropzone" data-detail-file-dropzone>
                 <input id="detailDishImage" type="file" accept="image/jpeg,image/png,image/webp" hidden />
                 <span class="detail-file-mark" aria-hidden="true">＋</span>
                 <span>
-                  <strong>Upload photo</strong>
+                  <strong data-i18n="detail.uploadPhoto">Upload photo</strong>
                   <small id="detailDishImageName">Click to upload or drag image here</small>
                 </span>
               </label>
-              <textarea id="detailDishNotes" rows="2" placeholder="这道菜的感想"></textarea>
+              <textarea id="detailDishNotes" rows="2" placeholder="What did you think of this dish?" data-i18n-placeholder="detail.dishNotesPlaceholder"></textarea>
               <div class="detail-add-actions">
-                <button class="secondary-button ghost-button" id="detailCancelDish" type="button">Cancel</button>
-                <button class="primary-button" id="detailAddDish" type="button">Add Menu</button>
+                <button class="secondary-button ghost-button" id="detailCancelDish" type="button" data-i18n="button.cancel">Cancel</button>
+                <button class="primary-button" id="detailAddDish" type="button" data-i18n="button.addMenu">+ Add Menu</button>
               </div>
             </div>
             <div class="detail-menu-grid" id="detailDishList"></div>
@@ -274,71 +284,71 @@
 
           <input name="id" type="hidden" />
           <label>
-            店名
-            <input name="name" required placeholder="自动识别，或手动输入店名" />
+            <span data-i18n="spot.name">Name</span>
+            <input name="name" required placeholder="Auto-detected, or enter a restaurant name" data-i18n-placeholder="spot.namePlaceholder" />
           </label>
           <label>
-            地址
-            <input name="address" placeholder="可选：手动记录地址" />
+            <span data-i18n="spot.address">Address</span>
+            <input name="address" placeholder="Optional: record the address manually" data-i18n-placeholder="spot.addressPlaceholder" />
           </label>
           <label>
-            Google Maps 链接
-            <input name="googleUrl" placeholder="粘贴 Google Maps 完整链接，自动识别店名和坐标" />
+            <span data-i18n="spot.googleUrl">Google Maps link</span>
+            <input name="googleUrl" placeholder="Paste a full Google Maps link to detect name and coordinates" data-i18n-placeholder="spot.googleUrlPlaceholder" />
           </label>
           <div class="two-col">
             <label>
-              纬度
-              <input name="lat" type="number" min="-90" max="90" step="any" placeholder="自动填入" />
+              <span data-i18n="spot.lat">Latitude</span>
+              <input name="lat" type="number" min="-90" max="90" step="any" placeholder="Auto-filled" data-i18n-placeholder="spot.coordPlaceholder" />
             </label>
             <label>
-              经度
-              <input name="lng" type="number" min="-180" max="180" step="any" placeholder="自动填入" />
+              <span data-i18n="spot.lng">Longitude</span>
+              <input name="lng" type="number" min="-180" max="180" step="any" placeholder="Auto-filled" data-i18n-placeholder="spot.coordPlaceholder" />
             </label>
           </div>
           <div class="two-col">
             <label>
-              状态
+              <span data-i18n="detail.status">Status</span>
               <select name="status">
-                <option value="visited">Visited</option>
-                <option value="want_to_go">Want to Go</option>
-                <option value="favorite">Favorite</option>
+                <option value="visited" data-i18n="status.visited">Visited</option>
+                <option value="want_to_go" data-i18n="status.want_to_go">Want to Go</option>
+                <option value="favorite" data-i18n="status.favorite">Favorite</option>
               </select>
             </label>
             <label>
-              评分
+              <span data-i18n="detail.rating">Rating</span>
               <input name="personalRating" type="number" min="0" max="5" step="0.1" value="4.5" />
             </label>
           </div>
           <label>
-            去过次数
+            <span data-i18n="detail.visitCount">Visit count</span>
             <input name="visitCount" type="number" min="0" step="1" value="0" />
           </label>
           <label>
-            想法
-            <textarea name="notes" rows="4" placeholder="汤底浓郁，适合下班后一个人慢慢吃。"></textarea>
+            <span data-i18n="spot.notes">Notes</span>
+            <textarea name="notes" rows="4" placeholder="Rich broth, good for a slow dinner after work." data-i18n-placeholder="spot.notesPlaceholder"></textarea>
           </label>
           <section class="dish-editor" id="dishEditor" hidden>
             <div class="section-head">
               <div>
-                <p class="eyebrow">DISHES</p>
-                <strong>菜品记录</strong>
+                <p class="eyebrow" data-i18n="spot.dishes">DISHES</p>
+                <strong data-i18n="spot.dishRecords">Dish records</strong>
               </div>
             </div>
             <div class="dish-form-grid">
-              <input id="dishNameInput" placeholder="菜品名称，例如 Black Garlic Tonkotsu" />
+              <input id="dishNameInput" placeholder="Dish name, e.g. Black Garlic Tonkotsu" data-i18n-placeholder="spot.dishPlaceholder" />
               <select id="dishStatusInput">
-                <option value="liked">Liked</option>
-                <option value="tried">Tried</option>
+                <option value="liked" data-i18n="status.liked">Liked</option>
+                <option value="tried" data-i18n="status.tried">Tried</option>
               </select>
               <input id="dishRatingInput" type="number" min="0" max="5" step="0.1" value="4.5" />
-              <button class="secondary-button" id="addDishButton" type="button">Add Dish</button>
+              <button class="secondary-button" id="addDishButton" type="button" data-i18n="button.addDish">Add Dish</button>
             </div>
             <div class="dish-editor-list" id="dishEditorList"></div>
           </section>
-          <p class="form-help" id="formHelp">
-            推荐复制 Google Maps 浏览器地址栏里的完整链接；短分享链接可能需要先在浏览器打开后再复制。
+          <p class="form-help" id="formHelp" data-i18n="google.help">
+            Copy the full Google Maps browser URL. Short share links may need to be opened in a browser first.
           </p>
-          <button class="primary-button" id="saveSpotButton" type="submit">Save Spot</button>
+          <button class="primary-button" id="saveSpotButton" type="submit" data-i18n="spot.saveButton">Save Spot</button>
         </form>
       </dialog>
 
@@ -346,20 +356,20 @@
         <form class="modal-card" id="shareForm" method="dialog">
           <div class="modal-head">
             <div>
-              <p class="eyebrow">SHARE</p>
-              <h2>Share This Spot</h2>
+              <p class="eyebrow" data-i18n="share.mode">SHARE</p>
+              <h2 data-i18n="share.title">Share This Spot</h2>
             </div>
             <button class="icon-button" type="button" id="closeShareDialog">×</button>
           </div>
-          <p class="form-help">选择这次要推荐给朋友的菜品，然后生成分享链接。</p>
+          <p class="form-help" data-i18n="share.help">Choose the dishes you want to recommend, then create a share link.</p>
           <div class="share-dish-list" id="shareDishList"></div>
           <label>
-            分享链接
-            <input id="shareUrlInput" readonly placeholder="生成后显示链接" />
+            <span data-i18n="share.link">Share link</span>
+            <input id="shareUrlInput" readonly placeholder="Link appears after creation" data-i18n-placeholder="share.linkPlaceholder" />
           </label>
           <div class="card-actions">
-            <button class="primary-button" id="createShareButton" type="submit">Create Share Link</button>
-            <button class="outline-button" id="copyShareButton" type="button">Copy</button>
+            <button class="primary-button" id="createShareButton" type="submit" data-i18n="button.createShareLink">Create Share Link</button>
+            <button class="outline-button" id="copyShareButton" type="button" data-i18n="button.copy">Copy</button>
           </div>
         </form>
       </dialog>
@@ -375,19 +385,19 @@
           </div>
           <input name="id" type="hidden" />
           <label>
-            标题
+            <span data-i18n="listForm.titleLabel">Title</span>
             <input name="title" required maxlength="160" placeholder="Tokyo Ramen Hunt" />
           </label>
           <label>
-            描述
-            <textarea name="description" rows="4" placeholder="记录这组餐厅适合什么场景。"></textarea>
+            <span data-i18n="listForm.descriptionLabel">Description</span>
+            <textarea name="description" rows="4" placeholder="Describe the occasion or theme for this restaurant group." data-i18n-placeholder="listForm.descriptionPlaceholder"></textarea>
           </label>
           <label>
-            封面 URL（可选）
-            <input name="coverImageUrl" placeholder="不填时自动使用清单内菜品图片" />
+            <span data-i18n="listForm.coverLabel">Cover URL (optional)</span>
+            <input name="coverImageUrl" placeholder="Leave blank to use a dish photo from the list" data-i18n-placeholder="listForm.coverPlaceholder" />
           </label>
-          <p class="form-help" id="listFormHelp">清单默认私密；发布后才会出现在 Discovery。</p>
-          <button class="primary-button" id="saveListButton" type="submit">Save List</button>
+          <p class="form-help" id="listFormHelp">Lists are private by default. Publish when you want them to appear in Discovery.</p>
+          <button class="primary-button" id="saveListButton" type="submit" data-i18n="button.createList">Create List</button>
         </form>
       </dialog>
 
@@ -395,17 +405,17 @@
         <form class="modal-card" method="dialog">
           <div class="modal-head">
             <div>
-              <p class="eyebrow">MANAGE_SPOTS</p>
-              <h2>Manage Spots</h2>
+              <p class="eyebrow" data-i18n="manageSpots.mode">MANAGE_SPOTS</p>
+              <h2 data-i18n="manageSpots.title">Manage Spots</h2>
             </div>
             <button class="icon-button" type="button" id="closeAddSpotsDialog">×</button>
           </div>
           <label>
-            搜索餐厅
-            <input id="addSpotsSearch" type="search" placeholder="Search your map..." />
+            <span data-i18n="manageSpots.search">Search restaurants</span>
+            <input id="addSpotsSearch" type="search" placeholder="Search your map..." data-i18n-placeholder="manageSpots.searchPlaceholder" />
           </label>
           <div class="add-spots-list" id="addSpotsList"></div>
-          <p class="form-help">已加入的餐厅可从这里移除；餐厅记录本身不会被删除。</p>
+          <p class="form-help" data-i18n="manageSpots.help">Restaurants already in the list can be removed here. Restaurant records are not deleted.</p>
         </form>
       </dialog>
 
@@ -413,22 +423,22 @@
         <form class="modal-card" id="settingsForm" method="dialog">
           <div class="modal-head">
             <div>
-              <p class="eyebrow">SETTINGS</p>
+              <p class="eyebrow" data-i18n="settings.mode">SETTINGS</p>
               <h2>Google API</h2>
             </div>
             <button class="icon-button" type="button" id="closeSettings">×</button>
           </div>
           <label>
-            Google Geocoding API Key
+            <span data-i18n="settings.keyLabel">Google Geocoding API Key</span>
             <input name="googleApiKey" id="googleApiKey" placeholder="AIza..." />
           </label>
-          <p class="form-help">
-            MVP 默认优先解析 Google Maps 链接和手动经纬度；只有只填地址时才需要 Google Geocoding API。
+          <p class="form-help" data-i18n="settings.help">
+            The MVP prefers Google Maps links and manual coordinates. A Google Geocoding API key is only needed when you enter an address without coordinates.
           </p>
-          <button class="primary-button" type="submit">Save Settings</button>
+          <button class="primary-button" type="submit" data-i18n="button.saveSettings">Save Settings</button>
         </form>
       </dialog>
     </main>
-    <script src="/app.js?v=20260613-wooden"></script>
+    <script src="/app.js?v=20260622-i18n"></script>
   </body>
 </html>
