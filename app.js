@@ -85,6 +85,16 @@ let editingListId = null;
 let addSpotsListId = null;
 let discoverySort = "popular";
 let mapZoom = 1;
+let isDetailAddDishOpen = false;
+let activeDetailRestaurantId = null;
+let detailCloseTimer = null;
+
+const DISH_AUTOSAVE_DELAY = 700;
+const REVIEW_AUTOSAVE_DELAY = 700;
+const editingDetailDishIds = new Set();
+const dishAutosaveTimers = new Map();
+let reviewAutosaveTimer = null;
+let isRenderingSpotDetail = false;
 
 const elements = {
   topbar: document.querySelector(".topbar"),
@@ -158,8 +168,12 @@ const elements = {
   detailDishStatus: document.querySelector("#detailDishStatus"),
   detailDishRating: document.querySelector("#detailDishRating"),
   detailDishImage: document.querySelector("#detailDishImage"),
+  detailDishImageName: document.querySelector("#detailDishImageName"),
   detailDishNotes: document.querySelector("#detailDishNotes"),
+  detailAddDishPanel: document.querySelector("#detailAddDishPanel"),
+  detailAddDishToggle: document.querySelector("#detailAddDishToggle"),
   detailAddDish: document.querySelector("#detailAddDish"),
+  detailCancelDish: document.querySelector("#detailCancelDish"),
   detailDishList: document.querySelector("#detailDishList"),
   shareDialog: document.querySelector("#shareDialog"),
   shareForm: document.querySelector("#shareForm"),
@@ -228,7 +242,22 @@ function bindEvents() {
   elements.closeSpotDetail.addEventListener("click", closeSpotDetail);
   elements.spotDetailDialog.addEventListener("click", closeSpotDetailFromBackdrop);
   elements.spotDetailForm.addEventListener("submit", saveDetailRestaurant);
+  elements.spotDetailForm.querySelectorAll("[data-detail-review-field]").forEach((field) => {
+    field.addEventListener("input", scheduleDetailReviewAutosave);
+    field.addEventListener("change", scheduleDetailReviewAutosave);
+  });
+  elements.spotDetailForm.querySelectorAll("[data-detail-review-status]").forEach((button) => {
+    button.addEventListener("click", () => setDetailReviewStatus(button.dataset.detailReviewStatus));
+  });
+  elements.detailAddDishToggle.addEventListener("click", () => setDetailAddDishOpen(!isDetailAddDishOpen));
   elements.detailAddDish.addEventListener("click", addDishFromDetail);
+  elements.detailCancelDish.addEventListener("click", cancelDetailDishAdd);
+  bindDetailFileDropzone(elements.detailDishImage.closest("[data-detail-file-dropzone]"), elements.detailDishImage, {
+    onFileSelected: () => updateDetailDishImageName(),
+  });
+  document.querySelectorAll("[data-detail-dish-status]").forEach((button) => {
+    button.addEventListener("click", () => setDetailDishStatus(button.dataset.detailDishStatus));
+  });
   elements.editSpot.addEventListener("click", openEditDialog);
   elements.shareSpot.addEventListener("click", openShareDialog);
   elements.deleteSpot.addEventListener("click", deleteSelectedRestaurant);
@@ -653,14 +682,14 @@ async function compressImage(file) {
   return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, { type: "image/webp" });
 }
 
-function replaceDish(updatedDish) {
+function replaceDish(updatedDish, { rerender = true } = {}) {
   const restaurant = selectedRestaurant();
   if (!restaurant) return;
   const normalized = normalizeDish(updatedDish);
   restaurant.dishes = (restaurant.dishes ?? []).map((dish) => (dish.id === normalized.id ? normalized : dish));
   syncRestaurantReferences(restaurant);
   if (editingRestaurantId === restaurant.id) renderDishEditor(restaurant);
-  if (elements.spotDetailDialog.open) renderSpotDetail(restaurant);
+  if (rerender && elements.spotDetailDialog.open) renderSpotDetail(restaurant);
   render();
 }
 
@@ -728,11 +757,25 @@ function openSpotDetail() {
   const selected = selectedRestaurant();
   if (!selected) return;
   renderSpotDetail(selected);
-  elements.spotDetailDialog.showModal();
+  clearTimeout(detailCloseTimer);
+  elements.spotDetailDialog.classList.remove("is-open", "is-closing");
+  if (!elements.spotDetailDialog.open) elements.spotDetailDialog.showModal();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      elements.spotDetailDialog.classList.add("is-open");
+    });
+  });
 }
 
 function closeSpotDetail() {
-  if (elements.spotDetailDialog.open) elements.spotDetailDialog.close();
+  if (!elements.spotDetailDialog.open) return;
+  clearTimeout(detailCloseTimer);
+  elements.spotDetailDialog.classList.remove("is-open");
+  elements.spotDetailDialog.classList.add("is-closing");
+  detailCloseTimer = window.setTimeout(() => {
+    elements.spotDetailDialog.classList.remove("is-closing");
+    elements.spotDetailDialog.close();
+  }, 240);
 }
 
 function closeSpotDetailFromBackdrop(event) {
@@ -749,12 +792,26 @@ function closeSpotDetailFromBackdrop(event) {
 
 function renderSpotDetail(restaurant = selectedRestaurant()) {
   if (!restaurant) return;
+  if (activeDetailRestaurantId !== restaurant.id) {
+    resetDetailDishUi();
+    activeDetailRestaurantId = restaurant.id;
+  }
+  isRenderingSpotDetail = true;
   const form = elements.spotDetailForm.elements;
   form.restaurantId.value = restaurant.id;
-  form.status.value = restaurant.status || "want_to_go";
+  setDetailReviewStatus(restaurant.status || "want_to_go", { autosave: false });
   form.personalRating.value = Number(restaurant.personal_rating || 0).toFixed(1);
   form.visitCount.value = restaurant.visit_count || 0;
   form.notes.value = restaurant.notes || "";
+  renderDetailHeader(restaurant);
+  elements.detailStatus.textContent = currentUser ? "修改后会自动保存餐厅评价。" : "演示模式可查看；登录后可以保存评价、菜单和图片。";
+  renderDetailAddDishState();
+  renderDetailDishList(restaurant);
+  isRenderingSpotDetail = false;
+}
+
+function renderDetailHeader(restaurant = selectedRestaurant()) {
+  if (!restaurant) return;
   elements.detailSpotName.textContent = restaurant.name;
   elements.detailSpotMeta.innerHTML = `
     <span>${statusLabel(restaurant.status)}</span>
@@ -762,31 +819,68 @@ function renderSpotDetail(restaurant = selectedRestaurant()) {
     <span>${restaurant.visit_count || 0} visits</span>
     <span>${distanceLabel(restaurant)}</span>
   `;
-  elements.detailStatus.textContent = currentUser ? "点击 Save 保存餐厅评价。" : "演示模式可查看；登录后可以保存评价、菜单和图片。";
-  renderDetailDishList(restaurant);
 }
 
 async function saveDetailRestaurant(event) {
   event.preventDefault();
-  if (!requireLogin()) return;
-  const restaurant = selectedRestaurant();
-  if (!restaurant) return;
+  clearReviewAutosaveTimer();
+  await saveDetailRestaurantReview({ rerenderDetail: false });
+}
+
+function getDetailReviewPayload() {
   const form = new FormData(elements.spotDetailForm);
-  const body = {
+  return {
     status: String(form.get("status") || "want_to_go"),
     personal_rating: clampRating(Number(form.get("personalRating") || 0)),
     visit_count: Math.max(0, Math.floor(Number(form.get("visitCount") || 0))),
     notes: String(form.get("notes") || "").trim(),
   };
+}
+
+function setDetailReviewStatus(status, { autosave = true } = {}) {
+  const allowedStatuses = ["visited", "want_to_go", "favorite"];
+  const nextStatus = allowedStatuses.includes(status) ? status : "want_to_go";
+  elements.spotDetailForm.elements.status.value = nextStatus;
+  elements.spotDetailForm.querySelectorAll("[data-detail-review-status]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.detailReviewStatus === nextStatus);
+  });
+  if (autosave) scheduleDetailReviewAutosave();
+}
+
+function scheduleDetailReviewAutosave() {
+  if (isRenderingSpotDetail) return;
+  if (!currentUser) {
+    elements.detailStatus.textContent = "登录后会自动保存餐厅评价。";
+    return;
+  }
+  clearReviewAutosaveTimer();
+  elements.detailStatus.textContent = "正在自动保存餐厅评价...";
+  reviewAutosaveTimer = window.setTimeout(() => {
+    saveDetailRestaurantReview({ rerenderDetail: false }).catch(() => {});
+  }, REVIEW_AUTOSAVE_DELAY);
+}
+
+function clearReviewAutosaveTimer() {
+  if (reviewAutosaveTimer) clearTimeout(reviewAutosaveTimer);
+  reviewAutosaveTimer = null;
+}
+
+async function saveDetailRestaurantReview({ rerenderDetail = false } = {}) {
+  if (!requireLogin()) return;
+  const restaurant = selectedRestaurant();
+  if (!restaurant) return;
+  const body = getDetailReviewPayload();
   try {
-    elements.detailStatus.textContent = "正在保存餐厅评价...";
+    elements.detailStatus.textContent = "正在自动保存餐厅评价...";
     const data = await api(`/api/restaurants/${restaurant.id}`, { method: "PATCH", body: JSON.stringify(body) });
     upsertRestaurant(data.restaurant);
-    elements.detailStatus.textContent = "已保存餐厅评价。";
+    elements.detailStatus.textContent = "已自动保存餐厅评价。";
     render();
-    renderSpotDetail(selectedRestaurant());
+    if (rerenderDetail) renderSpotDetail(selectedRestaurant());
+    else renderDetailHeader(selectedRestaurant());
   } catch (error) {
     elements.detailStatus.textContent = error.message;
+    throw error;
   }
 }
 
@@ -813,6 +907,7 @@ async function addDishFromDetail() {
     restaurant.dishes = [added, ...(restaurant.dishes ?? [])];
     syncRestaurantReferences(restaurant);
     clearDetailDishInputs();
+    setDetailAddDishOpen(false);
     elements.detailStatus.textContent = "已添加菜单。";
     render();
     renderSpotDetail(restaurant);
@@ -832,10 +927,79 @@ async function uploadOptionalDishImage(dish, file) {
 
 function clearDetailDishInputs() {
   elements.detailDishName.value = "";
-  elements.detailDishStatus.value = "liked";
+  setDetailDishStatus("liked");
   elements.detailDishRating.value = "4.5";
   elements.detailDishImage.value = "";
+  updateDetailDishImageName();
   elements.detailDishNotes.value = "";
+}
+
+function updateDetailDishImageName() {
+  const file = elements.detailDishImage.files?.[0];
+  elements.detailDishImageName.textContent = file ? file.name : "Click to upload or drag image here";
+}
+
+function bindDetailFileDropzone(zone, input, options = {}) {
+  if (!zone || !input) return;
+  input.addEventListener("change", () => {
+    zone.classList.toggle("has-file", Boolean(input.files?.[0]));
+    options.onFileSelected?.(input);
+  });
+  ["dragenter", "dragover"].forEach((eventName) => {
+    zone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      zone.classList.add("is-dragging");
+    });
+  });
+  ["dragleave", "drop"].forEach((eventName) => {
+    zone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      zone.classList.remove("is-dragging");
+    });
+  });
+  zone.addEventListener("drop", (event) => {
+    const file = [...(event.dataTransfer?.files ?? [])].find((item) => item.type.startsWith("image/"));
+    if (!file) return;
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+    zone.classList.add("has-file");
+    options.onFileSelected?.(input);
+  });
+}
+
+function setDetailDishStatus(status) {
+  const nextStatus = status === "tried" ? "tried" : "liked";
+  elements.detailDishStatus.value = nextStatus;
+  document.querySelectorAll("[data-detail-dish-status]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.detailDishStatus === nextStatus);
+  });
+}
+
+function setDetailAddDishOpen(isOpen) {
+  isDetailAddDishOpen = isOpen;
+  renderDetailAddDishState();
+  if (isOpen) elements.detailDishName.focus();
+}
+
+function renderDetailAddDishState() {
+  elements.detailAddDishToggle.textContent = isDetailAddDishOpen ? "Close" : "+ Add Menu";
+  elements.detailAddDishPanel.hidden = !isDetailAddDishOpen;
+}
+
+function cancelDetailDishAdd() {
+  clearDetailDishInputs();
+  setDetailAddDishOpen(false);
+  elements.detailStatus.textContent = "已取消新增菜单。";
+}
+
+function resetDetailDishUi() {
+  isDetailAddDishOpen = false;
+  clearDetailDishInputs();
+  clearReviewAutosaveTimer();
+  editingDetailDishIds.clear();
+  dishAutosaveTimers.forEach((timer) => clearTimeout(timer));
+  dishAutosaveTimers.clear();
 }
 
 function renderDetailDishList(restaurant) {
@@ -846,30 +1010,75 @@ function renderDetailDishList(restaurant) {
   elements.detailDishList.querySelectorAll("[data-detail-dish-action]").forEach((button) => {
     button.addEventListener("click", () => handleDetailDishAction(button));
   });
+  elements.detailDishList.querySelectorAll("[data-detail-dish-autosave]").forEach((field) => {
+    field.addEventListener("input", () => scheduleDetailDishAutosave(field.closest(".detail-dish-card")));
+    field.addEventListener("change", () => scheduleDetailDishAutosave(field.closest(".detail-dish-card")));
+  });
   elements.detailDishList.querySelectorAll(".detail-dish-image-input").forEach((input) => {
-    input.addEventListener("change", () => uploadDetailDishImage(input));
+    bindDetailFileDropzone(input.closest("[data-detail-file-dropzone]"), input, {
+      onFileSelected: uploadDetailDishImage,
+    });
   });
 }
 
 function detailDishTemplate(dish) {
+  if (!editingDetailDishIds.has(String(dish.id))) return detailDishPreviewTemplate(dish);
+  return detailDishEditTemplate(dish);
+}
+
+function detailDishPreviewTemplate(dish) {
+  const notes = dish.notes?.trim();
   return `
-    <article class="detail-dish-card" data-dish-id="${dish.id}">
+    <article class="detail-dish-card preview" data-dish-id="${dish.id}">
       <div class="detail-dish-photo">
         ${dish.image_url ? `<img src="${escapeAttribute(dish.image_url)}" alt="">` : "<span>IMG</span>"}
       </div>
       <div class="detail-dish-body">
-        <input data-field="name" value="${escapeAttribute(dish.name)}" />
+        <div class="detail-dish-summary">
+          <div>
+            <strong>${escapeHtml(dish.name)}</strong>
+            <div class="detail-dish-meta">
+              <span class="dish-status-pill">${dish.dish_status === "tried" ? "Tried" : "Liked"}</span>
+              <span>☆ ${Number(dish.rating || 0).toFixed(1)}</span>
+            </div>
+          </div>
+          <div class="detail-dish-actions">
+            <button class="secondary-button compact-action" type="button" data-detail-dish-action="edit">Edit</button>
+            <button class="secondary-button compact-action danger" type="button" data-detail-dish-action="delete">Delete</button>
+          </div>
+        </div>
+        <p class="detail-dish-notes-preview">${notes ? escapeHtml(notes) : "还没有记录这道菜的感想。"}</p>
+      </div>
+    </article>
+  `;
+}
+
+function detailDishEditTemplate(dish) {
+  return `
+    <article class="detail-dish-card editing" data-dish-id="${dish.id}">
+      <div class="detail-dish-photo">
+        ${dish.image_url ? `<img src="${escapeAttribute(dish.image_url)}" alt="">` : "<span>IMG</span>"}
+      </div>
+      <div class="detail-dish-body">
+        <input data-field="name" data-detail-dish-autosave value="${escapeAttribute(dish.name)}" />
         <div class="detail-dish-controls">
-          <select data-field="dish_status">
+          <select data-field="dish_status" data-detail-dish-autosave>
             <option value="liked" ${dish.dish_status === "liked" ? "selected" : ""}>Liked</option>
             <option value="tried" ${dish.dish_status === "tried" ? "selected" : ""}>Tried</option>
           </select>
-          <input data-field="rating" type="number" min="0" max="5" step="0.1" value="${Number(dish.rating || 0)}" />
-          <input class="detail-dish-image-input" type="file" accept="image/jpeg,image/png,image/webp" />
+          <input data-field="rating" data-detail-dish-autosave type="number" min="0" max="5" step="0.1" value="${Number(dish.rating || 0)}" />
+          <label class="detail-file-dropzone compact" data-detail-file-dropzone>
+            <input class="detail-dish-image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+            <span class="detail-file-mark" aria-hidden="true">＋</span>
+            <span>
+              <strong>Replace photo</strong>
+              <small>Click to upload or drag image here</small>
+            </span>
+          </label>
         </div>
-        <textarea data-field="notes" rows="3" placeholder="这道菜的感想">${escapeHtml(dish.notes || "")}</textarea>
+        <textarea data-field="notes" data-detail-dish-autosave rows="3" placeholder="这道菜的感想">${escapeHtml(dish.notes || "")}</textarea>
         <div class="detail-dish-actions">
-          <button class="secondary-button" type="button" data-detail-dish-action="save">Save Menu</button>
+          <button class="secondary-button" type="button" data-detail-dish-action="done">Done</button>
           <button class="secondary-button danger" type="button" data-detail-dish-action="delete">Delete</button>
         </div>
       </div>
@@ -881,26 +1090,86 @@ async function handleDetailDishAction(button) {
   if (!requireLogin()) return;
   const item = button.closest(".detail-dish-card");
   const dishId = item.dataset.dishId;
-  if (button.dataset.detailDishAction === "delete") {
+  const action = button.dataset.detailDishAction;
+  if (action === "edit") {
+    editingDetailDishIds.add(String(dishId));
+    renderDetailDishList(selectedRestaurant());
+    return;
+  }
+  if (action === "done") {
+    await finishDetailDishEdit(item);
+    return;
+  }
+  if (action === "delete") {
     if (!confirm("删除这道菜吗？")) return;
+    clearDishAutosaveTimer(dishId);
     await api(`/api/dishes/${dishId}`, { method: "DELETE" });
+    editingDetailDishIds.delete(String(dishId));
     removeDish(dishId);
     elements.detailStatus.textContent = "已删除菜单。";
     return;
   }
-  const body = {
-    name: item.querySelector('[data-field="name"]').value.trim(),
-    dish_status: item.querySelector('[data-field="dish_status"]').value,
-    rating: clampRating(Number(item.querySelector('[data-field="rating"]').value || 0)),
-    notes: item.querySelector('[data-field="notes"]').value.trim(),
+}
+
+function getDetailDishPayload(item) {
+  return {
+    name: item.querySelector('[data-field="name"]')?.value.trim() || "",
+    dish_status: item.querySelector('[data-field="dish_status"]')?.value || "liked",
+    rating: clampRating(Number(item.querySelector('[data-field="rating"]')?.value || 0)),
+    notes: item.querySelector('[data-field="notes"]')?.value.trim() || "",
   };
+}
+
+function scheduleDetailDishAutosave(item) {
+  if (!item || !requireLogin()) return;
+  const dishId = item.dataset.dishId;
+  clearDishAutosaveTimer(dishId);
+  const body = getDetailDishPayload(item);
   if (!body.name) {
     elements.detailStatus.textContent = "菜品名称不能为空。";
     return;
   }
-  const data = await api(`/api/dishes/${dishId}`, { method: "PATCH", body: JSON.stringify(body) });
-  replaceDish(data.dish);
-  elements.detailStatus.textContent = "已保存菜单。";
+  elements.detailStatus.textContent = "正在保存菜单...";
+  dishAutosaveTimers.set(
+    String(dishId),
+    window.setTimeout(() => saveDetailDish(item).catch(() => {}), DISH_AUTOSAVE_DELAY),
+  );
+}
+
+function clearDishAutosaveTimer(dishId) {
+  const key = String(dishId);
+  const timer = dishAutosaveTimers.get(key);
+  if (timer) clearTimeout(timer);
+  dishAutosaveTimers.delete(key);
+}
+
+async function saveDetailDish(item, { rerender = false } = {}) {
+  const dishId = item.dataset.dishId;
+  clearDishAutosaveTimer(dishId);
+  const body = getDetailDishPayload(item);
+  if (!body.name) {
+    elements.detailStatus.textContent = "菜品名称不能为空。";
+    throw new Error("Dish name is required");
+  }
+  try {
+    elements.detailStatus.textContent = "正在保存菜单...";
+    const data = await api(`/api/dishes/${dishId}`, { method: "PATCH", body: JSON.stringify(body) });
+    replaceDish(data.dish, { rerender });
+    elements.detailStatus.textContent = "已自动保存菜单。";
+  } catch (error) {
+    elements.detailStatus.textContent = error.message;
+    throw error;
+  }
+}
+
+async function finishDetailDishEdit(item) {
+  try {
+    await saveDetailDish(item, { rerender: false });
+    editingDetailDishIds.delete(String(item.dataset.dishId));
+    renderDetailDishList(selectedRestaurant());
+  } catch (error) {
+    // Keep the card editable so the user can fix validation or retry.
+  }
 }
 
 async function uploadDetailDishImage(input) {

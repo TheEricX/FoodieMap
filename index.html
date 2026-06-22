@@ -197,32 +197,32 @@
                 <p class="eyebrow">MY REVIEW</p>
                 <strong>餐厅评价</strong>
               </div>
-              <button class="secondary-button compact-action" id="saveDetailSpot" type="submit">Save</button>
             </div>
             <input name="restaurantId" type="hidden" />
             <div class="detail-form-grid">
               <label>
                 状态
-                <select name="status">
-                  <option value="visited">Visited</option>
-                  <option value="want_to_go">Want to Go</option>
-                  <option value="favorite">Favorite</option>
-                </select>
+                <input name="status" type="hidden" value="want_to_go" />
+                <div class="detail-review-status-picker" role="group" aria-label="Restaurant status">
+                  <button type="button" data-detail-review-status="visited">Visited</button>
+                  <button class="active" type="button" data-detail-review-status="want_to_go">Want to Go</button>
+                  <button type="button" data-detail-review-status="favorite">Favorite</button>
+                </div>
               </label>
               <label>
                 评分
-                <input name="personalRating" type="number" min="0" max="5" step="0.1" />
+                <input name="personalRating" type="number" min="0" max="5" step="0.1" data-detail-review-field />
               </label>
               <label>
                 去过次数
-                <input name="visitCount" type="number" min="0" step="1" />
+                <input name="visitCount" type="number" min="0" step="1" data-detail-review-field />
               </label>
             </div>
             <label>
               我的想法
-              <textarea name="notes" rows="5" placeholder="写下这家店适合什么场景、想再点什么、有没有避雷。"></textarea>
+              <textarea name="notes" rows="5" placeholder="写下这家店适合什么场景、想再点什么、有没有避雷。" data-detail-review-field></textarea>
             </label>
-            <p class="form-help" id="detailStatus">点击 Save 保存餐厅评价。</p>
+            <p class="form-help" id="detailStatus">修改后会自动保存餐厅评价。</p>
           </section>
 
           <section class="detail-paper-panel">
@@ -231,17 +231,29 @@
                 <p class="eyebrow">MENU NOTES</p>
                 <strong>菜单记录</strong>
               </div>
+              <button class="secondary-button compact-action detail-add-toggle" id="detailAddDishToggle" type="button">+ Add Menu</button>
             </div>
-            <div class="detail-add-dish">
-              <input id="detailDishName" placeholder="菜品名称" />
-              <select id="detailDishStatus">
-                <option value="liked">Liked</option>
-                <option value="tried">Tried</option>
-              </select>
+            <div class="detail-add-dish" id="detailAddDishPanel" hidden>
+              <input class="detail-dish-name-input" id="detailDishName" placeholder="菜品名称" />
+              <input id="detailDishStatus" type="hidden" value="liked" />
+              <div class="detail-status-picker" role="group" aria-label="Dish status">
+                <button class="active" type="button" data-detail-dish-status="liked">Liked</button>
+                <button type="button" data-detail-dish-status="tried">Tried</button>
+              </div>
               <input id="detailDishRating" type="number" min="0" max="5" step="0.1" value="4.5" />
-              <input id="detailDishImage" type="file" accept="image/jpeg,image/png,image/webp" />
+              <label class="detail-file-dropzone" data-detail-file-dropzone>
+                <input id="detailDishImage" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+                <span class="detail-file-mark" aria-hidden="true">＋</span>
+                <span>
+                  <strong>Upload photo</strong>
+                  <small id="detailDishImageName">Click to upload or drag image here</small>
+                </span>
+              </label>
               <textarea id="detailDishNotes" rows="2" placeholder="这道菜的感想"></textarea>
-              <button class="secondary-button" id="detailAddDish" type="button">Add Menu</button>
+              <div class="detail-add-actions">
+                <button class="secondary-button ghost-button" id="detailCancelDish" type="button">Cancel</button>
+                <button class="primary-button" id="detailAddDish" type="button">Add Menu</button>
+              </div>
             </div>
             <div class="detail-menu-grid" id="detailDishList"></div>
           </section>
