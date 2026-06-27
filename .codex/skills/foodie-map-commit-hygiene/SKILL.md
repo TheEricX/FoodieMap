@@ -21,7 +21,7 @@ Use this skill before every FoodieMap commit. Its purpose is to prevent code and
    - Internal refactor or style-only change
 3. Decide documentation updates before committing:
    - Update `README.md` when behavior, user flows, setup commands, API list, deployment, data files, or project limitations changed.
-   - Update `CHANGELOG.md` for every non-trivial commit. Put entries under `## Unreleased` unless the user is cutting a release.
+   - Update `CHANGELOG.md` for every non-trivial commit. Put normal development entries under `## Unreleased`; only create or move entries into a numbered version section when the user explicitly asks for a release/version.
    - Check existing planning docs such as `AGEND.md`, `AGENDA.md`, `ROADMAP.md`, `PLAN.md`, or files under `docs/` if present. Update them only when the change completes, invalidates, or changes a tracked plan item.
    - Do not create agenda or roadmap files unless the user asks.
 4. If no docs need updates, say so explicitly before committing and include the reason.
@@ -34,9 +34,14 @@ Use this skill before every FoodieMap commit. Its purpose is to prevent code and
 
 ## Changelog Rules
 
-Keep `CHANGELOG.md` in Keep a Changelog style:
+Keep `CHANGELOG.md` in lightweight Keep a Changelog style with semantic version sections:
 
-- Maintain `## Unreleased` at the top.
+- Maintain `## Unreleased` at the top. If there are no pending changes, keep `- No unreleased changes yet.` under it.
+- For normal commits, add entries under `## Unreleased` and remove the placeholder line if adding real entries.
+- Use version headings as `## [x.y.z] - YYYY-MM-DD` for released milestones, for example `## [0.4.0] - 2026-06-22`.
+- Do not invent a new version for ordinary commits. Create a version section only when the user asks to cut a release, tag a version, or archive unreleased changes.
+- When cutting a release, move all current `Unreleased` entries into the new version section, then reset `Unreleased` to `- No unreleased changes yet.`.
+- Choose version bumps conservatively if the user does not specify one: patch for fixes/docs, minor for user-facing features, major only for breaking changes.
 - Use concise entries under categories such as `Added`, `Changed`, `Fixed`, `Documentation`, and `Internal`.
 - Prefer user-facing wording over implementation details.
 - Combine related bullets instead of listing every touched file.

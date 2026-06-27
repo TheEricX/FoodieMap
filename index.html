@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260622-i18n" />
+    <link rel="stylesheet" href="/styles.css?v=20260623-auth" />
   </head>
   <body>
     <main class="app-shell">
@@ -190,7 +190,138 @@
             <section class="panel-surface list-detail-panel" id="discoveryDetail"></section>
           </div>
         </section>
+
+        <section class="admin-login-stage app-view" id="adminLoginView" data-view-panel="admin-login" hidden>
+          <form class="panel-surface admin-login-panel" id="adminLoginForm">
+            <div class="list-view-head admin-head">
+              <div>
+                <p class="eyebrow" data-i18n="admin.loginEyebrow">ADMIN</p>
+                <h2 data-i18n="admin.loginTitle">Admin Login</h2>
+                <p data-i18n="admin.loginDescription">Sign in with the fixed admin username and password configured on this server.</p>
+              </div>
+            </div>
+            <label>
+              <span data-i18n="admin.username">Username</span>
+              <input id="adminUsernameInput" autocomplete="username" placeholder="admin" data-i18n-placeholder="admin.usernamePlaceholder" />
+            </label>
+            <label>
+              <span data-i18n="admin.password">Password</span>
+              <input id="adminPasswordInput" type="password" autocomplete="current-password" placeholder="Admin password" data-i18n-placeholder="admin.passwordPlaceholder" />
+            </label>
+            <button class="primary-button" id="adminLoginButton" type="submit" data-i18n="admin.loginButton">Log in to Admin</button>
+            <p class="form-help" id="adminLoginStatus" data-i18n="admin.loginHelp">Use ADMIN_USERNAME and ADMIN_PASSWORD from your .env file.</p>
+          </form>
+        </section>
+
+        <section class="admin-stage app-view" id="adminView" data-view-panel="admin" hidden>
+          <section class="panel-surface admin-panel">
+            <div class="list-view-head admin-head">
+              <div>
+                <p class="eyebrow" data-i18n="admin.eyebrow">ADMIN</p>
+                <h2 data-i18n="admin.title">User Management</h2>
+                <p data-i18n="admin.description">Manage account access, plans, and Free account storage limits.</p>
+              </div>
+              <div class="admin-head-actions">
+                <button class="outline-button" id="adminRefreshButton" type="button" data-i18n="admin.refresh">Refresh</button>
+                <button class="outline-button" id="adminLogoutButton" type="button" data-i18n="admin.logout">Log out</button>
+              </div>
+            </div>
+            <div class="admin-filters">
+              <label>
+                <span data-i18n="admin.search">Search users</span>
+                <input id="adminSearchInput" type="search" placeholder="Email or name" data-i18n-placeholder="admin.searchPlaceholder" />
+              </label>
+              <label>
+                <span data-i18n="admin.status">Status</span>
+                <select id="adminStatusFilter">
+                  <option value="all" data-i18n="admin.allStatuses">All statuses</option>
+                  <option value="active" data-i18n="admin.statusActive">Active</option>
+                  <option value="suspended" data-i18n="admin.statusSuspended">Suspended</option>
+                  <option value="deleted" data-i18n="admin.statusDeleted">Deleted</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="admin.plan">Plan</span>
+                <select id="adminPlanFilter">
+                  <option value="all" data-i18n="admin.allPlans">All plans</option>
+                  <option value="free" data-i18n="admin.planFree">Free</option>
+                  <option value="paid" data-i18n="admin.planPaid">Paid</option>
+                </select>
+              </label>
+            </div>
+            <p class="form-help" id="adminStatusText"></p>
+            <div class="admin-user-list" id="adminUserList"></div>
+          </section>
+        </section>
       </section>
+
+      <dialog class="modal" id="authDialog">
+        <form class="modal-card auth-card" id="authForm" method="dialog">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow" data-i18n="auth.mode">SIGN IN</p>
+              <h2 data-i18n="auth.title">Sign in to FoodieMap</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeAuthDialog">×</button>
+          </div>
+
+          <button class="primary-button" id="googleSignInButton" type="button" data-i18n="auth.googleButton">Continue with Google</button>
+
+          <div class="segmented-tabs auth-tabs" role="tablist" aria-label="Sign-in method" data-i18n-aria-label="auth.tabsLabel">
+            <button class="active" type="button" data-auth-panel="password" data-i18n="auth.passwordTab">Password</button>
+            <button type="button" data-auth-panel="code" data-i18n="auth.codeTab">Email code</button>
+          </div>
+
+          <section class="auth-panel" data-auth-panel-view="password">
+            <div class="auth-mode-row">
+              <button class="secondary-button active" type="button" data-auth-password-mode="login" data-i18n="auth.passwordLogin">Log in</button>
+              <button class="secondary-button" type="button" data-auth-password-mode="register" data-i18n="auth.passwordRegister">Create account</button>
+              <button class="secondary-button" type="button" data-auth-password-mode="reset" data-i18n="auth.passwordReset">Reset password</button>
+            </div>
+            <label data-auth-name-row hidden>
+              <span data-i18n="auth.name">Name</span>
+              <input id="authNameInput" autocomplete="name" placeholder="Optional display name" data-i18n-placeholder="auth.namePlaceholder" />
+            </label>
+            <label>
+              <span data-i18n="auth.email">Email</span>
+              <input id="authEmailInput" type="email" autocomplete="email" placeholder="you@example.com" data-i18n-placeholder="auth.emailPlaceholder" />
+            </label>
+            <label data-auth-password-row>
+              <span data-i18n="auth.password">Password</span>
+              <input id="authPasswordInput" type="password" autocomplete="current-password" placeholder="At least 8 characters" data-i18n-placeholder="auth.passwordPlaceholder" />
+            </label>
+            <label data-auth-reset-code-row hidden>
+              <span data-i18n="auth.code">Code</span>
+              <input id="authResetCodeInput" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" data-i18n-placeholder="auth.codePlaceholder" />
+            </label>
+            <label data-auth-new-password-row hidden>
+              <span data-i18n="auth.newPassword">New password</span>
+              <input id="authNewPasswordInput" type="password" autocomplete="new-password" placeholder="At least 8 characters" data-i18n-placeholder="auth.passwordPlaceholder" />
+            </label>
+            <div class="auth-actions">
+              <button class="outline-button" id="sendResetCodeButton" type="button" hidden data-i18n="auth.sendResetCode">Send reset code</button>
+              <button class="primary-button" id="passwordAuthButton" type="button" data-i18n="auth.loginButton">Log in</button>
+            </div>
+          </section>
+
+          <section class="auth-panel" data-auth-panel-view="code" hidden>
+            <label>
+              <span data-i18n="auth.email">Email</span>
+              <input id="authCodeEmailInput" type="email" autocomplete="email" placeholder="you@example.com" data-i18n-placeholder="auth.emailPlaceholder" />
+            </label>
+            <div class="auth-code-row">
+              <label>
+                <span data-i18n="auth.code">Code</span>
+                <input id="authCodeInput" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" data-i18n-placeholder="auth.codePlaceholder" />
+              </label>
+              <button class="outline-button" id="sendLoginCodeButton" type="button" data-i18n="auth.sendCode">Send code</button>
+            </div>
+            <button class="primary-button" id="verifyLoginCodeButton" type="button" data-i18n="auth.verifyCode">Verify and sign in</button>
+          </section>
+
+          <p class="form-help" id="authStatusText" data-i18n="auth.help">Use Google, a password, or a one-time email code.</p>
+        </form>
+      </dialog>
 
       <dialog class="detail-drawer" id="spotDetailDialog">
         <form class="detail-drawer-card" id="spotDetailForm" method="dialog">
@@ -439,6 +570,6 @@
         </form>
       </dialog>
     </main>
-    <script src="/app.js?v=20260622-i18n"></script>
+    <script src="/app.js?v=20260623-auth"></script>
   </body>
 </html>

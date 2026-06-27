@@ -2,7 +2,34 @@
 
 All notable changes to this project are documented here.
 
+This project follows a lightweight [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) style and uses semantic versioning for app-facing milestones.
+
 ## Unreleased
+
+### Added
+
+- Added an admin user management area for account suspension, soft deletion/restoration, manual Free/Paid plan changes, and Free account restaurant limits.
+- Added email account sign-in with password login, one-time email codes, SMTP delivery, password reset, and same-email account merging with Google OAuth.
+- Added a dedicated `/admin` portal with fixed username/password login from server environment variables.
+
+### Changed
+
+- Discovery now excludes public lists owned by suspended or deleted accounts.
+- Free users are blocked from adding restaurants once they reach the configured storage limit.
+- The `Sign in` control now opens a unified auth dialog instead of going directly to Google OAuth.
+- Admin access now uses a separate admin session instead of ordinary user email allowlisting.
+
+### Fixed
+
+- Replaced remaining Chinese backend fallback messages with English defaults.
+- Fixed hidden auth dialog fields showing in the wrong sign-in mode.
+
+### Documentation
+
+- Added a tracked `env.example.txt` template for local and deployment configuration.
+- Clarified commit hygiene skill rules for versioned changelog sections and release handling.
+
+## [0.4.0] - 2026-06-22
 
 ### Added
 

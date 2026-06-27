@@ -7,6 +7,7 @@ import hmac
 import json
 import os
 import secrets
+import smtplib
 import sqlite3
 import sys
 import time
@@ -14,6 +15,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+from email.message import EmailMessage
 from pathlib import Path
 from typing import Any, Optional
 
@@ -50,11 +52,25 @@ APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5174").rstrip("/")
 SESSION_SECRET = os.getenv("SESSION_SECRET", "dev-change-me")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
+FREE_RESTAURANT_LIMIT = int(os.getenv("FREE_RESTAURANT_LIMIT", "50"))
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USERNAME)
+SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").strip().lower() not in {"0", "false", "no", "off"}
 ALLOWED_SHORT_HOSTS = {"maps.app.goo.gl", "goo.gl"}
 SESSION_COOKIE = "foodiemap_session"
+ADMIN_SESSION_COOKIE = "foodiemap_admin_session"
 OAUTH_STATE_COOKIE = "foodiemap_oauth_state"
 PUBLIC_FILES = {"index.html", "app.js", "styles.css"}
 INSECURE_SESSION_SECRETS = {"", "dev-change-me", "change-me-in-production"}
+PASSWORD_HASH_ITERATIONS = 310_000
+EMAIL_CODE_TTL_SECONDS = 10 * 60
+EMAIL_CODE_REQUEST_INTERVAL_SECONDS = 60
+EMAIL_CODE_MAX_ATTEMPTS = 5
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -122,6 +138,48 @@ class ListItemIn(BaseModel):
     note: str = ""
 
 
+class AdminUserPatch(BaseModel):
+    account_status: Optional[str] = None
+    plan: Optional[str] = None
+
+
+class AdminLoginIn(BaseModel):
+    username: str = Field(min_length=1, max_length=120)
+    password: str = Field(min_length=1, max_length=256)
+
+
+class EmailRegisterIn(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=8, max_length=256)
+    name: str = Field(default="", max_length=120)
+
+
+class EmailLoginIn(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=1, max_length=256)
+
+
+class EmailCodeRequestIn(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    lang: str = "en"
+
+
+class EmailCodeVerifyIn(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    code: str = Field(min_length=4, max_length=12)
+
+
+class PasswordResetRequestIn(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    lang: str = "en"
+
+
+class PasswordResetConfirmIn(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    code: str = Field(min_length=4, max_length=12)
+    password: str = Field(min_length=8, max_length=256)
+
+
 def now() -> int:
     return int(time.time())
 
@@ -135,6 +193,10 @@ def model_values(model: BaseModel) -> dict[str, Any]:
 def validate_config() -> None:
     if SESSION_SECRET in INSECURE_SESSION_SECRETS or len(SESSION_SECRET) < 32:
         raise RuntimeError("SESSION_SECRET must be set to a random value of at least 32 characters")
+    if bool(ADMIN_USERNAME) != bool(ADMIN_PASSWORD):
+        raise RuntimeError("ADMIN_USERNAME and ADMIN_PASSWORD must be configured together")
+    if ADMIN_PASSWORD and len(ADMIN_PASSWORD) < 8:
+        raise RuntimeError("ADMIN_PASSWORD must be at least 8 characters")
 
 
 def secure_cookie_enabled() -> bool:
@@ -163,6 +225,12 @@ def connect() -> sqlite3.Connection:
     return connection
 
 
+def ensure_column(db: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    columns = {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in columns:
+        db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
 def init_db() -> None:
     with connect() as db:
         db.executescript(
@@ -173,7 +241,15 @@ def init_db() -> None:
               email TEXT NOT NULL,
               name TEXT NOT NULL DEFAULT '',
               avatar_url TEXT NOT NULL DEFAULT '',
-              created_at INTEGER NOT NULL
+              created_at INTEGER NOT NULL,
+              updated_at INTEGER NOT NULL DEFAULT 0,
+              account_status TEXT NOT NULL DEFAULT 'active',
+              plan TEXT NOT NULL DEFAULT 'free',
+              password_hash TEXT NOT NULL DEFAULT '',
+              email_verified_at INTEGER,
+              last_login_at INTEGER,
+              suspended_at INTEGER,
+              deleted_at INTEGER
             );
 
             CREATE TABLE IF NOT EXISTS restaurants (
@@ -235,8 +311,41 @@ def init_db() -> None:
               created_at INTEGER NOT NULL,
               UNIQUE(list_id, restaurant_id)
             );
+
+            CREATE TABLE IF NOT EXISTS auth_codes (
+              id TEXT PRIMARY KEY,
+              email TEXT NOT NULL,
+              purpose TEXT NOT NULL,
+              code_hash TEXT NOT NULL,
+              created_at INTEGER NOT NULL,
+              expires_at INTEGER NOT NULL,
+              attempts INTEGER NOT NULL DEFAULT 0,
+              used_at INTEGER
+            );
             """
         )
+        ensure_column(db, "users", "updated_at", "INTEGER NOT NULL DEFAULT 0")
+        ensure_column(db, "users", "account_status", "TEXT NOT NULL DEFAULT 'active'")
+        ensure_column(db, "users", "plan", "TEXT NOT NULL DEFAULT 'free'")
+        ensure_column(db, "users", "password_hash", "TEXT NOT NULL DEFAULT ''")
+        ensure_column(db, "users", "email_verified_at", "INTEGER")
+        ensure_column(db, "users", "last_login_at", "INTEGER")
+        ensure_column(db, "users", "suspended_at", "INTEGER")
+        ensure_column(db, "users", "deleted_at", "INTEGER")
+        db.execute("UPDATE users SET updated_at = created_at WHERE updated_at = 0")
+        duplicate = db.execute(
+            """
+            SELECT LOWER(email) AS normalized_email, COUNT(*) AS count
+            FROM users
+            GROUP BY LOWER(email)
+            HAVING count > 1
+            LIMIT 1
+            """
+        ).fetchone()
+        if duplicate:
+            raise RuntimeError(f"Duplicate user email blocks auth migration: {duplicate['normalized_email']}")
+        db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users(LOWER(email))")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_auth_codes_email_purpose ON auth_codes(email, purpose, created_at)")
 
 
 @app.on_event("startup")
@@ -260,6 +369,162 @@ def unsign_value(signed: Optional[str]) -> Optional[str]:
     return None
 
 
+def session_response(user_id: str) -> JSONResponse:
+    response = JSONResponse({"ok": True})
+    response.set_cookie(
+        SESSION_COOKIE,
+        sign_value(user_id),
+        httponly=True,
+        samesite="lax",
+        secure=secure_cookie_enabled(),
+        max_age=60 * 60 * 24 * 30,
+    )
+    return response
+
+
+def admin_session_response() -> JSONResponse:
+    response = JSONResponse({"ok": True, "admin": admin_identity()})
+    response.set_cookie(
+        ADMIN_SESSION_COOKIE,
+        sign_value(f"admin:{ADMIN_USERNAME}"),
+        httponly=True,
+        samesite="lax",
+        secure=secure_cookie_enabled(),
+        max_age=60 * 60 * 8,
+    )
+    return response
+
+
+def normalize_email(email: str) -> str:
+    normalized = email.strip().lower()
+    if "@" not in normalized or normalized.startswith("@") or normalized.endswith("@") or len(normalized) > 254:
+        raise HTTPException(status_code=422, detail="Enter a valid email address")
+    return normalized
+
+
+def display_name_from_email(email: str) -> str:
+    return email.split("@", 1)[0].strip() or email
+
+
+def validate_password(password: str) -> str:
+    if len(password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
+    return password
+
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_urlsafe(18)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), PASSWORD_HASH_ITERATIONS)
+    encoded = base64.urlsafe_b64encode(digest).decode().rstrip("=")
+    return f"pbkdf2_sha256${PASSWORD_HASH_ITERATIONS}${salt}${encoded}"
+
+
+def verify_password(password: str, stored_hash: str) -> bool:
+    try:
+        algorithm, iterations, salt, expected = stored_hash.split("$", 3)
+        if algorithm != "pbkdf2_sha256":
+            return False
+        digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), int(iterations))
+        actual = base64.urlsafe_b64encode(digest).decode().rstrip("=")
+        return hmac.compare_digest(actual, expected)
+    except (ValueError, TypeError):
+        return False
+
+
+def auth_code_hash(email: str, purpose: str, code: str) -> str:
+    message = f"{purpose}:{email}:{code}".encode()
+    return hmac.new(SESSION_SECRET.encode(), message, hashlib.sha256).hexdigest()
+
+
+def smtp_configured() -> bool:
+    return bool(SMTP_HOST and SMTP_FROM)
+
+
+def send_email(to_email: str, subject: str, body: str) -> None:
+    if not smtp_configured():
+        raise HTTPException(status_code=503, detail="Email delivery is not configured")
+    message = EmailMessage()
+    message["From"] = SMTP_FROM
+    message["To"] = to_email
+    message["Subject"] = subject
+    message.set_content(body)
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as smtp:
+            if SMTP_USE_TLS:
+                smtp.starttls()
+            if SMTP_USERNAME or SMTP_PASSWORD:
+                smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+            smtp.send_message(message)
+    except OSError as error:
+        raise HTTPException(status_code=502, detail="Email delivery failed") from error
+
+
+def send_auth_code_email(email: str, purpose: str, code: str, lang: str = "en") -> None:
+    is_zh = lang == "zh"
+    if purpose == "password_reset":
+        subject = "FoodieMap password reset code" if not is_zh else "FoodieMap 密码重置验证码"
+        body = (
+            f"Your FoodieMap password reset code is {code}.\nIt expires in 10 minutes.\n"
+            if not is_zh
+            else f"你的 FoodieMap 密码重置验证码是 {code}。\n验证码 10 分钟内有效。\n"
+        )
+    else:
+        subject = "FoodieMap sign-in code" if not is_zh else "FoodieMap 登录验证码"
+        body = (
+            f"Your FoodieMap sign-in code is {code}.\nIt expires in 10 minutes.\n"
+            if not is_zh
+            else f"你的 FoodieMap 登录验证码是 {code}。\n验证码 10 分钟内有效。\n"
+        )
+    send_email(email, subject, body)
+
+
+def create_auth_code(db: sqlite3.Connection, email: str, purpose: str, lang: str = "en") -> None:
+    timestamp = now()
+    recent = db.execute(
+        """
+        SELECT created_at FROM auth_codes
+        WHERE email = ? AND purpose = ? AND used_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (email, purpose),
+    ).fetchone()
+    if recent and timestamp - int(recent["created_at"]) < EMAIL_CODE_REQUEST_INTERVAL_SECONDS:
+        raise HTTPException(status_code=429, detail="Please wait before requesting another code")
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    db.execute(
+        """
+        INSERT INTO auth_codes (id, email, purpose, code_hash, created_at, expires_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (new_id(), email, purpose, auth_code_hash(email, purpose, code), timestamp, timestamp + EMAIL_CODE_TTL_SECONDS),
+    )
+    send_auth_code_email(email, purpose, code, lang)
+
+
+def consume_auth_code(db: sqlite3.Connection, email: str, purpose: str, code: str) -> None:
+    timestamp = now()
+    row = db.execute(
+        """
+        SELECT * FROM auth_codes
+        WHERE email = ? AND purpose = ? AND used_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (email, purpose),
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+    if int(row["expires_at"]) < timestamp:
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+    if int(row["attempts"]) >= EMAIL_CODE_MAX_ATTEMPTS:
+        raise HTTPException(status_code=400, detail="Too many code attempts")
+    if not hmac.compare_digest(row["code_hash"], auth_code_hash(email, purpose, code.strip())):
+        db.execute("UPDATE auth_codes SET attempts = attempts + 1 WHERE id = ?", (row["id"],))
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+    db.execute("UPDATE auth_codes SET used_at = ? WHERE id = ?", (timestamp, row["id"]))
+
+
 def current_user(request: Request) -> Optional[dict[str, Any]]:
     user_id = unsign_value(request.cookies.get(SESSION_COOKIE))
     if not user_id:
@@ -273,7 +538,130 @@ def require_user(request: Request) -> dict[str, Any]:
     user = current_user(request)
     if not user:
         raise HTTPException(status_code=401, detail="Sign in required")
+    if user.get("account_status", "active") != "active":
+        raise HTTPException(status_code=403, detail="Account is not active")
     return user
+
+
+def admin_configured() -> bool:
+    return bool(ADMIN_USERNAME and ADMIN_PASSWORD)
+
+
+def admin_identity() -> dict[str, Any]:
+    return {
+        "id": "local-admin",
+        "username": ADMIN_USERNAME or "admin",
+        "email": "admin@local.foodiemap",
+        "name": "Admin",
+        "is_admin": True,
+        "account_status": "active",
+        "plan": "paid",
+    }
+
+
+def current_admin(request: Request) -> Optional[dict[str, Any]]:
+    if not admin_configured():
+        return None
+    value = unsign_value(request.cookies.get(ADMIN_SESSION_COOKIE))
+    if value == f"admin:{ADMIN_USERNAME}":
+        return admin_identity()
+    return None
+
+
+def require_admin(request: Request) -> dict[str, Any]:
+    admin = current_admin(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return admin
+
+
+def valid_account_status(status: str) -> str:
+    if status not in {"active", "suspended", "deleted"}:
+        raise HTTPException(status_code=422, detail="Invalid account status")
+    return status
+
+
+def valid_plan(plan: str) -> str:
+    if plan not in {"free", "paid"}:
+        raise HTTPException(status_code=422, detail="Invalid account plan")
+    return plan
+
+
+def restaurant_count(db: sqlite3.Connection, user_id: str) -> int:
+    row = db.execute("SELECT COUNT(*) AS count FROM restaurants WHERE owner_user_id = ?", (user_id,)).fetchone()
+    return int(row["count"] if row else 0)
+
+
+def remaining_restaurant_slots(db: sqlite3.Connection, user: dict[str, Any]) -> Optional[int]:
+    if user.get("plan") == "paid":
+        return None
+    return max(0, FREE_RESTAURANT_LIMIT - restaurant_count(db, user["id"]))
+
+
+def require_restaurant_capacity(db: sqlite3.Connection, user: dict[str, Any], add_count: int = 1) -> None:
+    if user.get("plan") == "paid":
+        return
+    current_count = restaurant_count(db, user["id"])
+    if current_count + add_count > FREE_RESTAURANT_LIMIT:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Free accounts can store up to {FREE_RESTAURANT_LIMIT} restaurants. Upgrade or delete restaurants before adding more.",
+        )
+
+
+def user_by_email(db: sqlite3.Connection, email: str) -> Optional[sqlite3.Row]:
+    return db.execute("SELECT * FROM users WHERE LOWER(email) = ?", (normalize_email(email),)).fetchone()
+
+
+def ensure_active_account(row: sqlite3.Row) -> None:
+    if row["account_status"] != "active":
+        raise HTTPException(status_code=403, detail="Account is not active")
+
+
+def create_email_user(db: sqlite3.Connection, email: str, name: str = "", password_hash: str = "") -> sqlite3.Row:
+    normalized_email = normalize_email(email)
+    timestamp = now()
+    user_id = new_id()
+    db.execute(
+        """
+        INSERT INTO users (id, google_sub, email, name, avatar_url, password_hash, created_at, updated_at, last_login_at)
+        VALUES (?, ?, ?, ?, '', ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            f"email:{normalized_email}",
+            normalized_email,
+            name.strip() or display_name_from_email(normalized_email),
+            password_hash,
+            timestamp,
+            timestamp,
+            timestamp,
+        ),
+    )
+    return db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+
+def touch_login(db: sqlite3.Connection, user_id: str, email_verified: bool = False) -> None:
+    timestamp = now()
+    if email_verified:
+        db.execute(
+            "UPDATE users SET last_login_at = ?, email_verified_at = COALESCE(email_verified_at, ?), updated_at = ? WHERE id = ?",
+            (timestamp, timestamp, timestamp, user_id),
+        )
+    else:
+        db.execute("UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?", (timestamp, timestamp, user_id))
+
+
+def auth_methods(row: Any) -> list[str]:
+    methods: list[str] = []
+    google_sub = row["google_sub"] if isinstance(row, sqlite3.Row) else row.get("google_sub", "")
+    password_hash = row["password_hash"] if isinstance(row, sqlite3.Row) else row.get("password_hash", "")
+    if google_sub and not str(google_sub).startswith("email:"):
+        methods.append("google")
+    if password_hash:
+        methods.append("password")
+    methods.append("email_code")
+    return methods
 
 
 def public_user(user: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
@@ -284,6 +672,10 @@ def public_user(user: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
         "email": user["email"],
         "name": user["name"],
         "avatar_url": user["avatar_url"],
+        "is_admin": False,
+        "account_status": user.get("account_status", "active"),
+        "plan": user.get("plan", "free"),
+        "auth_methods": auth_methods(user),
     }
 
 
@@ -294,6 +686,39 @@ def public_owner(user: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
         "id": user["id"],
         "name": user["name"],
         "avatar_url": user["avatar_url"],
+    }
+
+
+def admin_user_json(db: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
+    user_id = row["id"]
+    counts = db.execute(
+        """
+        SELECT
+          (SELECT COUNT(*) FROM restaurants WHERE owner_user_id = ?) AS restaurant_count,
+          (SELECT COUNT(*) FROM lists WHERE owner_user_id = ?) AS list_count,
+          (SELECT COUNT(*) FROM lists WHERE owner_user_id = ? AND visibility = 'public') AS public_list_count
+        """,
+        (user_id, user_id, user_id),
+    ).fetchone()
+    restaurant_total = int(counts["restaurant_count"] or 0)
+    return {
+        "id": user_id,
+        "email": row["email"],
+        "name": row["name"],
+        "avatar_url": row["avatar_url"],
+        "is_admin": False,
+        "account_status": row["account_status"],
+        "plan": row["plan"],
+        "auth_methods": auth_methods(row),
+        "restaurant_count": restaurant_total,
+        "restaurant_limit": None if row["plan"] == "paid" else FREE_RESTAURANT_LIMIT,
+        "remaining_restaurant_slots": None if row["plan"] == "paid" else max(0, FREE_RESTAURANT_LIMIT - restaurant_total),
+        "list_count": int(counts["list_count"] or 0),
+        "public_list_count": int(counts["public_list_count"] or 0),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "suspended_at": row["suspended_at"],
+        "deleted_at": row["deleted_at"],
     }
 
 
@@ -376,7 +801,11 @@ def owned_list(db: sqlite3.Connection, list_id: str, user_id: str) -> sqlite3.Ro
 
 def public_list(db: sqlite3.Connection, list_id: str) -> sqlite3.Row:
     row = db.execute(
-        "SELECT * FROM lists WHERE id = ? AND visibility = 'public'",
+        """
+        SELECT lists.* FROM lists
+        JOIN users ON users.id = lists.owner_user_id
+        WHERE lists.id = ? AND lists.visibility = 'public' AND users.account_status = 'active'
+        """,
         (list_id,),
     ).fetchone()
     if not row:
@@ -450,7 +879,16 @@ def health() -> dict[str, Any]:
 
 @app.get("/api/me")
 def me(request: Request) -> dict[str, Any]:
-    return {"user": public_user(current_user(request))}
+    user = current_user(request)
+    payload = public_user(user)
+    if not user:
+        return {"user": None}
+    with connect() as db:
+        count = restaurant_count(db, user["id"])
+        payload["restaurant_count"] = count
+        payload["restaurant_limit"] = None if user.get("plan") == "paid" else FREE_RESTAURANT_LIMIT
+        payload["remaining_restaurant_slots"] = None if user.get("plan") == "paid" else max(0, FREE_RESTAURANT_LIMIT - count)
+    return {"user": payload}
 
 
 @app.get("/auth/google/login")
@@ -518,18 +956,26 @@ def google_callback(request: Request, code: str, state: str) -> RedirectResponse
 
     user_id = new_id()
     timestamp = now()
+    profile_email = normalize_email(profile.get("email", ""))
     with connect() as db:
         existing = db.execute("SELECT * FROM users WHERE google_sub = ?", (profile["sub"],)).fetchone()
+        if not existing:
+            existing = user_by_email(db, profile_email)
         if existing:
             user_id = existing["id"]
+            ensure_active_account(existing)
             db.execute(
-                "UPDATE users SET email = ?, name = ?, avatar_url = ? WHERE id = ?",
-                (profile.get("email", ""), profile.get("name", ""), profile.get("picture", ""), user_id),
+                "UPDATE users SET google_sub = ?, email = ?, name = ?, avatar_url = ?, email_verified_at = COALESCE(email_verified_at, ?), last_login_at = ?, updated_at = ? WHERE id = ?",
+                (profile["sub"], profile_email, profile.get("name", ""), profile.get("picture", ""), timestamp, timestamp, timestamp, user_id),
             )
         else:
             db.execute(
-                "INSERT INTO users (id, google_sub, email, name, avatar_url, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (user_id, profile["sub"], profile.get("email", ""), profile.get("name", ""), profile.get("picture", ""), timestamp),
+                """
+                INSERT INTO users
+                (id, google_sub, email, name, avatar_url, email_verified_at, created_at, updated_at, last_login_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (user_id, profile["sub"], profile_email, profile.get("name", ""), profile.get("picture", ""), timestamp, timestamp, timestamp, timestamp),
             )
 
     state_payload = json.loads(base64.urlsafe_b64decode(state.encode()).decode())
@@ -554,6 +1000,238 @@ def logout() -> JSONResponse:
     return response
 
 
+@app.get("/api/admin/me")
+def admin_me(request: Request) -> dict[str, Any]:
+    return {"admin": current_admin(request), "configured": admin_configured()}
+
+
+@app.post("/auth/admin/login")
+def admin_login(payload: AdminLoginIn) -> JSONResponse:
+    if not admin_configured():
+        raise HTTPException(status_code=503, detail="Admin login is not configured")
+    username_ok = hmac.compare_digest(payload.username.strip(), ADMIN_USERNAME)
+    password_ok = hmac.compare_digest(payload.password, ADMIN_PASSWORD)
+    if not username_ok or not password_ok:
+        raise HTTPException(status_code=401, detail="Invalid admin username or password")
+    return admin_session_response()
+
+
+@app.post("/auth/admin/logout")
+def admin_logout() -> JSONResponse:
+    response = JSONResponse({"ok": True})
+    response.delete_cookie(ADMIN_SESSION_COOKIE)
+    return response
+
+
+@app.post("/auth/email/register")
+def email_register(payload: EmailRegisterIn) -> JSONResponse:
+    email = normalize_email(payload.email)
+    password_hash = hash_password(validate_password(payload.password))
+    with connect() as db:
+        existing = user_by_email(db, email)
+        if existing:
+            ensure_active_account(existing)
+            if existing["password_hash"]:
+                raise HTTPException(status_code=409, detail="This email already has a password. Sign in instead.")
+            timestamp = now()
+            db.execute(
+                "UPDATE users SET password_hash = ?, name = COALESCE(NULLIF(?, ''), name), last_login_at = ?, updated_at = ? WHERE id = ?",
+                (password_hash, payload.name.strip(), timestamp, timestamp, existing["id"]),
+            )
+            user_id = existing["id"]
+        else:
+            user = create_email_user(db, email, payload.name, password_hash)
+            user_id = user["id"]
+        return session_response(user_id)
+
+
+@app.post("/auth/email/login")
+def email_login(payload: EmailLoginIn) -> JSONResponse:
+    email = normalize_email(payload.email)
+    with connect() as db:
+        user = user_by_email(db, email)
+        if not user or not user["password_hash"] or not verify_password(payload.password, user["password_hash"]):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        ensure_active_account(user)
+        touch_login(db, user["id"])
+        return session_response(user["id"])
+
+
+@app.post("/auth/email/code/request")
+def email_code_request(payload: EmailCodeRequestIn) -> dict[str, Any]:
+    email = normalize_email(payload.email)
+    with connect() as db:
+        user = user_by_email(db, email)
+        if user:
+            ensure_active_account(user)
+        create_auth_code(db, email, "login", payload.lang)
+        return {"ok": True}
+
+
+@app.post("/auth/email/code/verify")
+def email_code_verify(payload: EmailCodeVerifyIn) -> JSONResponse:
+    email = normalize_email(payload.email)
+    with connect() as db:
+        consume_auth_code(db, email, "login", payload.code)
+        user = user_by_email(db, email)
+        if user:
+            ensure_active_account(user)
+            user_id = user["id"]
+        else:
+            user = create_email_user(db, email)
+            user_id = user["id"]
+        touch_login(db, user_id, email_verified=True)
+        return session_response(user_id)
+
+
+@app.post("/auth/email/password-reset/request")
+def password_reset_request(payload: PasswordResetRequestIn) -> dict[str, Any]:
+    email = normalize_email(payload.email)
+    with connect() as db:
+        user = user_by_email(db, email)
+        if not user:
+            raise HTTPException(status_code=404, detail="No account found for this email")
+        ensure_active_account(user)
+        create_auth_code(db, email, "password_reset", payload.lang)
+        return {"ok": True}
+
+
+@app.post("/auth/email/password-reset/confirm")
+def password_reset_confirm(payload: PasswordResetConfirmIn) -> JSONResponse:
+    email = normalize_email(payload.email)
+    password_hash = hash_password(validate_password(payload.password))
+    with connect() as db:
+        consume_auth_code(db, email, "password_reset", payload.code)
+        user = user_by_email(db, email)
+        if not user:
+            raise HTTPException(status_code=404, detail="No account found for this email")
+        ensure_active_account(user)
+        timestamp = now()
+        db.execute(
+            "UPDATE users SET password_hash = ?, email_verified_at = COALESCE(email_verified_at, ?), last_login_at = ?, updated_at = ? WHERE id = ?",
+            (password_hash, timestamp, timestamp, timestamp, user["id"]),
+        )
+        return session_response(user["id"])
+
+
+@app.get("/api/admin/users")
+def admin_users(
+    query: str = "",
+    status: str = "all",
+    plan: str = "all",
+    admin: dict[str, Any] = Depends(require_admin),
+) -> dict[str, Any]:
+    del admin
+    where: list[str] = []
+    values: list[Any] = []
+    if query.strip():
+        where.append("(LOWER(email) LIKE ? OR LOWER(name) LIKE ?)")
+        term = f"%{query.strip().lower()}%"
+        values.extend([term, term])
+    if status != "all":
+        valid_account_status(status)
+        where.append("account_status = ?")
+        values.append(status)
+    if plan != "all":
+        valid_plan(plan)
+        where.append("plan = ?")
+        values.append(plan)
+    clause = f"WHERE {' AND '.join(where)}" if where else ""
+    with connect() as db:
+        rows = db.execute(
+            f"""
+            SELECT * FROM users
+            {clause}
+            ORDER BY updated_at DESC, created_at DESC
+            LIMIT 200
+            """,
+            values,
+        ).fetchall()
+        return {"users": [admin_user_json(db, row) for row in rows]}
+
+
+@app.get("/api/admin/users/{user_id}")
+def admin_user_detail(user_id: str, admin: dict[str, Any] = Depends(require_admin)) -> dict[str, Any]:
+    del admin
+    with connect() as db:
+        row = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"user": admin_user_json(db, row)}
+
+
+@app.patch("/api/admin/users/{user_id}")
+def admin_update_user(user_id: str, payload: AdminUserPatch, admin: dict[str, Any] = Depends(require_admin)) -> dict[str, Any]:
+    updates = model_values(payload)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No changes provided")
+    with connect() as db:
+        target = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not target:
+            raise HTTPException(status_code=404, detail="User not found")
+        if target["id"] == admin["id"] and updates.get("account_status") in {"suspended", "deleted"}:
+            raise HTTPException(status_code=400, detail="Admins cannot suspend or delete their own account")
+
+        assignments: list[str] = []
+        values: list[Any] = []
+        timestamp = now()
+        if "plan" in updates and updates["plan"] is not None:
+            assignments.append("plan = ?")
+            values.append(valid_plan(updates["plan"]))
+        if "account_status" in updates and updates["account_status"] is not None:
+            next_status = valid_account_status(updates["account_status"])
+            assignments.append("account_status = ?")
+            values.append(next_status)
+            if next_status == "suspended":
+                assignments.extend(["suspended_at = ?", "deleted_at = NULL"])
+                values.append(timestamp)
+            elif next_status == "deleted":
+                assignments.extend(["deleted_at = ?", "suspended_at = NULL"])
+                values.append(timestamp)
+            elif next_status == "active":
+                assignments.extend(["suspended_at = NULL", "deleted_at = NULL"])
+        if not assignments:
+            raise HTTPException(status_code=400, detail="No changes provided")
+        assignments.append("updated_at = ?")
+        values.extend([timestamp, user_id])
+        db.execute(f"UPDATE users SET {', '.join(assignments)} WHERE id = ?", values)
+        updated = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        return {"user": admin_user_json(db, updated)}
+
+
+@app.delete("/api/admin/users/{user_id}")
+def admin_delete_user(user_id: str, admin: dict[str, Any] = Depends(require_admin)) -> dict[str, Any]:
+    if user_id == admin["id"]:
+        raise HTTPException(status_code=400, detail="Admins cannot delete their own account")
+    timestamp = now()
+    with connect() as db:
+        target = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not target:
+            raise HTTPException(status_code=404, detail="User not found")
+        db.execute(
+            "UPDATE users SET account_status = 'deleted', deleted_at = ?, suspended_at = NULL, updated_at = ? WHERE id = ?",
+            (timestamp, timestamp, user_id),
+        )
+        updated = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        return {"user": admin_user_json(db, updated)}
+
+
+@app.post("/api/admin/users/{user_id}/restore")
+def admin_restore_user(user_id: str, admin: dict[str, Any] = Depends(require_admin)) -> dict[str, Any]:
+    del admin
+    timestamp = now()
+    with connect() as db:
+        target = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not target:
+            raise HTTPException(status_code=404, detail="User not found")
+        db.execute(
+            "UPDATE users SET account_status = 'active', suspended_at = NULL, deleted_at = NULL, updated_at = ? WHERE id = ?",
+            (timestamp, user_id),
+        )
+        updated = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        return {"user": admin_user_json(db, updated)}
+
+
 @app.get("/api/restaurants")
 def list_restaurants(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
     with connect() as db:
@@ -570,6 +1248,7 @@ def create_restaurant(payload: RestaurantIn, user: dict[str, Any] = Depends(requ
     restaurant_id = new_id()
     timestamp = now()
     with connect() as db:
+        require_restaurant_capacity(db, user)
         db.execute(
             """
             INSERT INTO restaurants
@@ -792,6 +1471,7 @@ def add_shared_restaurant(token: str, user: dict[str, Any] = Depends(require_use
     timestamp = now()
     restaurant_id = new_id()
     with connect() as db:
+        require_restaurant_capacity(db, user)
         db.execute(
             """
             INSERT INTO restaurants
@@ -806,7 +1486,7 @@ def add_shared_restaurant(token: str, user: dict[str, Any] = Depends(require_use
                 source["lat"],
                 source["lng"],
                 source["google_url"],
-                f"来自分享：{payload['owner']['name'] if payload.get('owner') else 'FoodieMap'}",
+                f"From share: {payload['owner']['name'] if payload.get('owner') else 'FoodieMap'}",
                 timestamp,
                 timestamp,
             ),
@@ -946,9 +1626,10 @@ def get_discovery_lists() -> dict[str, Any]:
     with connect() as db:
         rows = db.execute(
             """
-            SELECT * FROM lists
-            WHERE visibility = 'public'
-            ORDER BY published_at DESC, updated_at DESC
+            SELECT lists.* FROM lists
+            JOIN users ON users.id = lists.owner_user_id
+            WHERE lists.visibility = 'public' AND users.account_status = 'active'
+            ORDER BY lists.published_at DESC, lists.updated_at DESC
             """
         ).fetchall()
         return {"lists": [list_json(db, row) for row in rows]}
@@ -967,6 +1648,14 @@ def copy_discovery_list(list_id: str, user: dict[str, Any] = Depends(require_use
     new_list_id = new_id()
     with connect() as db:
         source = public_list(db, list_id)
+        items = db.execute(
+            "SELECT * FROM list_items WHERE list_id = ? ORDER BY sort_order ASC, created_at ASC",
+            (source["id"],),
+        ).fetchall()
+        copyable_restaurant_count = sum(
+            1 for item in items if db.execute("SELECT id FROM restaurants WHERE id = ?", (item["restaurant_id"],)).fetchone()
+        )
+        require_restaurant_capacity(db, user, copyable_restaurant_count)
         db.execute(
             """
             INSERT INTO lists
@@ -983,10 +1672,6 @@ def copy_discovery_list(list_id: str, user: dict[str, Any] = Depends(require_use
                 timestamp,
             ),
         )
-        items = db.execute(
-            "SELECT * FROM list_items WHERE list_id = ? ORDER BY sort_order ASC, created_at ASC",
-            (source["id"],),
-        ).fetchall()
         for index, item in enumerate(items):
             source_restaurant = db.execute("SELECT * FROM restaurants WHERE id = ?", (item["restaurant_id"],)).fetchone()
             if not source_restaurant:
@@ -1007,7 +1692,7 @@ def copy_discovery_list(list_id: str, user: dict[str, Any] = Depends(require_use
                     source_restaurant["lng"],
                     source_restaurant["google_url"],
                     source_restaurant["personal_rating"],
-                    f"来自公开清单：{source['title']}",
+                    f"From public list: {source['title']}",
                     timestamp,
                     timestamp,
                 ),
@@ -1049,7 +1734,7 @@ def copy_discovery_list(list_id: str, user: dict[str, Any] = Depends(require_use
 def resolve_google_link(url: str) -> dict[str, str]:
     target = urllib.parse.urlparse(url.strip())
     if target.scheme not in {"http", "https"} or target.netloc not in ALLOWED_SHORT_HOSTS:
-        raise HTTPException(status_code=400, detail="只支持 Google Maps 短链接。")
+        raise HTTPException(status_code=400, detail="Only Google Maps short links are supported.")
     try:
         request = urllib.request.Request(
             url,
@@ -1061,7 +1746,7 @@ def resolve_google_link(url: str) -> dict[str, str]:
         with urllib.request.urlopen(request, timeout=8) as response:
             final_url = response.geturl()
     except (urllib.error.URLError, TimeoutError) as error:
-        raise HTTPException(status_code=502, detail="短链接展开失败，请在浏览器打开后复制完整链接。") from error
+        raise HTTPException(status_code=502, detail="Short link expansion failed. Open it in a browser and copy the full link.") from error
     return {"url": final_url}
 
 

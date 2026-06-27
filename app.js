@@ -1,5 +1,6 @@
 const LANGUAGE_KEY = "foodiemap:language";
 const LIST_FILTER_ORDER_KEY = "foodiemap:list-filter-order";
+const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
 const MAP_ZOOM_STEP = 0.18;
@@ -36,10 +37,42 @@ const translations = {
     "settings.button": "Google API settings",
     "auth.signIn": "Sign in",
     "auth.signOutTitle": "{email}, click to sign out",
-    "auth.signInTitle": "Sign in with Google",
+    "auth.signInTitle": "Sign in",
     "auth.signOutConfirm": "Sign out of {email}?",
-    "auth.required": "This action requires Google sign-in. Sign in now?",
-    "api.loginRequired": "Please sign in with Google first.",
+    "auth.required": "This action requires sign-in. Sign in now?",
+    "auth.mode": "SIGN IN",
+    "auth.title": "Sign in to FoodieMap",
+    "auth.googleButton": "Continue with Google",
+    "auth.tabsLabel": "Sign-in method",
+    "auth.passwordTab": "Password",
+    "auth.codeTab": "Email code",
+    "auth.passwordLogin": "Log in",
+    "auth.passwordRegister": "Create account",
+    "auth.passwordReset": "Reset password",
+    "auth.name": "Name",
+    "auth.namePlaceholder": "Optional display name",
+    "auth.email": "Email",
+    "auth.emailPlaceholder": "you@example.com",
+    "auth.password": "Password",
+    "auth.newPassword": "New password",
+    "auth.passwordPlaceholder": "At least 8 characters",
+    "auth.code": "Code",
+    "auth.codePlaceholder": "6-digit code",
+    "auth.sendCode": "Send code",
+    "auth.sendCodeWait": "Send code ({seconds}s)",
+    "auth.verifyCode": "Verify and sign in",
+    "auth.sendResetCode": "Send reset code",
+    "auth.loginButton": "Log in",
+    "auth.registerButton": "Create account",
+    "auth.resetButton": "Reset and sign in",
+    "auth.help": "Use Google, a password, or a one-time email code.",
+    "auth.codeSent": "Code sent. Check your email.",
+    "auth.signedIn": "Signed in.",
+    "auth.passwordResetSent": "Reset code sent. Check your email.",
+    "auth.enterEmail": "Enter your email.",
+    "auth.enterPassword": "Enter your password.",
+    "auth.enterCode": "Enter the code from your email.",
+    "api.loginRequired": "Please sign in first.",
     "api.requestFailed": "Request failed.",
     "paste.help": "Copy a Google Maps link, then click Paste & Add.",
     "paste.demo": "Demo mode. Sign in to save cloud data, upload photos, and share spots.",
@@ -274,6 +307,63 @@ const translations = {
     "settings.help": "The MVP prefers Google Maps links and manual coordinates. A Google Geocoding API key is only needed when you enter an address without coordinates.",
     "import.cloudOnly": "Cloud data does not import local JSON yet.",
     "reset.cloudOnly": "After sign-in, data is stored in the cloud. Reset Demo is not used.",
+    "limit.free": "Free accounts can store up to {limit} restaurants. You have {count}.",
+    "limit.freeFull": "Free account limit reached: {count}/{limit} restaurants.",
+    "admin.eyebrow": "ADMIN",
+    "admin.title": "User Management",
+    "admin.description": "Manage account access, plans, and Free account storage limits.",
+    "admin.loginEyebrow": "ADMIN",
+    "admin.loginTitle": "Admin Login",
+    "admin.loginDescription": "Sign in with the fixed admin username and password configured on this server.",
+    "admin.username": "Username",
+    "admin.usernamePlaceholder": "admin",
+    "admin.password": "Password",
+    "admin.passwordPlaceholder": "Admin password",
+    "admin.loginButton": "Log in to Admin",
+    "admin.logout": "Log out",
+    "admin.loginHelp": "Use ADMIN_USERNAME and ADMIN_PASSWORD from your .env file.",
+    "admin.loginMissing": "Enter the admin username and password.",
+    "admin.notConfigured": "Admin login is not configured on this server.",
+    "admin.refresh": "Refresh",
+    "admin.search": "Search users",
+    "admin.searchPlaceholder": "Email or name",
+    "admin.status": "Status",
+    "admin.plan": "Plan",
+    "admin.allStatuses": "All statuses",
+    "admin.allPlans": "All plans",
+    "admin.statusActive": "Active",
+    "admin.statusSuspended": "Suspended",
+    "admin.statusDeleted": "Deleted",
+    "admin.planFree": "Free",
+    "admin.planPaid": "Paid",
+    "admin.loading": "Loading users...",
+    "admin.noAccess": "Admin access required.",
+    "admin.noUsers": "No users match these filters.",
+    "admin.loaded": "Loaded {count} users.",
+    "admin.created": "Created {date}",
+    "admin.updated": "Updated {date}",
+    "admin.restaurants": "{count} restaurants",
+    "admin.lists": "{count} lists",
+    "admin.publicLists": "{count} public",
+    "admin.limit": "Limit {count}/{limit}",
+    "admin.authMethods": "Auth: {methods}",
+    "admin.methodGoogle": "Google",
+    "admin.methodPassword": "Password",
+    "admin.methodEmailCode": "Email code",
+    "admin.unlimited": "Unlimited",
+    "admin.makePaid": "Set Paid",
+    "admin.makeFree": "Set Free",
+    "admin.suspend": "Suspend",
+    "admin.reactivate": "Reactivate",
+    "admin.softDelete": "Soft delete",
+    "admin.restore": "Restore",
+    "admin.confirmSuspend": "Suspend {email}? They will lose access until reactivated.",
+    "admin.confirmReactivate": "Reactivate {email}?",
+    "admin.confirmDelete": "Soft delete {email}? Their data will be retained and can be restored.",
+    "admin.confirmRestore": "Restore {email}?",
+    "admin.confirmPlan": "Set {email} to {plan}?",
+    "admin.roleAdmin": "Admin",
+    "admin.you": "You",
   },
   zh: {
     "app.brand": "美食地图",
@@ -298,10 +388,42 @@ const translations = {
     "settings.button": "Google API 设置",
     "auth.signIn": "登录",
     "auth.signOutTitle": "{email}，点击退出登录",
-    "auth.signInTitle": "使用 Google 登录",
+    "auth.signInTitle": "登录",
     "auth.signOutConfirm": "退出 {email} 吗？",
-    "auth.required": "这个操作需要 Google 登录。现在登录吗？",
-    "api.loginRequired": "请先使用 Google 登录。",
+    "auth.required": "这个操作需要登录。现在登录吗？",
+    "auth.mode": "登录",
+    "auth.title": "登录 FoodieMap",
+    "auth.googleButton": "使用 Google 继续",
+    "auth.tabsLabel": "登录方式",
+    "auth.passwordTab": "密码",
+    "auth.codeTab": "邮箱验证码",
+    "auth.passwordLogin": "登录",
+    "auth.passwordRegister": "创建账号",
+    "auth.passwordReset": "重置密码",
+    "auth.name": "姓名",
+    "auth.namePlaceholder": "可选显示名",
+    "auth.email": "邮箱",
+    "auth.emailPlaceholder": "you@example.com",
+    "auth.password": "密码",
+    "auth.newPassword": "新密码",
+    "auth.passwordPlaceholder": "至少 8 位",
+    "auth.code": "验证码",
+    "auth.codePlaceholder": "6 位验证码",
+    "auth.sendCode": "发送验证码",
+    "auth.sendCodeWait": "重新发送（{seconds}s）",
+    "auth.verifyCode": "验证并登录",
+    "auth.sendResetCode": "发送重置验证码",
+    "auth.loginButton": "登录",
+    "auth.registerButton": "创建账号",
+    "auth.resetButton": "重置并登录",
+    "auth.help": "可使用 Google、密码或一次性邮箱验证码登录。",
+    "auth.codeSent": "验证码已发送，请检查邮箱。",
+    "auth.signedIn": "已登录。",
+    "auth.passwordResetSent": "重置验证码已发送，请检查邮箱。",
+    "auth.enterEmail": "请输入邮箱。",
+    "auth.enterPassword": "请输入密码。",
+    "auth.enterCode": "请输入邮箱里的验证码。",
+    "api.loginRequired": "请先登录。",
     "api.requestFailed": "请求失败。",
     "paste.help": "复制 Google Maps 链接后点 Paste & Add。",
     "paste.demo": "当前是演示模式。登录后可保存云端数据、上传图片和分享。",
@@ -536,6 +658,63 @@ const translations = {
     "settings.help": "MVP 默认优先解析 Google Maps 链接和手动经纬度；只有只填地址时才需要 Google Geocoding API。",
     "import.cloudOnly": "云端版本暂不导入本地 JSON。",
     "reset.cloudOnly": "登录后数据保存在云端，不使用 Reset Demo。",
+    "limit.free": "免费账号最多可保存 {limit} 家餐厅。你当前有 {count} 家。",
+    "limit.freeFull": "免费账号已达到上限：{count}/{limit} 家餐厅。",
+    "admin.eyebrow": "后台",
+    "admin.title": "用户管理",
+    "admin.description": "管理账号访问、套餐和免费账号存储限制。",
+    "admin.loginEyebrow": "后台",
+    "admin.loginTitle": "管理员登录",
+    "admin.loginDescription": "使用服务器环境变量配置的固定管理员用户名和密码登录。",
+    "admin.username": "用户名",
+    "admin.usernamePlaceholder": "admin",
+    "admin.password": "密码",
+    "admin.passwordPlaceholder": "管理员密码",
+    "admin.loginButton": "登录后台",
+    "admin.logout": "退出后台",
+    "admin.loginHelp": "使用 .env 里的 ADMIN_USERNAME 和 ADMIN_PASSWORD。",
+    "admin.loginMissing": "请输入管理员用户名和密码。",
+    "admin.notConfigured": "这个服务器尚未配置管理员登录。",
+    "admin.refresh": "刷新",
+    "admin.search": "搜索用户",
+    "admin.searchPlaceholder": "邮箱或姓名",
+    "admin.status": "状态",
+    "admin.plan": "套餐",
+    "admin.allStatuses": "全部状态",
+    "admin.allPlans": "全部套餐",
+    "admin.statusActive": "正常",
+    "admin.statusSuspended": "暂停",
+    "admin.statusDeleted": "已删除",
+    "admin.planFree": "免费",
+    "admin.planPaid": "付费",
+    "admin.loading": "正在加载用户...",
+    "admin.noAccess": "需要管理员权限。",
+    "admin.noUsers": "没有符合筛选条件的用户。",
+    "admin.loaded": "已加载 {count} 个用户。",
+    "admin.created": "创建于 {date}",
+    "admin.updated": "更新于 {date}",
+    "admin.restaurants": "{count} 家餐厅",
+    "admin.lists": "{count} 个清单",
+    "admin.publicLists": "{count} 个公开",
+    "admin.limit": "额度 {count}/{limit}",
+    "admin.authMethods": "登录：{methods}",
+    "admin.methodGoogle": "Google",
+    "admin.methodPassword": "密码",
+    "admin.methodEmailCode": "邮箱验证码",
+    "admin.unlimited": "不限量",
+    "admin.makePaid": "设为付费",
+    "admin.makeFree": "设为免费",
+    "admin.suspend": "暂停",
+    "admin.reactivate": "恢复",
+    "admin.softDelete": "软删除",
+    "admin.restore": "还原",
+    "admin.confirmSuspend": "暂停 {email} 吗？该用户在恢复前无法继续使用。",
+    "admin.confirmReactivate": "恢复 {email} 吗？",
+    "admin.confirmDelete": "软删除 {email} 吗？数据会保留，并可恢复。",
+    "admin.confirmRestore": "还原 {email} 吗？",
+    "admin.confirmPlan": "把 {email} 设置为{plan}套餐吗？",
+    "admin.roleAdmin": "管理员",
+    "admin.you": "你",
   },
 };
 
@@ -610,6 +789,7 @@ const systemLists = [
 
 let restaurants = [];
 let currentUser = null;
+let currentAdmin = null;
 let currentLocation = null;
 let activeFilter = "all";
 let selectedRestaurantId = null;
@@ -627,6 +807,11 @@ let selectedDiscoveryListId = null;
 let editingListId = null;
 let addSpotsListId = null;
 let discoverySort = "popular";
+let adminUsers = [];
+let adminLoadTimer = null;
+let authPasswordMode = "login";
+let authCodeCooldownTimer = null;
+let authCodeCooldownUntil = 0;
 let mapZoom = 1;
 let isDetailAddDishOpen = false;
 let activeDetailRestaurantId = null;
@@ -650,6 +835,29 @@ const elements = {
   languageLabel: document.querySelector("#languageLabel"),
   languageOptions: document.querySelectorAll("[data-language-option]"),
   loginButton: document.querySelector("#loginButton"),
+  authDialog: document.querySelector("#authDialog"),
+  authForm: document.querySelector("#authForm"),
+  closeAuthDialog: document.querySelector("#closeAuthDialog"),
+  googleSignInButton: document.querySelector("#googleSignInButton"),
+  authTabs: document.querySelectorAll("[data-auth-panel]"),
+  authPanels: document.querySelectorAll("[data-auth-panel-view]"),
+  authPasswordModeButtons: document.querySelectorAll("[data-auth-password-mode]"),
+  authNameRow: document.querySelector("[data-auth-name-row]"),
+  authPasswordRow: document.querySelector("[data-auth-password-row]"),
+  authResetCodeRow: document.querySelector("[data-auth-reset-code-row]"),
+  authNewPasswordRow: document.querySelector("[data-auth-new-password-row]"),
+  authNameInput: document.querySelector("#authNameInput"),
+  authEmailInput: document.querySelector("#authEmailInput"),
+  authPasswordInput: document.querySelector("#authPasswordInput"),
+  authResetCodeInput: document.querySelector("#authResetCodeInput"),
+  authNewPasswordInput: document.querySelector("#authNewPasswordInput"),
+  sendResetCodeButton: document.querySelector("#sendResetCodeButton"),
+  passwordAuthButton: document.querySelector("#passwordAuthButton"),
+  authCodeEmailInput: document.querySelector("#authCodeEmailInput"),
+  authCodeInput: document.querySelector("#authCodeInput"),
+  sendLoginCodeButton: document.querySelector("#sendLoginCodeButton"),
+  verifyLoginCodeButton: document.querySelector("#verifyLoginCodeButton"),
+  authStatusText: document.querySelector("#authStatusText"),
   openAddPanel: document.querySelector("#openAddPanel"),
   pasteAddButton: document.querySelector("#pasteAddButton"),
   pasteStatus: document.querySelector("#pasteStatus"),
@@ -736,6 +944,12 @@ const elements = {
   mapView: document.querySelector("#mapView"),
   listsView: document.querySelector("#listsView"),
   discoveryView: document.querySelector("#discoveryView"),
+  adminLoginView: document.querySelector("#adminLoginView"),
+  adminLoginForm: document.querySelector("#adminLoginForm"),
+  adminUsernameInput: document.querySelector("#adminUsernameInput"),
+  adminPasswordInput: document.querySelector("#adminPasswordInput"),
+  adminLoginStatus: document.querySelector("#adminLoginStatus"),
+  adminView: document.querySelector("#adminView"),
   createListButton: document.querySelector("#createListButton"),
   sidebarListFilters: document.querySelector("#sidebarListFilters"),
   myListDetail: document.querySelector("#myListDetail"),
@@ -752,6 +966,13 @@ const elements = {
   closeAddSpotsDialog: document.querySelector("#closeAddSpotsDialog"),
   addSpotsSearch: document.querySelector("#addSpotsSearch"),
   addSpotsList: document.querySelector("#addSpotsList"),
+  adminRefreshButton: document.querySelector("#adminRefreshButton"),
+  adminSearchInput: document.querySelector("#adminSearchInput"),
+  adminStatusFilter: document.querySelector("#adminStatusFilter"),
+  adminPlanFilter: document.querySelector("#adminPlanFilter"),
+  adminStatusText: document.querySelector("#adminStatusText"),
+  adminUserList: document.querySelector("#adminUserList"),
+  adminLogoutButton: document.querySelector("#adminLogoutButton"),
 };
 
 boot();
@@ -759,6 +980,13 @@ boot();
 async function boot() {
   translateStaticDom();
   bindEvents();
+  if (isAdminPortal) {
+    document.body.classList.add("admin-portal");
+    activeView = "admin-login";
+    await loadAdminSession();
+    setActiveView(currentAdmin ? "admin" : "admin-login", { push: false });
+    return;
+  }
   await loadMe();
   if (shareToken) {
     activeView = "my-map";
@@ -777,6 +1005,27 @@ function bindEvents() {
   elements.locateButton.addEventListener("click", requestLocation);
   elements.mapLocateButton?.addEventListener("click", requestLocation);
   elements.loginButton.addEventListener("click", handleLoginButton);
+  elements.authForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const codePanelOpen = [...elements.authPanels].some((panel) => panel.dataset.authPanelView === "code" && !panel.hidden);
+    if (codePanelOpen) {
+      verifyLoginCode();
+    } else {
+      submitPasswordAuth();
+    }
+  });
+  elements.closeAuthDialog?.addEventListener("click", closeAuthDialog);
+  elements.googleSignInButton?.addEventListener("click", startGoogleSignIn);
+  elements.authTabs.forEach((button) => {
+    button.addEventListener("click", () => setAuthPanel(button.dataset.authPanel));
+  });
+  elements.authPasswordModeButtons.forEach((button) => {
+    button.addEventListener("click", () => setAuthPasswordMode(button.dataset.authPasswordMode));
+  });
+  elements.passwordAuthButton?.addEventListener("click", submitPasswordAuth);
+  elements.sendResetCodeButton?.addEventListener("click", requestPasswordResetCode);
+  elements.sendLoginCodeButton?.addEventListener("click", requestLoginCode);
+  elements.verifyLoginCodeButton?.addEventListener("click", verifyLoginCode);
   elements.openAddPanel.addEventListener("click", openCreateDialog);
   elements.pasteAddButton.addEventListener("click", pasteAndAddFromClipboard);
   elements.closeAddPanel.addEventListener("click", closeRestaurantDialog);
@@ -820,7 +1069,7 @@ function bindEvents() {
   });
   window.addEventListener("hashchange", () => setActiveView(getInitialView(), { push: false }));
   window.addEventListener("scroll", updateTopbarElevation, { passive: true });
-  [elements.sidebar, elements.mapView, elements.listsView, elements.discoveryView].forEach((scrollArea) => {
+  [elements.sidebar, elements.mapView, elements.listsView, elements.discoveryView, elements.adminView].forEach((scrollArea) => {
     scrollArea?.addEventListener("scroll", updateTopbarElevation, { passive: true });
   });
   elements.createListButton.addEventListener("click", openCreateListDialog);
@@ -854,6 +1103,12 @@ function bindEvents() {
     event.preventDefault();
     elements.settingsDialog.close();
   });
+  elements.adminRefreshButton?.addEventListener("click", () => loadAdminUsers({ force: true }));
+  elements.adminLoginForm?.addEventListener("submit", handleAdminLogin);
+  elements.adminLogoutButton?.addEventListener("click", handleAdminLogout);
+  elements.adminSearchInput?.addEventListener("input", scheduleAdminLoad);
+  elements.adminStatusFilter?.addEventListener("change", () => loadAdminUsers({ force: true }));
+  elements.adminPlanFilter?.addEventListener("change", () => loadAdminUsers({ force: true }));
   elements.languageOptions.forEach((button) => {
     button.addEventListener("click", () => setLanguage(button.dataset.languageOption));
   });
@@ -902,6 +1157,10 @@ function refreshOpenDialogLanguage() {
     elements.listFormTitle.textContent = editingListId ? t("list.editTitle") : t("list.createTitle");
     elements.saveListButton.textContent = editingListId ? t("button.updateList") : t("button.createList");
     elements.listFormHelp.textContent = editingListId ? t("list.editHelp") : t("list.defaultPrivate");
+  }
+  if (elements.authDialog.open) {
+    setAuthPasswordMode(authPasswordMode);
+    updateLoginCodeCooldown();
   }
 }
 
@@ -961,6 +1220,44 @@ async function loadMe() {
   renderAuth();
 }
 
+async function loadAdminSession() {
+  try {
+    const data = await api("/api/admin/me");
+    currentAdmin = data.admin;
+    if (!data.configured && elements.adminLoginStatus) {
+      elements.adminLoginStatus.textContent = t("admin.notConfigured");
+    }
+  } catch {
+    currentAdmin = null;
+  }
+}
+
+async function handleAdminLogin(event) {
+  event.preventDefault();
+  const username = elements.adminUsernameInput.value.trim();
+  const password = elements.adminPasswordInput.value;
+  if (!username || !password) {
+    elements.adminLoginStatus.textContent = t("admin.loginMissing");
+    return;
+  }
+  try {
+    const data = await api("/auth/admin/login", { method: "POST", body: JSON.stringify({ username, password }) });
+    currentAdmin = data.admin;
+    elements.adminPasswordInput.value = "";
+    await loadAdminUsers({ force: true });
+    setActiveView("admin", { push: false });
+  } catch (error) {
+    elements.adminLoginStatus.textContent = error.message;
+  }
+}
+
+async function handleAdminLogout() {
+  await api("/auth/admin/logout", { method: "POST" });
+  currentAdmin = null;
+  adminUsers = [];
+  setActiveView("admin-login", { push: false });
+}
+
 function renderAuth() {
   elements.loginButton.textContent = currentUser ? shortUserName(currentUser) : t("auth.signIn");
   elements.loginButton.title = currentUser ? t("auth.signOutTitle", { email: currentUser.email }) : t("auth.signInTitle");
@@ -971,9 +1268,24 @@ function renderAuth() {
     : t("paste.demo");
 }
 
+function openAuthDialog() {
+  setAuthPanel("password");
+  setAuthPasswordMode("login");
+  elements.authStatusText.textContent = t("auth.help");
+  elements.authDialog?.showModal();
+}
+
+function closeAuthDialog() {
+  elements.authDialog?.close();
+}
+
+function startGoogleSignIn() {
+  window.location.href = `/auth/google/login?next=${encodeURIComponent(location.pathname + location.search + location.hash)}`;
+}
+
 async function handleLoginButton() {
   if (!currentUser) {
-    window.location.href = `/auth/google/login?next=${encodeURIComponent(location.pathname + location.search)}`;
+    openAuthDialog();
     return;
   }
   if (!confirm(t("auth.signOutConfirm", { email: currentUser.email }))) return;
@@ -989,6 +1301,140 @@ async function handleLoginButton() {
   render();
 }
 
+function setAuthPanel(panel) {
+  const nextPanel = panel === "code" ? "code" : "password";
+  elements.authTabs.forEach((button) => {
+    button.classList.toggle("active", button.dataset.authPanel === nextPanel);
+  });
+  elements.authPanels.forEach((section) => {
+    section.hidden = section.dataset.authPanelView !== nextPanel;
+  });
+  if (elements.authStatusText) elements.authStatusText.textContent = t("auth.help");
+}
+
+function setAuthPasswordMode(mode) {
+  authPasswordMode = ["register", "reset"].includes(mode) ? mode : "login";
+  elements.authPasswordModeButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.authPasswordMode === authPasswordMode);
+  });
+  elements.authNameRow.hidden = authPasswordMode !== "register";
+  elements.authPasswordRow.hidden = authPasswordMode === "reset";
+  elements.authResetCodeRow.hidden = authPasswordMode !== "reset";
+  elements.authNewPasswordRow.hidden = authPasswordMode !== "reset";
+  elements.sendResetCodeButton.hidden = authPasswordMode !== "reset";
+  elements.passwordAuthButton.textContent = {
+    login: t("auth.loginButton"),
+    register: t("auth.registerButton"),
+    reset: t("auth.resetButton"),
+  }[authPasswordMode];
+  elements.authStatusText.textContent = t("auth.help");
+}
+
+function authEmailValue(input = elements.authEmailInput) {
+  const email = input.value.trim();
+  if (!email) throw new Error(t("auth.enterEmail"));
+  return email;
+}
+
+async function refreshAfterAuth() {
+  await loadMe();
+  await loadRestaurants();
+  await loadLists();
+  await loadDiscoveryLists();
+  closeAuthDialog();
+  render();
+}
+
+async function submitPasswordAuth() {
+  try {
+    const email = authEmailValue();
+    if (authPasswordMode === "login") {
+      const password = elements.authPasswordInput.value;
+      if (!password) throw new Error(t("auth.enterPassword"));
+      await api("/auth/email/login", { method: "POST", body: JSON.stringify({ email, password }) });
+    } else if (authPasswordMode === "register") {
+      const password = elements.authPasswordInput.value;
+      if (!password) throw new Error(t("auth.enterPassword"));
+      await api("/auth/email/register", {
+        method: "POST",
+        body: JSON.stringify({ email, password, name: elements.authNameInput.value.trim() }),
+      });
+    } else {
+      const code = elements.authResetCodeInput.value.trim();
+      const password = elements.authNewPasswordInput.value;
+      if (!code) throw new Error(t("auth.enterCode"));
+      if (!password) throw new Error(t("auth.enterPassword"));
+      await api("/auth/email/password-reset/confirm", {
+        method: "POST",
+        body: JSON.stringify({ email, code, password }),
+      });
+    }
+    elements.authStatusText.textContent = t("auth.signedIn");
+    await refreshAfterAuth();
+  } catch (error) {
+    elements.authStatusText.textContent = error.message;
+  }
+}
+
+async function requestPasswordResetCode() {
+  try {
+    const email = authEmailValue();
+    await api("/auth/email/password-reset/request", {
+      method: "POST",
+      body: JSON.stringify({ email, lang: currentLanguage }),
+    });
+    elements.authStatusText.textContent = t("auth.passwordResetSent");
+  } catch (error) {
+    elements.authStatusText.textContent = error.message;
+  }
+}
+
+function startLoginCodeCooldown() {
+  authCodeCooldownUntil = Date.now() + 60_000;
+  clearInterval(authCodeCooldownTimer);
+  authCodeCooldownTimer = window.setInterval(updateLoginCodeCooldown, 250);
+  updateLoginCodeCooldown();
+}
+
+function updateLoginCodeCooldown() {
+  const remaining = Math.max(0, Math.ceil((authCodeCooldownUntil - Date.now()) / 1000));
+  if (remaining <= 0) {
+    clearInterval(authCodeCooldownTimer);
+    elements.sendLoginCodeButton.disabled = false;
+    elements.sendLoginCodeButton.textContent = t("auth.sendCode");
+    return;
+  }
+  elements.sendLoginCodeButton.disabled = true;
+  elements.sendLoginCodeButton.textContent = t("auth.sendCodeWait", { seconds: remaining });
+}
+
+async function requestLoginCode() {
+  try {
+    const email = authEmailValue(elements.authCodeEmailInput);
+    await api("/auth/email/code/request", {
+      method: "POST",
+      body: JSON.stringify({ email, lang: currentLanguage }),
+    });
+    elements.authStatusText.textContent = t("auth.codeSent");
+    startLoginCodeCooldown();
+  } catch (error) {
+    elements.authStatusText.textContent = error.message;
+  }
+}
+
+async function verifyLoginCode() {
+  try {
+    const email = authEmailValue(elements.authCodeEmailInput);
+    const code = elements.authCodeInput.value.trim();
+    if (!code) throw new Error(t("auth.enterCode"));
+    await api("/auth/email/code/verify", { method: "POST", body: JSON.stringify({ email, code }) });
+    elements.authStatusText.textContent = t("auth.signedIn");
+    await refreshAfterAuth();
+  } catch (error) {
+    elements.authStatusText.textContent = error.message;
+  }
+}
+
 async function loadRestaurants() {
   if (!currentUser) {
     restaurants = demoRestaurants.map(cloneRestaurant);
@@ -996,6 +1442,7 @@ async function loadRestaurants() {
     const data = await api("/api/restaurants");
     restaurants = data.restaurants.map(normalizeRestaurant);
   }
+  syncCurrentUserRestaurantCount();
   selectedRestaurantId = restaurants[0]?.id ?? null;
   isSpotCardOpen = Boolean(selectedRestaurantId);
   render();
@@ -1068,7 +1515,7 @@ function renderShareChrome() {
 function requireLogin() {
   if (currentUser) return true;
   if (confirm(t("auth.required"))) {
-    window.location.href = `/auth/google/login?next=${encodeURIComponent(location.pathname + location.search)}`;
+    openAuthDialog();
   }
   return false;
 }
@@ -1086,6 +1533,7 @@ function openCreateDialog() {
     return;
   }
   if (!requireLogin()) return;
+  if (!canAddOneRestaurant()) return;
   resetRestaurantForm();
   elements.dishEditor.hidden = true;
   elements.addDialog.showModal();
@@ -1371,6 +1819,7 @@ async function deleteRestaurantById(restaurantId) {
   if (!confirm(t("spot.deleteConfirm", { name: restaurant.name }))) return;
   await api(`/api/restaurants/${restaurant.id}`, { method: "DELETE" });
   restaurants = restaurants.filter((item) => item.id !== restaurant.id);
+  syncCurrentUserRestaurantCount();
   lists = lists.map((list) => ({
     ...list,
     item_count: Math.max(0, Number(list.item_count || 0) - (list.items?.some((item) => item.restaurant_id === restaurant.id) ? 1 : 0)),
@@ -1824,6 +2273,7 @@ async function uploadDetailDishImage(input) {
 
 async function pasteAndAddFromClipboard() {
   if (!requireLogin()) return;
+  if (!canAddOneRestaurant()) return;
   try {
     const text = (await navigator.clipboard.readText()).trim();
     const googleUrl = extractGoogleMapsUrl(text);
@@ -2037,6 +2487,7 @@ function render() {
   renderViewShell();
   renderMapContext();
   renderCounts();
+  syncQuotaUi();
   syncFilterButtons();
   renderSidebarListFilters();
   renderRecentList();
@@ -2044,18 +2495,22 @@ function render() {
   renderSpotCard();
   renderListsView();
   renderDiscoveryView();
+  renderAdminView();
   updateTopbarElevation();
 }
 
 function getInitialView() {
+  if (isAdminPortal) return "admin-login";
   const hash = window.location.hash.replace("#", "");
   return ["my-map", "my-lists", "discovery"].includes(hash) ? hash : "my-map";
 }
 
 function setActiveView(view, options = {}) {
-  if (!["my-map", "my-lists", "discovery"].includes(view)) view = "my-map";
+  const allowedViews = isAdminPortal ? ["admin-login", "admin"] : ["my-map", "my-lists", "discovery"];
+  if (!allowedViews.includes(view)) view = isAdminPortal ? "admin-login" : "my-map";
+  if (isAdminPortal && view === "admin" && !currentAdmin) view = "admin-login";
   activeView = shareToken ? "my-map" : view;
-  if (options.push !== false && window.location.hash !== `#${activeView}`) {
+  if (!isAdminPortal && options.push !== false && window.location.hash !== `#${activeView}`) {
     window.location.hash = activeView;
   }
   if (activeView === "my-lists" && currentUser && !lists.length) {
@@ -2063,6 +2518,11 @@ function setActiveView(view, options = {}) {
   }
   if (activeView === "discovery" && !discoveryLists.length) {
     loadDiscoveryLists().then(render).catch((error) => alert(error.message));
+  }
+  if (activeView === "admin") {
+    loadAdminUsers().catch((error) => {
+      elements.adminStatusText.textContent = error.message;
+    });
   }
   render();
   requestAnimationFrame(updateTopbarElevation);
@@ -2087,6 +2547,8 @@ function renderViewShell() {
     "my-map": t("search.category"),
     "my-lists": t("search.category"),
     discovery: t("search.discovery"),
+    admin: t("admin.searchPlaceholder"),
+    "admin-login": t("admin.usernamePlaceholder"),
   }[activeView];
 }
 
@@ -2379,6 +2841,169 @@ function renderDiscoveryView() {
   }
   elements.discoveryDetail.innerHTML = selected ? discoveryDetailTemplate(selected) : discoveryEmptyStateTemplate(term).detail;
   elements.discoveryDetail.querySelector("[data-copy-public]")?.addEventListener("click", copyPublicList);
+}
+
+function scheduleAdminLoad() {
+  clearTimeout(adminLoadTimer);
+  adminLoadTimer = window.setTimeout(() => {
+    loadAdminUsers({ force: true }).catch((error) => {
+      elements.adminStatusText.textContent = error.message;
+    });
+  }, 250);
+}
+
+async function loadAdminUsers({ force = false } = {}) {
+  if (!currentAdmin) return;
+  if (!force && adminUsers.length) {
+    renderAdminView();
+    return;
+  }
+  elements.adminStatusText.textContent = t("admin.loading");
+  const params = new URLSearchParams();
+  const query = elements.adminSearchInput?.value.trim() || "";
+  const status = elements.adminStatusFilter?.value || "all";
+  const plan = elements.adminPlanFilter?.value || "all";
+  if (query) params.set("query", query);
+  if (status !== "all") params.set("status", status);
+  if (plan !== "all") params.set("plan", plan);
+  const data = await api(`/api/admin/users${params.toString() ? `?${params}` : ""}`);
+  adminUsers = data.users || [];
+  renderAdminView();
+}
+
+function renderAdminView() {
+  if (!elements.adminUserList) return;
+  if (!currentAdmin) {
+    elements.adminUserList.innerHTML = emptyStateTemplate(t("admin.noAccess"), "");
+    if (elements.adminStatusText) elements.adminStatusText.textContent = "";
+    return;
+  }
+  elements.adminStatusText.textContent = adminUsers.length ? t("admin.loaded", { count: adminUsers.length }) : "";
+  elements.adminUserList.innerHTML = adminUsers.length
+    ? adminUsers.map(adminUserRowTemplate).join("")
+    : emptyStateTemplate(t("admin.noUsers"), "");
+  elements.adminUserList.querySelectorAll("[data-admin-action]").forEach((button) => {
+    button.addEventListener("click", () => handleAdminUserAction(button));
+  });
+}
+
+function adminUserRowTemplate(user) {
+  const isSelf = false;
+  const limitLabel = user.restaurant_limit == null
+    ? t("admin.unlimited")
+    : t("admin.limit", { count: user.restaurant_count, limit: user.restaurant_limit });
+  const authLabel = t("admin.authMethods", { methods: authMethodLabel(user.auth_methods || []) });
+  const statusClass = `admin-status-${user.account_status}`;
+  return `
+    <article class="admin-user-row ${statusClass}" data-admin-user-id="${escapeAttribute(user.id)}">
+      <div class="admin-user-main">
+        <div class="admin-user-avatar">${escapeHtml(shortUserName(user))}</div>
+        <div>
+          <div class="admin-user-title">
+            <strong>${escapeHtml(user.name || user.email)}</strong>
+          </div>
+          <small>${escapeHtml(user.email)}</small>
+          <div class="admin-user-meta">
+            <span>${t("admin.restaurants", { count: user.restaurant_count })}</span>
+            <span>${t("admin.lists", { count: user.list_count })}</span>
+            <span>${t("admin.publicLists", { count: user.public_list_count })}</span>
+            <span>${escapeHtml(limitLabel)}</span>
+            <span>${escapeHtml(authLabel)}</span>
+          </div>
+          <div class="admin-user-meta muted">
+            <span>${t("admin.created", { date: formatDate(user.created_at) })}</span>
+            <span>${t("admin.updated", { date: formatDate(user.updated_at) })}</span>
+          </div>
+        </div>
+      </div>
+      <div class="admin-user-state">
+        <span class="tag-pill ${user.plan === "paid" ? "favorite" : "want_to_go"}">${adminPlanLabel(user.plan)}</span>
+        <span class="tag-pill ${user.account_status === "active" ? "visited" : user.account_status === "suspended" ? "want_to_go" : "favorite"}">${adminStatusLabel(user.account_status)}</span>
+      </div>
+      <div class="admin-user-actions">
+        <button class="secondary-button compact-action" type="button" data-admin-action="plan" data-user-id="${escapeAttribute(user.id)}" data-next-plan="${user.plan === "paid" ? "free" : "paid"}">
+          ${user.plan === "paid" ? t("admin.makeFree") : t("admin.makePaid")}
+        </button>
+        ${
+          user.account_status === "active"
+            ? `<button class="secondary-button compact-action" type="button" data-admin-action="suspend" data-user-id="${escapeAttribute(user.id)}" ${isSelf ? "disabled" : ""}>${t("admin.suspend")}</button>`
+            : `<button class="secondary-button compact-action" type="button" data-admin-action="reactivate" data-user-id="${escapeAttribute(user.id)}">${t("admin.reactivate")}</button>`
+        }
+        ${
+          user.account_status === "deleted"
+            ? `<button class="secondary-button compact-action" type="button" data-admin-action="restore" data-user-id="${escapeAttribute(user.id)}">${t("admin.restore")}</button>`
+            : `<button class="secondary-button compact-action danger" type="button" data-admin-action="delete" data-user-id="${escapeAttribute(user.id)}" ${isSelf ? "disabled" : ""}>${t("admin.softDelete")}</button>`
+        }
+      </div>
+    </article>
+  `;
+}
+
+function authMethodLabel(methods) {
+  const labels = {
+    google: t("admin.methodGoogle"),
+    password: t("admin.methodPassword"),
+    email_code: t("admin.methodEmailCode"),
+  };
+  return methods.map((method) => labels[method] || method).join(", ") || t("admin.methodEmailCode");
+}
+
+async function handleAdminUserAction(button) {
+  const user = adminUsers.find((item) => item.id === button.dataset.userId);
+  if (!user) return;
+  const action = button.dataset.adminAction;
+  if (action === "plan") {
+    const nextPlan = button.dataset.nextPlan === "paid" ? "paid" : "free";
+    if (!confirm(t("admin.confirmPlan", { email: user.email, plan: adminPlanLabel(nextPlan) }))) return;
+    await updateAdminUser(user.id, { plan: nextPlan });
+    return;
+  }
+  if (action === "suspend") {
+    if (!confirm(t("admin.confirmSuspend", { email: user.email }))) return;
+    await updateAdminUser(user.id, { account_status: "suspended" });
+    return;
+  }
+  if (action === "reactivate") {
+    if (!confirm(t("admin.confirmReactivate", { email: user.email }))) return;
+    await updateAdminUser(user.id, { account_status: "active" });
+    return;
+  }
+  if (action === "delete") {
+    if (!confirm(t("admin.confirmDelete", { email: user.email }))) return;
+    const data = await api(`/api/admin/users/${user.id}`, { method: "DELETE" });
+    replaceAdminUser(data.user);
+    return;
+  }
+  if (action === "restore") {
+    if (!confirm(t("admin.confirmRestore", { email: user.email }))) return;
+    const data = await api(`/api/admin/users/${user.id}/restore`, { method: "POST" });
+    replaceAdminUser(data.user);
+  }
+}
+
+async function updateAdminUser(userId, body) {
+  const data = await api(`/api/admin/users/${userId}`, { method: "PATCH", body: JSON.stringify(body) });
+  replaceAdminUser(data.user);
+}
+
+function replaceAdminUser(user) {
+  adminUsers = adminUsers.map((item) => (item.id === user.id ? user : item));
+  if (!adminUsers.some((item) => item.id === user.id)) adminUsers = [user, ...adminUsers];
+  renderAdminView();
+  syncQuotaUi();
+  renderAuth();
+}
+
+function adminStatusLabel(status) {
+  return {
+    active: t("admin.statusActive"),
+    suspended: t("admin.statusSuspended"),
+    deleted: t("admin.statusDeleted"),
+  }[status] || status;
+}
+
+function adminPlanLabel(plan) {
+  return plan === "paid" ? t("admin.planPaid") : t("admin.planFree");
 }
 
 function discoveryEmptyStateTemplate(term = "") {
@@ -2945,6 +3570,39 @@ function upsertRestaurant(restaurant) {
   if (index >= 0) restaurants[index] = normalized;
   else restaurants = [normalized, ...restaurants];
   syncRestaurantReferences(normalized);
+  syncCurrentUserRestaurantCount();
+}
+
+function syncCurrentUserRestaurantCount() {
+  if (!currentUser) return;
+  currentUser.restaurant_count = restaurants.length;
+  if (currentUser.restaurant_limit != null) {
+    currentUser.remaining_restaurant_slots = Math.max(0, Number(currentUser.restaurant_limit) - restaurants.length);
+  }
+}
+
+function canAddOneRestaurant() {
+  if (!currentUser || currentUser.plan === "paid" || currentUser.restaurant_limit == null) return true;
+  syncCurrentUserRestaurantCount();
+  if (restaurants.length < Number(currentUser.restaurant_limit)) return true;
+  alert(t("limit.freeFull", { count: restaurants.length, limit: currentUser.restaurant_limit }));
+  return false;
+}
+
+function syncQuotaUi() {
+  if (!elements.openAddPanel || !elements.pasteAddButton) return;
+  if (!currentUser || shareToken) {
+    elements.openAddPanel.disabled = false;
+    elements.pasteAddButton.disabled = false;
+    return;
+  }
+  syncCurrentUserRestaurantCount();
+  const limitReached = currentUser.plan !== "paid" && currentUser.restaurant_limit != null && restaurants.length >= Number(currentUser.restaurant_limit);
+  elements.openAddPanel.disabled = limitReached;
+  elements.pasteAddButton.disabled = limitReached;
+  if (limitReached) {
+    elements.pasteStatus.textContent = t("limit.freeFull", { count: restaurants.length, limit: currentUser.restaurant_limit });
+  }
 }
 
 function syncRestaurantReferences(restaurant) {
