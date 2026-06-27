@@ -14,6 +14,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Tightened the map view layout, selected spot card, sidebar filter labels, and signed-in avatar alignment.
 - Discovery now excludes public lists owned by suspended or deleted accounts.
 - Free users are blocked from adding restaurants once they reach the configured storage limit.
 - The `Sign in` control now opens a unified auth dialog instead of going directly to Google OAuth.

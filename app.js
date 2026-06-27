@@ -1261,6 +1261,7 @@ async function handleAdminLogout() {
 function renderAuth() {
   elements.loginButton.textContent = currentUser ? shortUserName(currentUser) : t("auth.signIn");
   elements.loginButton.title = currentUser ? t("auth.signOutTitle", { email: currentUser.email }) : t("auth.signInTitle");
+  elements.loginButton.classList.toggle("is-signed-in", Boolean(currentUser));
   elements.pasteStatus.textContent = shareToken
     ? t("paste.shared")
     : currentUser
