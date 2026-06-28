@@ -1055,6 +1055,8 @@ function bindEvents() {
       if (button.dataset.mobileAction === "paste-add") pasteAndAddFromClipboard();
     });
   });
+  document.addEventListener("pointerdown", closeMobileMapMenuFromOutside);
+  document.addEventListener("keydown", closeMobileMapMenuFromKeyboard);
   elements.closeAddPanel.addEventListener("click", closeRestaurantDialog);
   elements.closeCard.addEventListener("click", () => {
     isSpotCardOpen = false;
@@ -1148,6 +1150,17 @@ function bindEvents() {
       render();
     });
   });
+}
+
+function closeMobileMapMenuFromOutside(event) {
+  if (!elements.mobileMapMenu?.hasAttribute("open")) return;
+  if (elements.mobileMapMenu.contains(event.target)) return;
+  elements.mobileMapMenu.removeAttribute("open");
+}
+
+function closeMobileMapMenuFromKeyboard(event) {
+  if (event.key !== "Escape") return;
+  elements.mobileMapMenu?.removeAttribute("open");
 }
 
 function setLanguage(language) {
