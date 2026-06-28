@@ -25,6 +25,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Made the mobile selected spot sheet close on outside taps or downward swipes without triggering controls behind it.
 - Kept the mobile custom-list drawer within the viewport, let it close on outside taps, and compacted mobile selected spot actions.
 - Replaced remaining Chinese backend fallback messages with English defaults.
 - Fixed hidden auth dialog fields showing in the wrong sign-in mode.

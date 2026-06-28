@@ -810,6 +810,8 @@ let currentLocation = null;
 let activeFilter = "all";
 let selectedRestaurantId = null;
 let isSpotCardOpen = false;
+let spotCardDragStart = null;
+let suppressNextSpotCardOutsideClick = false;
 let editingRestaurantId = null;
 let shortLinkResolveTimer = null;
 let shareToken = getShareToken();
@@ -1056,7 +1058,12 @@ function bindEvents() {
     });
   });
   document.addEventListener("pointerdown", closeMobileMapMenuFromOutside);
+  document.addEventListener("pointerdown", closeMobileSpotCardFromOutside, true);
+  document.addEventListener("click", suppressMobileSpotCardOutsideClick, true);
   document.addEventListener("keydown", closeMobileMapMenuFromKeyboard);
+  elements.spotCard.addEventListener("pointerdown", startMobileSpotCardDrag);
+  elements.spotCard.addEventListener("pointerup", finishMobileSpotCardDrag);
+  elements.spotCard.addEventListener("pointercancel", cancelMobileSpotCardDrag);
   elements.closeAddPanel.addEventListener("click", closeRestaurantDialog);
   elements.closeCard.addEventListener("click", () => {
     isSpotCardOpen = false;
@@ -1165,6 +1172,44 @@ function closeMobileMapMenuFromKeyboard(event) {
   if (event.key !== "Escape") return;
   elements.mobileMapMenu?.removeAttribute("open");
   elements.mobileListDrawer?.removeAttribute("open");
+}
+
+function closeMobileSpotCardFromOutside(event) {
+  if (!isMobileMapViewport() || !isSpotCardOpen || elements.spotCard.hidden) return;
+  if (elements.spotCard.contains(event.target) || elements.spotCardTab.contains(event.target)) return;
+  isSpotCardOpen = false;
+  suppressNextSpotCardOutsideClick = true;
+  renderSpotCard();
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation?.();
+}
+
+function suppressMobileSpotCardOutsideClick(event) {
+  if (!suppressNextSpotCardOutsideClick) return;
+  suppressNextSpotCardOutsideClick = false;
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation?.();
+}
+
+function startMobileSpotCardDrag(event) {
+  if (!isMobileMapViewport() || !isSpotCardOpen) return;
+  spotCardDragStart = { x: event.clientX, y: event.clientY };
+}
+
+function finishMobileSpotCardDrag(event) {
+  if (!spotCardDragStart) return;
+  const deltaY = event.clientY - spotCardDragStart.y;
+  const deltaX = Math.abs(event.clientX - spotCardDragStart.x);
+  spotCardDragStart = null;
+  if (deltaY < 56 || deltaX > 90) return;
+  isSpotCardOpen = false;
+  renderSpotCard();
+}
+
+function cancelMobileSpotCardDrag() {
+  spotCardDragStart = null;
 }
 
 function setLanguage(language) {
