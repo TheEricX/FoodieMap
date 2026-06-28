@@ -28,6 +28,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Documentation
 
+- Added Google Cloud Run deployment notes covering build, deploy, environment variables, OAuth callback setup, logs, rollback, and storage caveats.
 - Added a tracked `env.example.txt` template for local and deployment configuration.
 - Clarified commit hygiene skill rules for versioned changelog sections and release handling.
 

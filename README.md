@@ -91,6 +91,8 @@ http://localhost:5174/auth/google/callback
 
 Docker 镜像会读取 `PORT` 环境变量；Google Cloud Run 会自动注入该变量。本地 `docker compose` 仍映射到 `5173`。
 
+Google Cloud Run 部署流程见 [docs/deployment-google-cloud.md](docs/deployment-google-cloud.md)。
+
 从模板创建 `.env`：
 
 ```bash
