@@ -15,6 +15,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 ### Changed
 
 - Reworked the mobile Map View around a compact toolbar, bottom navigation, full-height map, and bottom-sheet selected spot details.
+- Added a mobile custom-list drawer and flattened the selected state for mobile map filters.
 - Tightened the map view layout, selected spot card, sidebar filter labels, and signed-in avatar alignment.
 - Updated the Docker startup command to read Cloud Run's `PORT` environment variable instead of hard-coding `5173`.
 - Discovery now excludes public lists owned by suspended or deleted accounts.
@@ -29,6 +30,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Documentation
 
+- Documented the desktop/mobile responsive UI split and mobile Map View placement rules.
 - Added Google Cloud Run deployment notes covering build, deploy, environment variables, OAuth callback setup, logs, rollback, and storage caveats.
 - Added a tracked `env.example.txt` template for local and deployment configuration.
 - Clarified commit hygiene skill rules for versioned changelog sections and release handling.

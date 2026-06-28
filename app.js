@@ -138,6 +138,7 @@ const translations = {
     "mobileFilter.visited": "Visited",
     "mobileFilter.want": "Want",
     "mobileFilter.favorite": "Favs",
+    "mobileList.summary": "Lists",
     "map.view": "MAP VIEW",
     "map.summary": "{count} spots · sorted by distance from you",
     "map.sorted": "Sorted by distance from you",
@@ -496,6 +497,7 @@ const translations = {
     "mobileFilter.visited": "去过",
     "mobileFilter.want": "想去",
     "mobileFilter.favorite": "最爱",
+    "mobileList.summary": "清单",
     "map.view": "地图视图",
     "map.summary": "{count} 个餐厅 · 按距离排序",
     "map.sorted": "按与你的距离排序",
@@ -876,6 +878,8 @@ const elements = {
   pasteAddButton: document.querySelector("#pasteAddButton"),
   mobileMapMenu: document.querySelector(".mobile-map-menu"),
   mobileActionButtons: document.querySelectorAll("[data-mobile-action]"),
+  mobileListDrawer: document.querySelector("#mobileListDrawer"),
+  mobileListFilters: document.querySelector("#mobileListFilters"),
   pasteStatus: document.querySelector("#pasteStatus"),
   exportButton: document.querySelector("#exportButton"),
   importButton: document.querySelector("#importButton"),
@@ -2514,6 +2518,7 @@ function render() {
   syncQuotaUi();
   syncFilterButtons();
   renderSidebarListFilters();
+  renderMobileListFilters();
   renderRecentList();
   renderMarkers();
   renderSpotCard();
@@ -2718,6 +2723,35 @@ function renderSidebarListFilters() {
       event.preventDefault();
       button.classList.remove("drag-over");
       reorderListFilter(event.dataTransfer.getData("text/plain"), button.dataset.sidebarListId);
+    });
+  });
+}
+
+function renderMobileListFilters() {
+  if (!elements.mobileListFilters) return;
+  if (!currentUser) {
+    elements.mobileListFilters.innerHTML = `<p class="sidebar-empty">${escapeHtml(t("sidebar.signInLists"))}</p>`;
+    return;
+  }
+  const ordered = orderedLists();
+  elements.mobileListFilters.innerHTML = ordered.length
+    ? ordered.map((list) => `
+        <button class="list-filter-item ${activeMyListKey === `custom:${list.id}` ? "active" : ""}" type="button" data-mobile-list-id="${list.id}">
+          <span class="list-filter-text">
+            <strong>${escapeHtml(list.title)}</strong>
+            <small>${t("count.spots", { count: list.item_count || 0 })} · ${visibilityLabel(list.visibility)}</small>
+          </span>
+        </button>
+      `).join("")
+    : `<p class="sidebar-empty">${escapeHtml(t("sidebar.noLists"))}</p>`;
+  elements.mobileListFilters.querySelectorAll("[data-mobile-list-id]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      setActiveCategory(`custom:${button.dataset.mobileListId}`);
+      elements.mobileListDrawer?.removeAttribute("open");
+      syncFilterButtons();
+      await ensureListDetail(selectedListId);
+      selectFirstVisibleRestaurant();
+      render();
     });
   });
 }

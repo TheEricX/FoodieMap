@@ -24,10 +24,19 @@
           <a href="#my-lists" data-view="my-lists" data-i18n="nav.lists">List View</a>
           <a href="#discovery" data-view="discovery" data-i18n="nav.discovery">Discovery</a>
         </nav>
-        <label class="search-box">
-          <span>⌕</span>
-          <input id="searchInput" type="search" placeholder="Search for tasty treats..." data-i18n-placeholder="search.default" />
-        </label>
+        <div class="mobile-search-row">
+          <label class="search-box">
+            <span>⌕</span>
+            <input id="searchInput" type="search" placeholder="Search for tasty treats..." data-i18n-placeholder="search.default" />
+          </label>
+          <details class="mobile-map-menu">
+            <summary aria-label="Add restaurant" data-i18n="button.addSpotShort">+ Add</summary>
+            <div class="mobile-map-actions">
+              <button type="button" data-mobile-action="new-spot" data-i18n="button.newSpot">+ New Spot</button>
+              <button type="button" data-mobile-action="paste-add" data-i18n="button.pasteGoogleLink">Paste Google link</button>
+            </div>
+          </details>
+        </div>
         <div class="top-actions">
           <div class="location-status top-location-status" id="locationStatus" data-i18n="location.waiting">Location pending</div>
           <button class="icon-button" id="locateButton" title="Get current location" data-i18n-title="location.button">⌖</button>
@@ -105,14 +114,16 @@
               <button class="filter-item mobile-filter-chip" data-filter="visited" type="button" title="Visited" data-i18n-title="system.visited.title"><span data-i18n="mobileFilter.visited">Visited</span></button>
               <button class="filter-item mobile-filter-chip" data-filter="want_to_go" type="button" title="Want to Go" data-i18n-title="system.want_to_go.title"><span data-i18n="mobileFilter.want">Want</span></button>
               <button class="filter-item mobile-filter-chip" data-filter="favorite" type="button" title="Favorites" data-i18n-title="system.favorite.title"><span data-i18n="mobileFilter.favorite">Favs</span></button>
+              <details class="mobile-list-drawer" id="mobileListDrawer">
+                <summary data-i18n="mobileList.summary">Lists</summary>
+                <div class="mobile-list-panel">
+                  <div class="mobile-list-head">
+                    <strong data-i18n="sidebar.customLists">CUSTOM LISTS</strong>
+                  </div>
+                  <div class="mobile-list-filters" id="mobileListFilters"></div>
+                </div>
+              </details>
             </nav>
-            <details class="mobile-map-menu">
-              <summary aria-label="Add restaurant" data-i18n="button.addSpotShort">+ Add</summary>
-              <div class="mobile-map-actions">
-                <button type="button" data-mobile-action="new-spot" data-i18n="button.newSpot">+ New Spot</button>
-                <button type="button" data-mobile-action="paste-add" data-i18n="button.pasteGoogleLink">Paste Google link</button>
-              </div>
-            </details>
           </section>
 
           <section class="map-nearest-panel">

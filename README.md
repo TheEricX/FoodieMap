@@ -215,6 +215,8 @@ docker compose down
 - `server.py`：FastAPI 后端、SQLite、OAuth、上传、分享、list API、管理员 API 和 Free/Paid 额度规则
 - `requirements.txt`：Python 依赖
 - `Dockerfile` / `compose.yaml`：Docker 运行配置
+- `docs/responsive-ui-design.md`：桌面/手机响应式 UI 分工和移动端 Map View 设计原则
+- `docs/deployment-google-cloud.md`：Google Cloud Run 部署流程和运维说明
 - `.codex/skills/foodie-map-commit-hygiene/`：项目内 Codex skill；提交前检查 README、CHANGELOG 和已有 agenda/roadmap 文档是否需要同步
 
 ## 当前限制
