@@ -25,6 +25,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Kept the mobile custom-list drawer within the viewport, let it close on outside taps, and compacted mobile selected spot actions.
 - Replaced remaining Chinese backend fallback messages with English defaults.
 - Fixed hidden auth dialog fields showing in the wrong sign-in mode.
 

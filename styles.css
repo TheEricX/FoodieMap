@@ -3984,7 +3984,8 @@ body.is-topbar-elevated .layout::before {
   body[data-view="my-map"] .mobile-list-panel {
     position: absolute;
     top: calc(100% + 8px);
-    left: 0;
+    right: 0;
+    left: auto;
     display: grid;
     gap: 8px;
     width: min(280px, calc(100vw - 36px));
@@ -4175,10 +4176,10 @@ body.is-topbar-elevated .layout::before {
   }
 
   body[data-view="my-map"] .spot-card {
-    max-height: min(52svh, 430px);
+    max-height: min(42svh, 330px);
     overflow: auto;
-    border-radius: 22px;
-    padding: 16px;
+    border-radius: 18px;
+    padding: 12px;
     box-shadow: 0 20px 42px rgba(82, 61, 48, 0.28);
   }
 
@@ -4188,7 +4189,7 @@ body.is-topbar-elevated .layout::before {
     height: 5px;
     border-radius: 999px;
     background: rgba(139, 106, 87, 0.34);
-    margin: 0 auto 10px;
+    margin: 0 auto 8px;
     content: "";
   }
 
@@ -4196,19 +4197,76 @@ body.is-topbar-elevated .layout::before {
     display: none;
   }
 
+  body[data-view="my-map"] .spot-card .eyebrow {
+    margin-bottom: 5px;
+    font-size: 10px;
+  }
+
   body[data-view="my-map"] .spot-card h2 {
-    font-size: 24px;
+    display: -webkit-box;
+    margin-bottom: 8px;
+    overflow: hidden;
+    font-size: clamp(20px, 5.7vw, 24px);
+    line-height: 1.04;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-view="my-map"] .close-card {
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+  }
+
+  body[data-view="my-map"] .meta-row {
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  body[data-view="my-map"] .meta-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-view="my-map"] .meta-row span {
+    flex: 0 0 auto;
+    min-height: 28px;
+    padding: 5px 10px;
+    font-size: 12px;
   }
 
   body[data-view="my-map"] .spot-card p:not(.eyebrow) {
     display: -webkit-box;
+    margin: 8px 0;
     overflow: hidden;
+    font-size: 14px;
+    line-height: 1.28;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
 
   body[data-view="my-map"] .spot-card .card-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  body[data-view="my-map"] .spot-card .card-actions .outline-button {
+    min-height: 32px;
+    border-width: 1px;
+    padding: 5px 7px;
+    font-size: 12px;
+    box-shadow: 0 2px 0 rgba(139, 106, 87, 0.18);
+  }
+
+  body[data-view="my-map"] .spot-card .outline-link {
+    min-height: 34px;
+    margin-top: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    box-shadow: 0 2px 0 rgba(139, 106, 87, 0.18);
   }
 
   body[data-view="my-map"] .spot-card-tab {

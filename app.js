@@ -1153,14 +1153,18 @@ function bindEvents() {
 }
 
 function closeMobileMapMenuFromOutside(event) {
-  if (!elements.mobileMapMenu?.hasAttribute("open")) return;
-  if (elements.mobileMapMenu.contains(event.target)) return;
-  elements.mobileMapMenu.removeAttribute("open");
+  if (elements.mobileMapMenu?.hasAttribute("open") && !elements.mobileMapMenu.contains(event.target)) {
+    elements.mobileMapMenu.removeAttribute("open");
+  }
+  if (elements.mobileListDrawer?.hasAttribute("open") && !elements.mobileListDrawer.contains(event.target)) {
+    elements.mobileListDrawer.removeAttribute("open");
+  }
 }
 
 function closeMobileMapMenuFromKeyboard(event) {
   if (event.key !== "Escape") return;
   elements.mobileMapMenu?.removeAttribute("open");
+  elements.mobileListDrawer?.removeAttribute("open");
 }
 
 function setLanguage(language) {
