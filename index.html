@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260623-auth" />
+    <link rel="stylesheet" href="/styles.css?v=20260628-mobile-map" />
   </head>
   <body>
     <main class="app-shell">
@@ -99,6 +99,22 @@
         </aside>
 
         <section class="map-stage app-view" id="mapView" data-view-panel="my-map">
+          <section class="mobile-map-bar" aria-label="Mobile map tools">
+            <nav class="mobile-filter-chips" aria-label="Restaurant filters">
+              <button class="filter-item mobile-filter-chip active" data-filter="all" type="button" title="All Spots" data-i18n-title="system.all.title"><span data-i18n="mobileFilter.all">All</span></button>
+              <button class="filter-item mobile-filter-chip" data-filter="visited" type="button" title="Visited" data-i18n-title="system.visited.title"><span data-i18n="mobileFilter.visited">Visited</span></button>
+              <button class="filter-item mobile-filter-chip" data-filter="want_to_go" type="button" title="Want to Go" data-i18n-title="system.want_to_go.title"><span data-i18n="mobileFilter.want">Want</span></button>
+              <button class="filter-item mobile-filter-chip" data-filter="favorite" type="button" title="Favorites" data-i18n-title="system.favorite.title"><span data-i18n="mobileFilter.favorite">Favs</span></button>
+            </nav>
+            <details class="mobile-map-menu">
+              <summary aria-label="Add restaurant" data-i18n="button.addSpotShort">+ Add</summary>
+              <div class="mobile-map-actions">
+                <button type="button" data-mobile-action="new-spot" data-i18n="button.newSpot">+ New Spot</button>
+                <button type="button" data-mobile-action="paste-add" data-i18n="button.pasteGoogleLink">Paste Google link</button>
+              </div>
+            </details>
+          </section>
+
           <section class="map-nearest-panel">
             <div class="section-head">
               <div>
@@ -570,6 +586,6 @@
         </form>
       </dialog>
     </main>
-    <script src="/app.js?v=20260623-auth"></script>
+    <script src="/app.js?v=20260628-mobile-map"></script>
   </body>
 </html>

@@ -131,6 +131,13 @@ const translations = {
     "button.closeAddMenu": "Close",
     "button.addDish": "Add Dish",
     "button.replacePhoto": "Replace photo",
+    "button.more": "More",
+    "button.addSpotShort": "+ Add",
+    "button.pasteGoogleLink": "Paste Google link",
+    "mobileFilter.all": "All",
+    "mobileFilter.visited": "Visited",
+    "mobileFilter.want": "Want",
+    "mobileFilter.favorite": "Favs",
     "map.view": "MAP VIEW",
     "map.summary": "{count} spots · sorted by distance from you",
     "map.sorted": "Sorted by distance from you",
@@ -482,6 +489,13 @@ const translations = {
     "button.closeAddMenu": "关闭",
     "button.addDish": "添加菜品",
     "button.replacePhoto": "替换照片",
+    "button.more": "更多",
+    "button.addSpotShort": "+ 添加",
+    "button.pasteGoogleLink": "粘贴 Google 链接",
+    "mobileFilter.all": "全部",
+    "mobileFilter.visited": "去过",
+    "mobileFilter.want": "想去",
+    "mobileFilter.favorite": "最爱",
     "map.view": "地图视图",
     "map.summary": "{count} 个餐厅 · 按距离排序",
     "map.sorted": "按与你的距离排序",
@@ -793,7 +807,7 @@ let currentAdmin = null;
 let currentLocation = null;
 let activeFilter = "all";
 let selectedRestaurantId = null;
-let isSpotCardOpen = true;
+let isSpotCardOpen = false;
 let editingRestaurantId = null;
 let shortLinkResolveTimer = null;
 let shareToken = getShareToken();
@@ -860,6 +874,8 @@ const elements = {
   authStatusText: document.querySelector("#authStatusText"),
   openAddPanel: document.querySelector("#openAddPanel"),
   pasteAddButton: document.querySelector("#pasteAddButton"),
+  mobileMapMenu: document.querySelector(".mobile-map-menu"),
+  mobileActionButtons: document.querySelectorAll("[data-mobile-action]"),
   pasteStatus: document.querySelector("#pasteStatus"),
   exportButton: document.querySelector("#exportButton"),
   importButton: document.querySelector("#importButton"),
@@ -1028,6 +1044,13 @@ function bindEvents() {
   elements.verifyLoginCodeButton?.addEventListener("click", verifyLoginCode);
   elements.openAddPanel.addEventListener("click", openCreateDialog);
   elements.pasteAddButton.addEventListener("click", pasteAndAddFromClipboard);
+  elements.mobileActionButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      elements.mobileMapMenu?.removeAttribute("open");
+      if (button.dataset.mobileAction === "new-spot") openCreateDialog();
+      if (button.dataset.mobileAction === "paste-add") pasteAndAddFromClipboard();
+    });
+  });
   elements.closeAddPanel.addEventListener("click", closeRestaurantDialog);
   elements.closeCard.addEventListener("click", () => {
     isSpotCardOpen = false;
@@ -1445,7 +1468,7 @@ async function loadRestaurants() {
   }
   syncCurrentUserRestaurantCount();
   selectedRestaurantId = restaurants[0]?.id ?? null;
-  isSpotCardOpen = Boolean(selectedRestaurantId);
+  isSpotCardOpen = Boolean(selectedRestaurantId) && !isMobileMapViewport();
   render();
 }
 
@@ -2633,8 +2656,12 @@ function selectFirstVisibleRestaurant() {
   }
   if (!visible.some((restaurant) => restaurant.id === selectedRestaurantId)) {
     selectedRestaurantId = visible[0].id;
-    isSpotCardOpen = true;
+    isSpotCardOpen = !isMobileMapViewport();
   }
+}
+
+function isMobileMapViewport() {
+  return window.matchMedia?.("(max-width: 900px)")?.matches ?? false;
 }
 
 function getVisibleRestaurants() {
@@ -3776,7 +3803,7 @@ function resetDemoData() {
   }
   restaurants = demoRestaurants.map(cloneRestaurant);
   selectedRestaurantId = restaurants[0]?.id ?? null;
-  isSpotCardOpen = Boolean(selectedRestaurantId);
+  isSpotCardOpen = Boolean(selectedRestaurantId) && !isMobileMapViewport();
   render();
 }
 

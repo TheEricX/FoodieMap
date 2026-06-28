@@ -14,6 +14,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Reworked the mobile Map View around a compact toolbar, bottom navigation, full-height map, and bottom-sheet selected spot details.
 - Tightened the map view layout, selected spot card, sidebar filter labels, and signed-in avatar alignment.
 - Updated the Docker startup command to read Cloud Run's `PORT` environment variable instead of hard-coding `5173`.
 - Discovery now excludes public lists owned by suspended or deleted accounts.
