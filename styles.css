@@ -1933,8 +1933,8 @@ body.is-topbar-elevated .layout::before {
 .cute-map {
   position: relative;
   isolation: isolate;
-  min-height: 520px;
-  height: clamp(520px, calc(100dvh - 250px), 760px);
+  min-height: 540px;
+  height: clamp(540px, calc(100dvh - 220px), 960px);
   overflow: hidden;
   border: 1px solid rgba(139, 106, 87, 0.48);
   border-radius: var(--radius-md);
@@ -2034,7 +2034,7 @@ body.is-topbar-elevated .layout::before {
   .cute-map {
     height: 100%;
     min-height: 520px;
-    max-height: 760px;
+    max-height: none;
   }
 }
 
@@ -2330,9 +2330,9 @@ body.is-topbar-elevated .layout::before {
   }
 
   .cute-map {
-    height: clamp(430px, calc(100dvh - 235px), 560px);
+    height: 100%;
     min-height: 430px;
-    max-height: 560px;
+    max-height: none;
   }
 
   .restaurant-marker {
@@ -2613,7 +2613,7 @@ body.is-topbar-elevated .layout::before {
 .spot-card {
   position: absolute;
   right: clamp(14px, 1.8vw, 30px);
-  bottom: clamp(14px, 1.8vw, 30px);
+  bottom: clamp(24px, 2.4vw, 42px);
   z-index: 8;
   width: clamp(320px, 24vw, 390px);
   max-width: calc(100% - 36px);
