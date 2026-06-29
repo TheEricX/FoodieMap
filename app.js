@@ -4,6 +4,7 @@ const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
 const MAP_ZOOM_STEP = 0.18;
+const MAP_PAN_LIMIT_RATIO = 0.42;
 const MOBILE_VIEWPORT_QUERY = "(max-width: 900px)";
 const FOOD_PLACEHOLDERS = [
   { icon: "🍜", top: "#f4c49d", bottom: "#fff7ed", accent: "#96694c" },
@@ -154,6 +155,7 @@ const translations = {
     "map.noMatches": "No matching restaurants",
     "map.zoomOut": "Zoom out",
     "map.zoomIn": "Zoom in",
+    "map.center": "Center on you",
     "map.zoomReset": "Reset zoom",
     "count.places": "{count} places",
     "count.spots": "{count} spots",
@@ -513,6 +515,7 @@ const translations = {
     "map.noMatches": "没有匹配餐厅",
     "map.zoomOut": "缩小",
     "map.zoomIn": "放大",
+    "map.center": "回到我的位置",
     "map.zoomReset": "重置缩放",
     "count.places": "{count} 个地点",
     "count.spots": "{count} 个餐厅",
@@ -832,6 +835,9 @@ let authPasswordMode = "login";
 let authCodeCooldownTimer = null;
 let authCodeCooldownUntil = 0;
 let mapZoom = 1;
+let mapPan = { x: 0, y: 0 };
+let mapPanDrag = null;
+let mapGestureStartZoom = null;
 let isDetailAddDishOpen = false;
 let activeDetailRestaurantId = null;
 let detailCloseTimer = null;
@@ -912,8 +918,10 @@ const elements = {
   cuteMap: document.querySelector("#cuteMap"),
   mapZoomOut: document.querySelector("#mapZoomOut"),
   mapZoomIn: document.querySelector("#mapZoomIn"),
+  mapCenterButton: document.querySelector("#mapCenterButton"),
   mapZoomReset: document.querySelector("#mapZoomReset"),
   mapZoomLabel: document.querySelector("#mapZoomLabel"),
+  meMarker: document.querySelector("#meMarker"),
   markersLayer: document.querySelector("#markersLayer"),
   emptyMap: document.querySelector("#emptyMap"),
   locationStatus: document.querySelector("#locationStatus"),
@@ -1115,6 +1123,7 @@ function bindEvents() {
   });
   window.addEventListener("hashchange", () => setActiveView(getInitialView(), { push: false }));
   window.addEventListener("scroll", updateTopbarElevation, { passive: true });
+  window.addEventListener("resize", recenterMapPanWithinBounds);
   [elements.sidebar, elements.mapView, elements.listsView, elements.discoveryView, elements.adminView].forEach((scrollArea) => {
     scrollArea?.addEventListener("scroll", updateTopbarElevation, { passive: true });
   });
@@ -1124,9 +1133,18 @@ function bindEvents() {
   elements.closeAddSpotsDialog.addEventListener("click", () => elements.addSpotsDialog.close());
   elements.addSpotsSearch.addEventListener("input", renderAddSpotsDialog);
   elements.cuteMap.addEventListener("wheel", handleMapWheel, { passive: false });
+  elements.cuteMap.addEventListener("pointerdown", startMapPan);
+  elements.cuteMap.addEventListener("pointermove", moveMapPan);
+  elements.cuteMap.addEventListener("pointerup", finishMapPan);
+  elements.cuteMap.addEventListener("pointercancel", cancelMapPan);
+  elements.cuteMap.addEventListener("gesturestart", startMapGestureZoom);
+  elements.cuteMap.addEventListener("gesturechange", changeMapGestureZoom);
+  elements.cuteMap.addEventListener("gestureend", endMapGestureZoom);
   elements.mapZoomOut.addEventListener("click", () => setMapZoom(mapZoom - MAP_ZOOM_STEP));
   elements.mapZoomIn.addEventListener("click", () => setMapZoom(mapZoom + MAP_ZOOM_STEP));
+  elements.mapCenterButton?.addEventListener("click", centerMapOnUser);
   elements.mapZoomReset.addEventListener("click", () => setMapZoom(1));
+  elements.meMarker?.addEventListener("click", centerMapOnUser);
   document.querySelectorAll("[data-discovery-sort]").forEach((button) => {
     button.addEventListener("click", () => {
       discoverySort = button.dataset.discoverySort;
@@ -4027,8 +4045,87 @@ function handleMapWheel(event) {
   if (event.target.closest(".spot-card, .spot-card-tab, .map-zoom-controls")) return;
   event.preventDefault();
   const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
-  const factor = Math.exp(-delta * 0.0018);
+  const factor = Math.exp(-delta * (event.ctrlKey ? 0.01 : 0.0018));
   setMapZoom(mapZoom * factor);
+}
+
+function startMapGestureZoom(event) {
+  if (event.target.closest(".spot-card, .spot-card-tab, .map-zoom-controls")) return;
+  mapGestureStartZoom = mapZoom;
+  event.preventDefault();
+}
+
+function changeMapGestureZoom(event) {
+  if (mapGestureStartZoom == null) return;
+  event.preventDefault();
+  setMapZoom(mapGestureStartZoom * Number(event.scale || 1));
+}
+
+function endMapGestureZoom(event) {
+  mapGestureStartZoom = null;
+  event?.preventDefault?.();
+}
+
+function startMapPan(event) {
+  if (event.button != null && event.button !== 0) return;
+  if (event.target.closest(".spot-card, .spot-card-tab, .map-zoom-controls, .restaurant-marker, .me-marker, a, button, input, textarea, select")) return;
+  mapPanDrag = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    originX: mapPan.x,
+    originY: mapPan.y,
+  };
+  elements.cuteMap.classList.add("is-panning");
+  elements.cuteMap.setPointerCapture?.(event.pointerId);
+  event.preventDefault();
+}
+
+function moveMapPan(event) {
+  if (!mapPanDrag || event.pointerId !== mapPanDrag.pointerId) return;
+  setMapPan(mapPanDrag.originX + event.clientX - mapPanDrag.startX, mapPanDrag.originY + event.clientY - mapPanDrag.startY);
+  event.preventDefault();
+}
+
+function finishMapPan(event) {
+  if (!mapPanDrag || event.pointerId !== mapPanDrag.pointerId) return;
+  elements.cuteMap.releasePointerCapture?.(event.pointerId);
+  cancelMapPan();
+}
+
+function cancelMapPan() {
+  mapPanDrag = null;
+  elements.cuteMap?.classList.remove("is-panning");
+}
+
+function centerMapOnUser() {
+  setMapPan(0, 0);
+}
+
+function recenterMapPanWithinBounds() {
+  setMapPan(mapPan.x, mapPan.y);
+}
+
+function setMapPan(x, y) {
+  const next = clampMapPan(x, y);
+  if (Math.abs(next.x - mapPan.x) < 0.5 && Math.abs(next.y - mapPan.y) < 0.5) return;
+  mapPan = next;
+  updateMapPanUi();
+}
+
+function clampMapPan(x, y) {
+  const bounds = elements.cuteMap?.getBoundingClientRect();
+  const maxX = Math.max(0, (bounds?.width || 0) * MAP_PAN_LIMIT_RATIO);
+  const maxY = Math.max(0, (bounds?.height || 0) * MAP_PAN_LIMIT_RATIO);
+  return {
+    x: Math.max(-maxX, Math.min(maxX, x)),
+    y: Math.max(-maxY, Math.min(maxY, y)),
+  };
+}
+
+function updateMapPanUi() {
+  elements.cuteMap?.style.setProperty("--map-pan-x", `${Math.round(mapPan.x)}px`);
+  elements.cuteMap?.style.setProperty("--map-pan-y", `${Math.round(mapPan.y)}px`);
 }
 
 function setMapZoom(value) {

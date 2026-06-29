@@ -1950,6 +1950,8 @@ body.is-topbar-elevated .layout::before {
 .cute-map {
   position: relative;
   isolation: isolate;
+  --map-pan-x: 0px;
+  --map-pan-y: 0px;
   min-height: 540px;
   height: clamp(540px, calc(100dvh - 220px), 960px);
   overflow: hidden;
@@ -1963,13 +1965,17 @@ body.is-topbar-elevated .layout::before {
   user-select: none;
 }
 
+.cute-map.is-panning {
+  cursor: grabbing;
+}
+
 .map-zoom-controls {
   position: absolute;
   top: 14px;
   left: 14px;
   z-index: 12;
   display: inline-grid;
-  grid-template-columns: 38px minmax(58px, auto) 38px 42px;
+  grid-template-columns: 38px minmax(58px, auto) 38px 38px 42px;
   gap: 6px;
   align-items: center;
   border: 1px solid rgba(139, 106, 87, 0.32);
@@ -2413,12 +2419,14 @@ body.is-topbar-elevated .layout::before {
   opacity: 0.24;
   background:
     radial-gradient(circle, rgba(150, 105, 76, 0.18) 1px, transparent 1.2px) 0 0 / 22px 22px;
+  transform: translate(var(--map-pan-x, 0px), var(--map-pan-y, 0px));
 }
 
 #markersLayer {
   position: absolute;
   inset: 0;
   z-index: 5;
+  transform: translate(var(--map-pan-x, 0px), var(--map-pan-y, 0px));
 }
 
 .range-ring {
@@ -2427,7 +2435,7 @@ body.is-topbar-elevated .layout::before {
   top: 50%;
   border: 1px dashed rgba(104, 68, 45, 0.26);
   border-radius: 50%;
-  transform: translate(-50%, -50%) scale(var(--map-zoom, 1));
+  transform: translate(calc(-50% + var(--map-pan-x, 0px)), calc(-50% + var(--map-pan-y, 0px))) scale(var(--map-zoom, 1));
   transform-origin: center;
   pointer-events: none;
   transition: transform 120ms ease;
@@ -2471,8 +2479,8 @@ body.is-topbar-elevated .layout::before {
 
 .me-marker {
   z-index: 6;
-  left: 50%;
-  top: 50%;
+  left: calc(50% + var(--map-pan-x, 0px));
+  top: calc(50% + var(--map-pan-y, 0px));
   width: 76px;
   height: 76px;
   border-radius: 50%;
@@ -2620,7 +2628,7 @@ body.is-topbar-elevated .layout::before {
   padding: 22px;
   color: var(--muted);
   text-align: center;
-  transform: translateX(-50%);
+  transform: translate(calc(-50% + var(--map-pan-x, 0px)), var(--map-pan-y, 0px));
 }
 
 .empty-map strong {
@@ -4320,7 +4328,7 @@ body.is-topbar-elevated .layout::before {
   body[data-view="my-map"] .map-zoom-controls {
     top: 10px;
     left: 10px;
-    grid-template-columns: 34px 48px 34px;
+    grid-template-columns: 34px 48px 34px 34px;
     padding: 4px;
   }
 
@@ -4577,6 +4585,122 @@ body.is-topbar-elevated .layout::before {
     border-width: 0;
     border-radius: 0;
     padding: 16px;
+  }
+
+  .auth-card {
+    align-content: start;
+    gap: 12px;
+    padding: 14px;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .auth-card .modal-head {
+    align-items: center;
+    gap: 10px;
+  }
+
+  .auth-card .modal-head h2 {
+    font-size: clamp(28px, 8vw, 36px);
+    line-height: 1.02;
+  }
+
+  .auth-card .modal-head .eyebrow {
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+
+  .auth-card #closeAuthDialog {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .auth-card #googleSignInButton {
+    min-height: 48px;
+    margin-top: 8px;
+    padding: 10px 16px;
+    font-size: 16px;
+    box-shadow: 0 5px 0 var(--primary-dark), 0 12px 22px rgba(82, 61, 48, 0.14);
+  }
+
+  .auth-tabs {
+    width: 100%;
+    max-width: 360px;
+    padding: 5px;
+  }
+
+  .auth-tabs button {
+    min-height: 38px;
+    padding: 7px 10px;
+    font-size: 14px;
+  }
+
+  .auth-panel {
+    gap: 10px;
+  }
+
+  .auth-mode-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .auth-mode-row .secondary-button {
+    min-width: 0;
+    min-height: 36px;
+    padding: 6px 8px;
+    font-size: 13px;
+    box-shadow: 0 2px 0 rgba(139, 106, 87, 0.18);
+  }
+
+  .auth-actions {
+    gap: 8px;
+  }
+
+  .auth-actions .primary-button,
+  .auth-actions .outline-button,
+  .auth-panel > .primary-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 14px;
+    font-size: 15px;
+  }
+
+  .auth-code-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: end;
+  }
+
+  .auth-code-row label {
+    min-width: 0;
+  }
+
+  .auth-code-row .outline-button {
+    min-height: 42px;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .auth-card .form-help {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .auth-card label {
+    gap: 5px;
+    font-size: 11px;
+  }
+
+  .auth-card input {
+    min-height: 42px;
+    border-radius: 14px;
+    padding: 9px 12px;
+    font-size: 16px;
   }
 
   .dish-form-grid,

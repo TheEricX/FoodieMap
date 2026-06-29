@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260628-mobile-list" />
+    <link rel="stylesheet" href="/styles.css?v=20260628-map-pan" />
   </head>
   <body>
     <main class="app-shell">
@@ -142,6 +142,7 @@
               <button class="map-zoom-button" id="mapZoomOut" type="button" title="Zoom out" data-i18n-title="map.zoomOut">−</button>
               <span id="mapZoomLabel">100%</span>
               <button class="map-zoom-button" id="mapZoomIn" type="button" title="Zoom in" data-i18n-title="map.zoomIn">＋</button>
+              <button class="map-zoom-button center" id="mapCenterButton" type="button" title="Center on you" data-i18n-title="map.center">⌖</button>
               <button class="map-zoom-button reset" id="mapZoomReset" type="button" title="Reset zoom" data-i18n-title="map.zoomReset">1×</button>
             </div>
             <div class="grid-overlay"></div>
@@ -614,6 +615,6 @@
         </form>
       </dialog>
     </main>
-    <script src="/app.js?v=20260628-mobile-list"></script>
+    <script src="/app.js?v=20260628-map-pan"></script>
   </body>
 </html>

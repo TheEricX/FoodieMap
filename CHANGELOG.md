@@ -8,12 +8,14 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added mouse and touch panning, touchpad pinch zoom, and a one-tap control to center the relative map back on the user marker.
 - Added an admin user management area for account suspension, soft deletion/restoration, manual Free/Paid plan changes, and Free account restaurant limits.
 - Added email account sign-in with password login, one-time email codes, SMTP delivery, password reset, and same-email account merging with Google OAuth.
 - Added a dedicated `/admin` portal with fixed username/password login from server environment variables.
 
 ### Changed
 
+- Compacted the mobile sign-in dialog with smaller actions, tighter tabs, and shorter form fields.
 - Upgraded the mobile List View to match the compact Map View layout with in-page list filters and a scrollable detail panel.
 - Reworked the mobile Map View around a compact toolbar, bottom navigation, full-height map, and bottom-sheet selected spot details.
 - Added a mobile custom-list drawer and flattened the selected state for mobile map filters.
