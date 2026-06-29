@@ -938,7 +938,8 @@ body.is-topbar-elevated .layout::before {
   font-size: 14px;
 }
 
-.mobile-map-bar {
+.mobile-map-bar,
+.mobile-list-bar {
   display: none;
 }
 
@@ -3807,18 +3808,27 @@ body.is-topbar-elevated .layout::before {
     padding: 8px 10px;
   }
 
-  body[data-view="my-map"] .brand {
+  body[data-view="my-lists"] .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  body[data-view="my-map"] .brand,
+  body[data-view="my-lists"] .brand {
     gap: 8px;
     font-size: 21px;
   }
 
-  body[data-view="my-map"] .brand-mark {
+  body[data-view="my-map"] .brand-mark,
+  body[data-view="my-lists"] .brand-mark {
     width: 32px;
     height: 32px;
     font-size: 18px;
   }
 
-  body[data-view="my-map"] .mobile-search-row {
+  body[data-view="my-map"] .mobile-search-row,
+  body[data-view="my-lists"] .mobile-search-row {
     display: grid;
     grid-column: 1 / -1;
     grid-row: 2;
@@ -3827,7 +3837,8 @@ body.is-topbar-elevated .layout::before {
     align-items: center;
   }
 
-  body[data-view="my-map"] .mobile-search-row .search-box {
+  body[data-view="my-map"] .mobile-search-row .search-box,
+  body[data-view="my-lists"] .mobile-search-row .search-box {
     grid-column: 1;
     grid-row: auto;
     order: 0;
@@ -3835,7 +3846,8 @@ body.is-topbar-elevated .layout::before {
     padding: 0 13px;
   }
 
-  body[data-view="my-map"] .mobile-map-menu {
+  body[data-view="my-map"] .mobile-map-menu,
+  body[data-view="my-lists"] .mobile-map-menu {
     grid-column: 2;
     grid-row: auto;
     order: 0;
@@ -3846,7 +3858,8 @@ body.is-topbar-elevated .layout::before {
     margin: 0;
   }
 
-  body[data-view="my-map"] .top-actions {
+  body[data-view="my-map"] .top-actions,
+  body[data-view="my-lists"] .top-actions {
     grid-column: 2;
     grid-row: 1;
     display: flex;
@@ -3855,18 +3868,24 @@ body.is-topbar-elevated .layout::before {
 
   body[data-view="my-map"] .top-location-status,
   body[data-view="my-map"] .language-menu,
-  body[data-view="my-map"] #settingsButton {
+  body[data-view="my-map"] #settingsButton,
+  body[data-view="my-lists"] .top-location-status,
+  body[data-view="my-lists"] .language-menu,
+  body[data-view="my-lists"] #settingsButton {
     display: none;
   }
 
   body[data-view="my-map"] .top-actions .icon-button,
-  body[data-view="my-map"] .top-actions .avatar {
+  body[data-view="my-map"] .top-actions .avatar,
+  body[data-view="my-lists"] .top-actions .icon-button,
+  body[data-view="my-lists"] .top-actions .avatar {
     width: 38px;
     min-width: 38px;
     height: 38px;
   }
 
-  body[data-view="my-map"] .top-actions .avatar:not(.is-signed-in) {
+  body[data-view="my-map"] .top-actions .avatar:not(.is-signed-in),
+  body[data-view="my-lists"] .top-actions .avatar:not(.is-signed-in) {
     width: auto;
     min-width: 66px;
     padding: 0 11px;
@@ -3879,7 +3898,25 @@ body.is-topbar-elevated .layout::before {
     overflow: hidden;
   }
 
-  body[data-view="my-map"] .sidebar {
+  body[data-view="my-lists"] {
+    overflow: hidden;
+  }
+
+  body[data-view="my-lists"] .app-shell {
+    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body[data-view="my-lists"] .layout {
+    display: block;
+    height: calc(100svh - 119px - 72px - env(safe-area-inset-bottom, 0px));
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body[data-view="my-map"] .sidebar,
+  body[data-view="my-lists"] .sidebar {
     display: none;
   }
 
@@ -3898,6 +3935,158 @@ body.is-topbar-elevated .layout::before {
     min-width: 0;
   }
 
+  body[data-view="my-lists"] .lists-stage {
+    display: grid;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 8px;
+    overflow: hidden;
+    padding: 9px;
+  }
+
+  body[data-view="my-lists"] .mobile-list-bar {
+    position: relative;
+    display: block;
+    min-width: 0;
+  }
+
+  body[data-view="my-lists"] .list-detail-panel {
+    min-height: 0;
+    overflow: auto;
+    border-radius: 15px;
+    padding: 12px;
+  }
+
+  body[data-view="my-lists"] .list-view-head {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+  }
+
+  body[data-view="my-lists"] .list-view-head h2 {
+    display: -webkit-box;
+    margin-bottom: 4px;
+    overflow: hidden;
+    font-size: clamp(22px, 6vw, 28px);
+    line-height: 1.05;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-view="my-lists"] .list-view-head p:not(.eyebrow) {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-view="my-lists"] .list-view-tools {
+    width: 100%;
+    min-width: 0;
+    justify-items: stretch;
+  }
+
+  body[data-view="my-lists"] .list-view-meta {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  body[data-view="my-lists"] .list-view-meta::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-view="my-lists"] .list-view-meta span {
+    flex: 0 0 auto;
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+
+  body[data-view="my-lists"] .manage-list-menu {
+    justify-self: start;
+    width: auto;
+  }
+
+  body[data-view="my-lists"] .manage-list-menu summary {
+    min-height: 34px;
+    width: auto;
+    padding: 6px 13px;
+    border-width: 1px;
+    font-size: 12px;
+    box-shadow: 0 2px 0 rgba(139, 106, 87, 0.18);
+  }
+
+  body[data-view="my-lists"] .manage-list-actions {
+    right: auto;
+    left: 0;
+    width: min(220px, calc(100vw - 42px));
+    border-radius: 14px;
+  }
+
+  body[data-view="my-lists"] .detail-actions {
+    grid-template-columns: minmax(0, 1fr);
+    margin-bottom: 8px;
+  }
+
+  body[data-view="my-lists"] .detail-actions .outline-button {
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  body[data-view="my-lists"] .restaurant-list-mode,
+  body[data-view="my-lists"] .spot-row-list {
+    gap: 8px;
+  }
+
+  body[data-view="my-lists"] .spot-row {
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 9px;
+    border-radius: 14px;
+    padding: 9px;
+  }
+
+  body[data-view="my-lists"] .spot-row .recent-thumb {
+    width: 46px;
+    height: 46px;
+  }
+
+  body[data-view="my-lists"] .spot-row-title {
+    gap: 5px;
+  }
+
+  body[data-view="my-lists"] .spot-row-title strong {
+    font-size: 14px;
+    line-height: 1.15;
+  }
+
+  body[data-view="my-lists"] .spot-row small {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-view="my-lists"] .spot-row-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  body[data-view="my-lists"] .spot-row-actions .icon-link {
+    min-height: 30px;
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+
   body[data-view="my-map"] .mobile-map-bar::after {
     content: none;
   }
@@ -3912,20 +4101,29 @@ body.is-topbar-elevated .layout::before {
     padding: 0 0 3px;
   }
 
-  body[data-view="my-map"] .mobile-filter-chip {
+  body[data-view="my-map"] .mobile-filter-chip,
+  body[data-view="my-lists"] .mobile-list-chip {
+    display: grid;
     min-height: 32px;
     min-width: 0;
+    place-items: center;
+    border: 1px solid transparent;
     justify-content: center;
     gap: 0;
     border-radius: 999px;
+    background: transparent;
+    color: var(--primary-dark);
     padding: 5px 4px;
     font-size: 11px;
+    font-weight: 700;
     text-align: center;
     white-space: nowrap;
   }
 
   .mobile-filter-chip span:first-child,
-  .mobile-filter-chip span:last-child {
+  .mobile-filter-chip span:last-child,
+  .mobile-list-chip span:first-child,
+  .mobile-list-chip span:last-child {
     display: block;
     min-width: 0;
     height: auto;
@@ -3935,7 +4133,8 @@ body.is-topbar-elevated .layout::before {
     font-size: inherit;
   }
 
-  body[data-view="my-map"] .mobile-filter-chip.active {
+  body[data-view="my-map"] .mobile-filter-chip.active,
+  body[data-view="my-lists"] .mobile-list-chip.active {
     min-height: 32px;
     border-color: rgba(150, 105, 76, 0.34);
     background: var(--primary);
@@ -3944,12 +4143,22 @@ body.is-topbar-elevated .layout::before {
     transform: none;
   }
 
+  body[data-view="my-lists"] .mobile-list-drawer.active summary {
+    border-color: rgba(150, 105, 76, 0.34);
+    background: var(--primary);
+    box-shadow: none;
+    color: var(--paper);
+  }
+
   body[data-view="my-map"] .mobile-filter-chip:hover,
-  body[data-view="my-map"] .mobile-filter-chip:active {
+  body[data-view="my-map"] .mobile-filter-chip:active,
+  body[data-view="my-lists"] .mobile-list-chip:hover,
+  body[data-view="my-lists"] .mobile-list-chip:active {
     transform: none;
   }
 
-  body[data-view="my-map"] .mobile-list-drawer {
+  body[data-view="my-map"] .mobile-list-drawer,
+  body[data-view="my-lists"] .mobile-list-drawer {
     position: relative;
     top: auto;
     left: auto;
@@ -3957,7 +4166,8 @@ body.is-topbar-elevated .layout::before {
     display: block;
   }
 
-  body[data-view="my-map"] .mobile-list-drawer summary {
+  body[data-view="my-map"] .mobile-list-drawer summary,
+  body[data-view="my-lists"] .mobile-list-drawer summary {
     display: grid;
     min-width: 0;
     min-height: 32px;
@@ -3973,15 +4183,18 @@ body.is-topbar-elevated .layout::before {
     box-shadow: 0 3px 0 rgba(139, 106, 87, 0.18);
   }
 
-  body[data-view="my-map"] .mobile-list-drawer summary::-webkit-details-marker {
+  body[data-view="my-map"] .mobile-list-drawer summary::-webkit-details-marker,
+  body[data-view="my-lists"] .mobile-list-drawer summary::-webkit-details-marker {
     display: none;
   }
 
-  body[data-view="my-map"] .mobile-list-drawer:not([open]) .mobile-list-panel {
+  body[data-view="my-map"] .mobile-list-drawer:not([open]) .mobile-list-panel,
+  body[data-view="my-lists"] .mobile-list-drawer:not([open]) .mobile-list-panel {
     display: none;
   }
 
-  body[data-view="my-map"] .mobile-list-panel {
+  body[data-view="my-map"] .mobile-list-panel,
+  body[data-view="my-lists"] .mobile-list-panel {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
@@ -3998,18 +4211,21 @@ body.is-topbar-elevated .layout::before {
     box-shadow: 0 18px 36px rgba(82, 61, 48, 0.2);
   }
 
-  body[data-view="my-map"] .mobile-list-head {
+  body[data-view="my-map"] .mobile-list-head,
+  body[data-view="my-lists"] .mobile-list-head {
     color: var(--muted);
     font-size: 11px;
     text-transform: uppercase;
   }
 
-  body[data-view="my-map"] .mobile-list-filters {
+  body[data-view="my-map"] .mobile-list-filters,
+  body[data-view="my-lists"] .mobile-list-filters {
     display: grid;
     gap: 7px;
   }
 
-  body[data-view="my-map"] .mobile-list-filters .list-filter-item {
+  body[data-view="my-map"] .mobile-list-filters .list-filter-item,
+  body[data-view="my-lists"] .mobile-list-filters .list-filter-item {
     grid-template-columns: minmax(0, 1fr);
     height: auto;
     min-height: 48px;

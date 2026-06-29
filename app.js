@@ -4,6 +4,7 @@ const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
 const MAP_ZOOM_STEP = 0.18;
+const MOBILE_VIEWPORT_QUERY = "(max-width: 900px)";
 const FOOD_PLACEHOLDERS = [
   { icon: "🍜", top: "#f4c49d", bottom: "#fff7ed", accent: "#96694c" },
   { icon: "🥘", top: "#dce6af", bottom: "#fffaf4", accent: "#7a8450" },
@@ -882,6 +883,9 @@ const elements = {
   mobileActionButtons: document.querySelectorAll("[data-mobile-action]"),
   mobileListDrawer: document.querySelector("#mobileListDrawer"),
   mobileListFilters: document.querySelector("#mobileListFilters"),
+  mobileMyListDrawer: document.querySelector("#mobileMyListDrawer"),
+  mobileMyListFilters: document.querySelector("#mobileMyListFilters"),
+  mobileListChips: document.querySelectorAll("[data-mobile-system-list]"),
   pasteStatus: document.querySelector("#pasteStatus"),
   exportButton: document.querySelector("#exportButton"),
   importButton: document.querySelector("#importButton"),
@@ -1052,26 +1056,32 @@ function bindEvents() {
   elements.pasteAddButton.addEventListener("click", pasteAndAddFromClipboard);
   elements.mobileActionButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      elements.mobileMapMenu?.removeAttribute("open");
+      closeMobileMenuDetails(elements.mobileMapMenu);
       if (button.dataset.mobileAction === "new-spot") openCreateDialog();
       if (button.dataset.mobileAction === "paste-add") pasteAndAddFromClipboard();
     });
   });
-  document.addEventListener("pointerdown", closeMobileMapMenuFromOutside);
+  elements.mobileListChips.forEach((button) => {
+    button.addEventListener("click", () => {
+      setActiveCategory(`system:${button.dataset.mobileSystemList}`);
+      syncFilterButtons();
+      selectFirstVisibleRestaurant();
+      render();
+    });
+  });
+  document.addEventListener("pointerdown", closeMobileMenusFromOutside);
   document.addEventListener("pointerdown", closeMobileSpotCardFromOutside, true);
   document.addEventListener("click", suppressMobileSpotCardOutsideClick, true);
-  document.addEventListener("keydown", closeMobileMapMenuFromKeyboard);
+  document.addEventListener("keydown", closeMobileOverlaysFromKeyboard);
   elements.spotCard.addEventListener("pointerdown", startMobileSpotCardDrag);
   elements.spotCard.addEventListener("pointerup", finishMobileSpotCardDrag);
   elements.spotCard.addEventListener("pointercancel", cancelMobileSpotCardDrag);
   elements.closeAddPanel.addEventListener("click", closeRestaurantDialog);
   elements.closeCard.addEventListener("click", () => {
-    isSpotCardOpen = false;
-    renderSpotCard();
+    setSpotCardOpen(false, { render: true });
   });
   elements.spotCardTab.addEventListener("click", () => {
-    isSpotCardOpen = true;
-    renderSpotCard();
+    setSpotCardOpen(true, { render: true });
   });
   elements.openSpotDetail.addEventListener("click", openSpotDetail);
   elements.closeSpotDetail.addEventListener("click", closeSpotDetail);
@@ -1159,27 +1169,60 @@ function bindEvents() {
   });
 }
 
-function closeMobileMapMenuFromOutside(event) {
+function closeMobileMenuDetails(element) {
+  if (!element?.hasAttribute("open")) return false;
+  element.removeAttribute("open");
+  return true;
+}
+
+function closeMobileTransientOverlays() {
+  closeMobileMenuDetails(elements.mobileMapMenu);
+  closeMobileMenuDetails(elements.mobileListDrawer);
+  closeMobileMenuDetails(elements.mobileMyListDrawer);
+  closeOpenDetailsMenus(".manage-list-menu");
+}
+
+function closeMobileMenusFromOutside(event) {
   if (elements.mobileMapMenu?.hasAttribute("open") && !elements.mobileMapMenu.contains(event.target)) {
-    elements.mobileMapMenu.removeAttribute("open");
+    closeMobileMenuDetails(elements.mobileMapMenu);
   }
   if (elements.mobileListDrawer?.hasAttribute("open") && !elements.mobileListDrawer.contains(event.target)) {
-    elements.mobileListDrawer.removeAttribute("open");
+    closeMobileMenuDetails(elements.mobileListDrawer);
+  }
+  if (elements.mobileMyListDrawer?.hasAttribute("open") && !elements.mobileMyListDrawer.contains(event.target)) {
+    closeMobileMenuDetails(elements.mobileMyListDrawer);
+  }
+  document.querySelectorAll(".manage-list-menu[open]").forEach((menu) => {
+    if (!menu.contains(event.target)) closeMobileMenuDetails(menu);
+  });
+}
+
+function closeOpenDetailsMenus(selector) {
+  document.querySelectorAll(selector).forEach((element) => closeMobileMenuDetails(element));
+}
+
+function closeMobileOverlaysFromKeyboard(event) {
+  if (event.key !== "Escape") return;
+  closeMobileTransientOverlays();
+  if (isMobileMapViewport() && isSpotCardOpen) {
+    setSpotCardOpen(false, { render: true });
   }
 }
 
-function closeMobileMapMenuFromKeyboard(event) {
-  if (event.key !== "Escape") return;
-  elements.mobileMapMenu?.removeAttribute("open");
-  elements.mobileListDrawer?.removeAttribute("open");
+function setSpotCardOpen(open, options = {}) {
+  isSpotCardOpen = Boolean(open);
+  if (options.render) renderSpotCard();
+}
+
+function setSpotCardOpenForCurrentViewport() {
+  setSpotCardOpen(Boolean(selectedRestaurantId) && !isMobileMapViewport());
 }
 
 function closeMobileSpotCardFromOutside(event) {
   if (!isMobileMapViewport() || !isSpotCardOpen || elements.spotCard.hidden) return;
   if (elements.spotCard.contains(event.target) || elements.spotCardTab.contains(event.target)) return;
-  isSpotCardOpen = false;
   suppressNextSpotCardOutsideClick = true;
-  renderSpotCard();
+  setSpotCardOpen(false, { render: true });
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation?.();
@@ -1204,8 +1247,7 @@ function finishMobileSpotCardDrag(event) {
   const deltaX = Math.abs(event.clientX - spotCardDragStart.x);
   spotCardDragStart = null;
   if (deltaY < 56 || deltaX > 90) return;
-  isSpotCardOpen = false;
-  renderSpotCard();
+  setSpotCardOpen(false, { render: true });
 }
 
 function cancelMobileSpotCardDrag() {
@@ -1534,7 +1576,7 @@ async function loadRestaurants() {
   }
   syncCurrentUserRestaurantCount();
   selectedRestaurantId = restaurants[0]?.id ?? null;
-  isSpotCardOpen = Boolean(selectedRestaurantId) && !isMobileMapViewport();
+  setSpotCardOpenForCurrentViewport();
   render();
 }
 
@@ -1584,7 +1626,7 @@ async function loadSharePage(token) {
   shareData = data.share;
   restaurants = [normalizeRestaurant({ ...shareData.restaurant, dishes: shareData.dishes })];
   selectedRestaurantId = restaurants[0].id;
-  isSpotCardOpen = true;
+  setSpotCardOpen(true);
   renderShareChrome();
   elements.openAddPanel.onclick = addSharedRestaurant;
   elements.pasteAddButton.hidden = true;
@@ -1698,7 +1740,7 @@ async function saveRestaurantFromForm(event) {
       : await api("/api/restaurants", { method: "POST", body: JSON.stringify(body) });
     upsertRestaurant(data.restaurant);
     selectedRestaurantId = data.restaurant.id;
-    isSpotCardOpen = true;
+    setSpotCardOpen(true);
     if (!editingRestaurantId) {
       resetRestaurantForm();
       elements.addDialog.close();
@@ -1919,7 +1961,7 @@ async function deleteRestaurantById(restaurantId) {
     selectedRestaurantId = null;
     selectFirstVisibleRestaurant();
   }
-  isSpotCardOpen = Boolean(selectedRestaurantId);
+  setSpotCardOpen(Boolean(selectedRestaurantId));
   closeSpotDetail();
   render();
 }
@@ -2379,7 +2421,7 @@ async function pasteAndAddFromClipboard() {
     let confirmedCreate = false;
     if (duplicate) {
       selectedRestaurantId = duplicate.id;
-      isSpotCardOpen = true;
+      setSpotCardOpen(true);
       render();
       const duplicateDistance = formatDistance(haversineDistance(duplicate, { lat: parsed.lat, lng: parsed.lng }));
       confirmedCreate = confirm(
@@ -2405,7 +2447,7 @@ async function pasteAndAddFromClipboard() {
     const data = await api("/api/restaurants", { method: "POST", body: JSON.stringify(body) });
     upsertRestaurant(data.restaurant);
     selectedRestaurantId = data.restaurant.id;
-    isSpotCardOpen = true;
+    setSpotCardOpen(true);
     setPasteStatus(t("paste.added", { name: data.restaurant.name }));
     render();
   } catch (error) {
@@ -2581,6 +2623,7 @@ function render() {
   syncFilterButtons();
   renderSidebarListFilters();
   renderMobileListFilters();
+  renderMobileMyListFilters();
   renderRecentList();
   renderMarkers();
   renderSpotCard();
@@ -2718,17 +2761,17 @@ function selectFirstVisibleRestaurant() {
   const visible = getVisibleRestaurants();
   if (!visible.length) {
     selectedRestaurantId = null;
-    isSpotCardOpen = false;
+    setSpotCardOpen(false);
     return;
   }
   if (!visible.some((restaurant) => restaurant.id === selectedRestaurantId)) {
     selectedRestaurantId = visible[0].id;
-    isSpotCardOpen = !isMobileMapViewport();
+    setSpotCardOpenForCurrentViewport();
   }
 }
 
 function isMobileMapViewport() {
-  return window.matchMedia?.("(max-width: 900px)")?.matches ?? false;
+  return window.matchMedia?.(MOBILE_VIEWPORT_QUERY)?.matches ?? false;
 }
 
 function getVisibleRestaurants() {
@@ -2809,7 +2852,40 @@ function renderMobileListFilters() {
   elements.mobileListFilters.querySelectorAll("[data-mobile-list-id]").forEach((button) => {
     button.addEventListener("click", async () => {
       setActiveCategory(`custom:${button.dataset.mobileListId}`);
-      elements.mobileListDrawer?.removeAttribute("open");
+      closeMobileMenuDetails(elements.mobileListDrawer);
+      syncFilterButtons();
+      await ensureListDetail(selectedListId);
+      selectFirstVisibleRestaurant();
+      render();
+    });
+  });
+}
+
+function renderMobileMyListFilters() {
+  elements.mobileListChips?.forEach((button) => {
+    button.classList.toggle("active", activeMyListKey === `system:${button.dataset.mobileSystemList}`);
+  });
+  elements.mobileMyListDrawer?.classList.toggle("active", activeMyListKey.startsWith("custom:"));
+  if (!elements.mobileMyListFilters) return;
+  if (!currentUser) {
+    elements.mobileMyListFilters.innerHTML = `<p class="sidebar-empty">${escapeHtml(t("sidebar.signInLists"))}</p>`;
+    return;
+  }
+  const ordered = orderedLists();
+  elements.mobileMyListFilters.innerHTML = ordered.length
+    ? ordered.map((list) => `
+        <button class="list-filter-item ${activeMyListKey === `custom:${list.id}` ? "active" : ""}" type="button" data-mobile-my-list-id="${list.id}">
+          <span class="list-filter-text">
+            <strong>${escapeHtml(list.title)}</strong>
+            <small>${t("count.spots", { count: list.item_count || 0 })} · ${visibilityLabel(list.visibility)}</small>
+          </span>
+        </button>
+      `).join("")
+    : `<p class="sidebar-empty">${escapeHtml(t("sidebar.noLists"))}</p>`;
+  elements.mobileMyListFilters.querySelectorAll("[data-mobile-my-list-id]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      setActiveCategory(`custom:${button.dataset.mobileMyListId}`);
+      closeMobileMenuDetails(elements.mobileMyListDrawer);
       syncFilterButtons();
       await ensureListDetail(selectedListId);
       selectFirstVisibleRestaurant();
@@ -2834,7 +2910,7 @@ function renderRecentList() {
   elements.recentList.querySelectorAll(".recent-item").forEach((item) => {
     item.addEventListener("click", () => {
       selectedRestaurantId = item.dataset.id;
-      isSpotCardOpen = true;
+      setSpotCardOpen(true);
       render();
       openSpotDetail();
     });
@@ -2868,7 +2944,7 @@ function renderMarkers() {
     marker.title = `${restaurant.name} - ${formatDistance(distance)}`;
     marker.addEventListener("click", () => {
       selectedRestaurantId = restaurant.id;
-      isSpotCardOpen = true;
+      setSpotCardOpen(true);
       render();
     });
     elements.markersLayer.appendChild(marker);
@@ -3259,7 +3335,7 @@ function bindSystemListDetailActions(definition) {
       selectedRestaurantId = button.dataset.openSpot;
       activeFilter = definition.filter;
       syncFilterButtons();
-      isSpotCardOpen = true;
+      setSpotCardOpen(true);
       setActiveView("my-map");
     });
   });
@@ -3446,7 +3522,7 @@ function bindMyListDetailActions(list) {
   elements.myListDetail.querySelectorAll("[data-open-spot]").forEach((button) => {
     button.addEventListener("click", () => {
       selectedRestaurantId = button.dataset.openSpot;
-      isSpotCardOpen = true;
+      setSpotCardOpen(true);
       setActiveCategory(`custom:${list.id}`);
       setActiveView("my-map");
     });
@@ -3463,7 +3539,7 @@ function bindRestaurantRows(container) {
       const restaurantId = row.dataset.restaurantId;
       if (!restaurants.some((restaurant) => restaurant.id === restaurantId)) return;
       selectedRestaurantId = restaurantId;
-      isSpotCardOpen = true;
+      setSpotCardOpen(true);
       render();
       openSpotDetail();
     });
@@ -3899,7 +3975,7 @@ function resetDemoData() {
   }
   restaurants = demoRestaurants.map(cloneRestaurant);
   selectedRestaurantId = restaurants[0]?.id ?? null;
-  isSpotCardOpen = Boolean(selectedRestaurantId) && !isMobileMapViewport();
+  setSpotCardOpenForCurrentViewport();
   render();
 }
 

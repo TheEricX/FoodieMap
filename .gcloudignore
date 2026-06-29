@@ -1,12 +1,12 @@
 .git
 .DS_Store
-__pycache__
+__pycache__/
 *.pyc
-node_modules
+node_modules/
 npm-debug.log
 .env
 .env.*
-data
-uploads
+data/
+uploads/
 *.db
 *.sqlite

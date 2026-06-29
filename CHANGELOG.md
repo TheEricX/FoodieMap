@@ -14,6 +14,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Upgraded the mobile List View to match the compact Map View layout with in-page list filters and a scrollable detail panel.
 - Reworked the mobile Map View around a compact toolbar, bottom navigation, full-height map, and bottom-sheet selected spot details.
 - Added a mobile custom-list drawer and flattened the selected state for mobile map filters.
 - Tightened the map view layout, selected spot card, sidebar filter labels, and signed-in avatar alignment.
@@ -36,6 +37,11 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Added Google Cloud Run deployment notes covering build, deploy, environment variables, OAuth callback setup, logs, rollback, and storage caveats.
 - Added a tracked `env.example.txt` template for local and deployment configuration.
 - Clarified commit hygiene skill rules for versioned changelog sections and release handling.
+
+### Internal
+
+- Centralized mobile overlay closing and selected spot sheet state helpers ahead of List View and Discovery mobile work.
+- Added explicit Cloud Build ignore rules for local environment files and runtime data.
 
 ## [0.4.0] - 2026-06-22
 

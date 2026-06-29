@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260628-mobile-map" />
+    <link rel="stylesheet" href="/styles.css?v=20260628-mobile-list" />
   </head>
   <body>
     <main class="app-shell">
@@ -186,6 +186,23 @@
         </section>
 
         <section class="lists-stage app-view" id="listsView" data-view-panel="my-lists" hidden>
+          <section class="mobile-list-bar" aria-label="Mobile list tools">
+            <nav class="mobile-filter-chips" aria-label="List filters">
+              <button class="mobile-list-chip" data-mobile-system-list="all" type="button"><span data-i18n="mobileFilter.all">All</span></button>
+              <button class="mobile-list-chip" data-mobile-system-list="visited" type="button"><span data-i18n="mobileFilter.visited">Visited</span></button>
+              <button class="mobile-list-chip" data-mobile-system-list="want_to_go" type="button"><span data-i18n="mobileFilter.want">Want</span></button>
+              <button class="mobile-list-chip" data-mobile-system-list="favorite" type="button"><span data-i18n="mobileFilter.favorite">Favs</span></button>
+              <details class="mobile-list-drawer" id="mobileMyListDrawer">
+                <summary data-i18n="mobileList.summary">Lists</summary>
+                <div class="mobile-list-panel">
+                  <div class="mobile-list-head">
+                    <strong data-i18n="sidebar.customLists">CUSTOM LISTS</strong>
+                  </div>
+                  <div class="mobile-list-filters" id="mobileMyListFilters"></div>
+                </div>
+              </details>
+            </nav>
+          </section>
           <section class="panel-surface list-detail-panel" id="myListDetail"></section>
         </section>
 
@@ -597,6 +614,6 @@
         </form>
       </dialog>
     </main>
-    <script src="/app.js?v=20260628-mobile-map"></script>
+    <script src="/app.js?v=20260628-mobile-list"></script>
   </body>
 </html>
