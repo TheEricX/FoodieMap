@@ -31,6 +31,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Kept the mobile language switch visible and horizontally aligned with the topbar actions in Map View and List View.
 - Let the mobile add-spot dialog close with a downward swipe while confirming before discarding unsaved form input.
 - Made the mobile selected spot sheet close on outside taps or downward swipes without triggering controls behind it.
 - Kept the mobile custom-list drawer within the viewport, let it close on outside taps, and compacted mobile selected spot actions.

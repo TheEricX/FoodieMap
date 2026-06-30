@@ -361,6 +361,7 @@ body.is-topbar-elevated .topbar::after {
 .language-trigger {
   position: relative;
   display: grid;
+  place-items: center;
   padding: 0;
   border-color: transparent;
   font-size: 21px;
@@ -382,6 +383,12 @@ body.is-topbar-elevated .topbar::after {
   font-size: 9px;
   line-height: 1;
   letter-spacing: 0;
+}
+
+.language-trigger > span[aria-hidden="true"] {
+  display: block;
+  line-height: 1;
+  transform: translateY(1px);
 }
 
 .language-options {
@@ -3887,13 +3894,14 @@ body.is-topbar-elevated .layout::before {
     grid-row: 1;
     display: flex;
     gap: 6px;
+    align-items: center;
+    align-self: center;
+    justify-content: flex-end;
   }
 
   body[data-view="my-map"] .top-location-status,
-  body[data-view="my-map"] .language-menu,
   body[data-view="my-map"] #settingsButton,
   body[data-view="my-lists"] .top-location-status,
-  body[data-view="my-lists"] .language-menu,
   body[data-view="my-lists"] #settingsButton,
   body[data-view="discovery"] .top-location-status,
   body[data-view="discovery"] #settingsButton,
@@ -3903,14 +3911,27 @@ body.is-topbar-elevated .layout::before {
   }
 
   body[data-view="my-map"] .top-actions .icon-button,
+  body[data-view="my-map"] .top-actions .language-menu,
+  body[data-view="my-map"] .top-actions .language-menu summary,
   body[data-view="my-map"] .top-actions .avatar,
   body[data-view="my-lists"] .top-actions .icon-button,
+  body[data-view="my-lists"] .top-actions .language-menu,
+  body[data-view="my-lists"] .top-actions .language-menu summary,
   body[data-view="my-lists"] .top-actions .avatar,
   body[data-view="discovery"] .top-actions .icon-button,
+  body[data-view="discovery"] .top-actions .language-menu,
+  body[data-view="discovery"] .top-actions .language-menu summary,
   body[data-view="discovery"] .top-actions .avatar {
     width: 38px;
     min-width: 38px;
     height: 38px;
+  }
+
+  body[data-view="my-map"] .top-actions .language-trigger,
+  body[data-view="my-lists"] .top-actions .language-trigger,
+  body[data-view="discovery"] .top-actions .language-trigger {
+    display: grid;
+    place-items: center;
   }
 
   body[data-view="my-map"] .top-actions .avatar:not(.is-signed-in),
