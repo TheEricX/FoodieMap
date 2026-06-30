@@ -8,14 +8,14 @@ Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱
 - SQLite 保存用户、餐厅、菜品、分享链接、自定义 list 和公开 Discovery list
 - 保存餐厅状态、去过次数、个人评分、备注、Google Maps 链接和坐标
 - 每家店可记录菜品：`Liked` / `Tried`、5 星评分、备注、1 张压缩图片
-- `Paste & Add` 支持 Google Maps 完整链接和 `maps.app.goo.gl` 短链接
+- `Paste & Add` 支持 Google Maps 完整链接和 `maps.app.goo.gl` 短链接，并会尽量识别店名、地址和坐标；链接只有坐标时可用 Google Geocoding API Key 反查地址
 - `Paste & Add` 会检测相似餐厅；发现重复时先询问用户是否继续创建
 - 左侧分类支持系统智能分类和自定义清单：`All Spots`、`Visited`、`Want to Go`、`Favorites`，以及用户创建的私密/公开 list
 - `Map View` 和 `List View` 是同一分类的两种展示方式；系统分类和自定义 list 都可以在地图与列表之间切换
 - 自定义 list 在 `Manage` 菜单里集中管理：编辑信息、发布/取消发布、添加或移除餐厅、删除清单
 - `List View` 行内操作保持统一：`Map` 打开当前分类地图，`Google` 打开 Google Maps；系统分类里的 `Delete` 会删除餐厅记录，自定义 list 里的 `Remove` 只从当前清单移除餐厅
 - 自定义 list 默认私密，可手动 `Publish` 到 Discovery；公开 list 可被其他用户复制到自己的 My Lists
-- `Discovery` 支持浏览公开清单、按 Popular / Recent 排序、搜索公开清单；没有公开清单时会根据登录和 list 状态引导创建、添加餐厅或手动发布
+- `Discovery` 支持浏览公开清单、按 Popular / Recent 排序、搜索公开清单，并提供独立手机布局；没有公开清单时会根据登录和 list 状态引导创建、添加餐厅或手动发布
 - 系统语言默认英文，顶部 globe 菜单可切换 English / 中文，并会在当前浏览器中记住选择
 - 管理员可通过独立 `/admin` 地址登录后台，管理账号状态、手动切换 Free/Paid 计划、暂停账号、软删除账号和恢复账号
 - Free 用户默认最多保存 50 个餐厅；Paid 用户不受该额度限制
@@ -43,6 +43,7 @@ cp env.example.txt .env
 ```env
 GOOGLE_CLIENT_ID=你的 Google OAuth Client ID
 GOOGLE_CLIENT_SECRET=你的 Google OAuth Client Secret
+GOOGLE_GEOCODING_API_KEY=可选，用于从坐标自动补全地址
 APP_BASE_URL=http://localhost:5174
 SESSION_SECRET=换成一串随机长字符串
 ADMIN_USERNAME=admin
@@ -59,6 +60,7 @@ SMTP_USE_TLS=true
 `SESSION_SECRET` 必须至少 32 个字符，不能使用默认示例值。
 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD` 用于 `/admin` 独立后台登录，必须一起配置；管理员密码至少 8 个字符。
 `FREE_RESTAURANT_LIMIT` 可调整 Free 用户的餐厅保存上限，默认是 `50`。
+`GOOGLE_GEOCODING_API_KEY` 可选；配置后，Google Maps 链接只包含坐标时可自动反查地址。也可以在网页右上角 `Google API` 设置里为当前浏览器保存 key。
 邮箱验证码登录和密码重置需要 SMTP 配置；未配置 SMTP 时，Google 登录和邮箱密码登录仍可用，但发送验证码会返回配置错误。
 
 启动：
@@ -105,6 +107,7 @@ cp env.example.txt .env
 SESSION_SECRET=换成一串随机长字符串
 GOOGLE_CLIENT_ID=你的 Google OAuth Client ID
 GOOGLE_CLIENT_SECRET=你的 Google OAuth Client Secret
+GOOGLE_GEOCODING_API_KEY=可选，用于从坐标自动补全地址
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=换成强密码
 FREE_RESTAURANT_LIMIT=50
@@ -204,6 +207,7 @@ docker compose down
 - `GET /api/discovery/lists/{id}`
 - `POST /api/discovery/lists/{id}/copy`
 - `GET /api/resolve-google-link?url=...`
+- `POST /api/reverse-geocode`
 - `GET /api/health`
 
 ## 项目文件

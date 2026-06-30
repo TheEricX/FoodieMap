@@ -58,10 +58,13 @@ gcloud run deploy foodie-map \
   --set-env-vars SESSION_SECRET=REPLACE_WITH_32_PLUS_RANDOM_CHARS \
   --set-env-vars GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID \
   --set-env-vars GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET \
+  --set-env-vars GOOGLE_GEOCODING_API_KEY=YOUR_OPTIONAL_GEOCODING_KEY \
   --set-env-vars ADMIN_USERNAME=admin \
   --set-env-vars ADMIN_PASSWORD=REPLACE_WITH_STRONG_PASSWORD \
   --set-env-vars FREE_RESTAURANT_LIMIT=50
 ```
+
+`GOOGLE_GEOCODING_API_KEY` is optional. Set it when Maps links that contain only coordinates should auto-fill a postal address.
 
 Add SMTP variables only when email code sign-in and password reset should be enabled:
 

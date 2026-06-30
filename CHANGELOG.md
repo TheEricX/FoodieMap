@@ -8,6 +8,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added Google Maps link autofill for restaurant name, address, and coordinates, with optional Google Geocoding reverse lookup when links only include coordinates.
 - Added mouse and touch panning, touchpad pinch zoom, and a one-tap control to center the relative map back on the user marker.
 - Added an admin user management area for account suspension, soft deletion/restoration, manual Free/Paid plan changes, and Free account restaurant limits.
 - Added email account sign-in with password login, one-time email codes, SMTP delivery, password reset, and same-email account merging with Google OAuth.
@@ -15,7 +16,9 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Reworked the mobile Discovery view to use the same fixed-height mobile shell, compact topbar, internal scrolling, and bottom-navigation spacing as Map View and List View.
 - Compacted the mobile sign-in dialog with smaller actions, tighter tabs, and shorter form fields.
+- Let the mobile List View use the space behind the floating bottom navigation while preserving bottom scroll padding.
 - Upgraded the mobile List View to match the compact Map View layout with in-page list filters and a scrollable detail panel.
 - Reworked the mobile Map View around a compact toolbar, bottom navigation, full-height map, and bottom-sheet selected spot details.
 - Added a mobile custom-list drawer and flattened the selected state for mobile map filters.
@@ -28,6 +31,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Let the mobile add-spot dialog close with a downward swipe while confirming before discarding unsaved form input.
 - Made the mobile selected spot sheet close on outside taps or downward swipes without triggering controls behind it.
 - Kept the mobile custom-list drawer within the viewport, let it close on outside taps, and compacted mobile selected spot actions.
 - Replaced remaining Chinese backend fallback messages with English defaults.

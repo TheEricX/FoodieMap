@@ -52,6 +52,7 @@ APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5174").rstrip("/")
 SESSION_SECRET = os.getenv("SESSION_SECRET", "dev-change-me")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_GEOCODING_API_KEY = os.getenv("GOOGLE_GEOCODING_API_KEY", "") or os.getenv("GOOGLE_MAPS_API_KEY", "")
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 FREE_RESTAURANT_LIMIT = int(os.getenv("FREE_RESTAURANT_LIMIT", "50"))
@@ -100,6 +101,12 @@ class RestaurantPatch(BaseModel):
     visit_count: Optional[int] = Field(default=None, ge=0)
     personal_rating: Optional[float] = Field(default=None, ge=0, le=5)
     notes: Optional[str] = None
+
+
+class ReverseGeocodeIn(BaseModel):
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
+    key: str = ""
 
 
 class DishIn(BaseModel):
@@ -1748,6 +1755,30 @@ def resolve_google_link(url: str) -> dict[str, str]:
     except (urllib.error.URLError, TimeoutError) as error:
         raise HTTPException(status_code=502, detail="Short link expansion failed. Open it in a browser and copy the full link.") from error
     return {"url": final_url}
+
+
+@app.post("/api/reverse-geocode")
+def reverse_geocode(payload: ReverseGeocodeIn) -> dict[str, str]:
+    api_key = payload.key.strip() or GOOGLE_GEOCODING_API_KEY
+    if not api_key:
+        raise HTTPException(status_code=400, detail="Google Geocoding API key is not configured.")
+    params = urllib.parse.urlencode({"latlng": f"{payload.lat},{payload.lng}", "key": api_key})
+    request = urllib.request.Request(
+        f"https://maps.googleapis.com/maps/api/geocode/json?{params}",
+        headers={"User-Agent": "FoodieMap/1.0"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=8) as response:
+            data = json.loads(response.read().decode())
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+        raise HTTPException(status_code=502, detail="Could not look up the address.") from error
+    if data.get("status") not in {"OK", "ZERO_RESULTS"}:
+        message = data.get("error_message") or "Could not look up the address."
+        raise HTTPException(status_code=502, detail=message)
+    address = data.get("results", [{}])[0].get("formatted_address", "") if data.get("results") else ""
+    if not address:
+        raise HTTPException(status_code=404, detail="No address found for those coordinates.")
+    return {"address": address}
 
 
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")

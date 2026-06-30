@@ -1,11 +1,14 @@
 const LANGUAGE_KEY = "foodiemap:language";
 const LIST_FILTER_ORDER_KEY = "foodiemap:list-filter-order";
+const GOOGLE_GEOCODING_KEY = "foodiemap:google-geocoding-key";
 const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
 const MAP_ZOOM_STEP = 0.18;
 const MAP_PAN_LIMIT_RATIO = 0.42;
 const MOBILE_VIEWPORT_QUERY = "(max-width: 900px)";
+const ADD_DIALOG_SWIPE_CLOSE_DISTANCE = 110;
+const ADD_DIALOG_SWIPE_LOCK_DISTANCE = 12;
 const FOOD_PLACEHOLDERS = [
   { icon: "🍜", top: "#f4c49d", bottom: "#fff7ed", accent: "#96694c" },
   { icon: "🥘", top: "#dce6af", bottom: "#fffaf4", accent: "#7a8450" },
@@ -88,9 +91,12 @@ const translations = {
     "paste.backendOffline": "Backend service is not connected. Start it with python3 server.py 5174.",
     "google.help": "Copy the full Google Maps browser URL. Short share links will be expanded by the local service.",
     "google.shortExpanding": "Expanding Google Maps short link...",
-    "google.shortExpanded": "Short link expanded and coordinates filled.",
-    "google.coordsFound": "Coordinates detected from the Google Maps link.",
+    "google.shortExpanded": "Short link expanded and detectable restaurant details filled.",
+    "google.coordsFound": "Restaurant details detected from the Google Maps link.",
     "google.noCoords": "No coordinates found in the link. Open the short link, then copy the full Google Maps address bar URL.",
+    "google.addressLookup": "Looking up the address from coordinates...",
+    "google.addressLookupFailed": "Coordinates found. Address was not available in the link; add a Google Geocoding API key in settings to auto-fill it.",
+    "spot.discardConfirm": "Discard this unfinished spot?",
     "sidebar.myPantry": "MY PANTRY",
     "sidebar.smartLists": "SMART LISTS",
     "sidebar.builtFromMap": "Built from your map",
@@ -282,7 +288,7 @@ const translations = {
     "spot.address": "Address",
     "spot.addressPlaceholder": "Optional: record the address manually",
     "spot.googleUrl": "Google Maps link",
-    "spot.googleUrlPlaceholder": "Paste a full Google Maps link to detect name and coordinates",
+    "spot.googleUrlPlaceholder": "Paste a full Google Maps link to detect name, address, and coordinates",
     "spot.lat": "Latitude",
     "spot.lng": "Longitude",
     "spot.coordPlaceholder": "Auto-filled",
@@ -315,7 +321,8 @@ const translations = {
     "settings.mode": "SETTINGS",
     "settings.title": "Google API",
     "settings.keyLabel": "Google Geocoding API Key",
-    "settings.help": "The MVP prefers Google Maps links and manual coordinates. A Google Geocoding API key is only needed when you enter an address without coordinates.",
+    "settings.help": "A Google Geocoding API key lets FoodieMap fill an address when a Maps link only contains coordinates.",
+    "settings.saved": "Google API settings saved.",
     "import.cloudOnly": "Cloud data does not import local JSON yet.",
     "reset.cloudOnly": "After sign-in, data is stored in the cloud. Reset Demo is not used.",
     "limit.free": "Free accounts can store up to {limit} restaurants. You have {count}.",
@@ -448,9 +455,12 @@ const translations = {
     "paste.backendOffline": "后端服务未连接。请用 python3 server.py 5174 启动。",
     "google.help": "推荐复制 Google Maps 浏览器地址栏里的完整链接；短分享链接会由本地服务自动展开。",
     "google.shortExpanding": "正在展开 Google Maps 短链接...",
-    "google.shortExpanded": "短链接已展开并填入坐标。",
-    "google.coordsFound": "已从 Google Maps 链接识别坐标。",
+    "google.shortExpanded": "短链接已展开，并已填入可识别的餐厅信息。",
+    "google.coordsFound": "已从 Google Maps 链接识别餐厅信息。",
     "google.noCoords": "没有从链接识别到坐标。请打开短链接后复制完整 Google Maps 地址栏链接。",
+    "google.addressLookup": "正在用坐标查询地址...",
+    "google.addressLookupFailed": "已识别坐标。这个链接里没有地址；如需自动填地址，请在设置里填写 Google Geocoding API Key。",
+    "spot.discardConfirm": "放弃这个还没保存的餐厅吗？",
     "sidebar.myPantry": "我的美食库",
     "sidebar.smartLists": "智能分类",
     "sidebar.builtFromMap": "根据你的地图生成",
@@ -642,7 +652,7 @@ const translations = {
     "spot.address": "地址",
     "spot.addressPlaceholder": "可选：手动记录地址",
     "spot.googleUrl": "Google Maps 链接",
-    "spot.googleUrlPlaceholder": "粘贴 Google Maps 完整链接，自动识别店名和坐标",
+    "spot.googleUrlPlaceholder": "粘贴 Google Maps 完整链接，自动识别店名、地址和坐标",
     "spot.lat": "纬度",
     "spot.lng": "经度",
     "spot.coordPlaceholder": "自动填入",
@@ -675,7 +685,8 @@ const translations = {
     "settings.mode": "设置",
     "settings.title": "Google API",
     "settings.keyLabel": "Google Geocoding API Key",
-    "settings.help": "MVP 默认优先解析 Google Maps 链接和手动经纬度；只有只填地址时才需要 Google Geocoding API。",
+    "settings.help": "Google Geocoding API Key 可在 Maps 链接只有坐标时自动补全地址。",
+    "settings.saved": "Google API 设置已保存。",
     "import.cloudOnly": "云端版本暂不导入本地 JSON。",
     "reset.cloudOnly": "登录后数据保存在云端，不使用 Reset Demo。",
     "limit.free": "免费账号最多可保存 {limit} 家餐厅。你当前有 {count} 家。",
@@ -816,6 +827,7 @@ let selectedRestaurantId = null;
 let isSpotCardOpen = false;
 let spotCardDragStart = null;
 let suppressNextSpotCardOutsideClick = false;
+let addDialogDragStart = null;
 let editingRestaurantId = null;
 let shortLinkResolveTimer = null;
 let shareToken = getShareToken();
@@ -900,6 +912,8 @@ const elements = {
   closeAddPanel: document.querySelector("#closeAddPanel"),
   addDialog: document.querySelector("#addDialog"),
   restaurantForm: document.querySelector("#restaurantForm"),
+  restaurantModalHead: document.querySelector("#restaurantForm .modal-head"),
+  restaurantDragHandle: document.querySelector("#restaurantForm .modal-drag-handle"),
   googleUrlInput: document.querySelector('input[name="googleUrl"]'),
   formModeLabel: document.querySelector("#formModeLabel"),
   formTitle: document.querySelector("#formTitle"),
@@ -1084,7 +1098,12 @@ function bindEvents() {
   elements.spotCard.addEventListener("pointerdown", startMobileSpotCardDrag);
   elements.spotCard.addEventListener("pointerup", finishMobileSpotCardDrag);
   elements.spotCard.addEventListener("pointercancel", cancelMobileSpotCardDrag);
-  elements.closeAddPanel.addEventListener("click", closeRestaurantDialog);
+  elements.restaurantModalHead?.addEventListener("pointerdown", startAddDialogSwipeClose);
+  elements.restaurantDragHandle?.addEventListener("pointerdown", startAddDialogSwipeClose);
+  elements.restaurantForm?.addEventListener("pointermove", moveAddDialogSwipeClose);
+  elements.restaurantForm?.addEventListener("pointerup", finishAddDialogSwipeClose);
+  elements.restaurantForm?.addEventListener("pointercancel", cancelAddDialogSwipeClose);
+  elements.closeAddPanel.addEventListener("click", () => closeRestaurantDialog());
   elements.closeCard.addEventListener("click", () => {
     setSpotCardOpen(false, { render: true });
   });
@@ -1161,12 +1180,9 @@ function bindEvents() {
   elements.exportButton.addEventListener("click", exportRestaurants);
   elements.importButton.addEventListener("click", () => alert(t("import.cloudOnly")));
   elements.resetButton.addEventListener("click", resetDemoData);
-  elements.settingsButton.addEventListener("click", () => elements.settingsDialog.showModal());
+  elements.settingsButton.addEventListener("click", openSettingsDialog);
   elements.closeSettings.addEventListener("click", () => elements.settingsDialog.close());
-  elements.settingsForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    elements.settingsDialog.close();
-  });
+  elements.settingsForm.addEventListener("submit", saveSettings);
   elements.adminRefreshButton?.addEventListener("click", () => loadAdminUsers({ force: true }));
   elements.adminLoginForm?.addEventListener("submit", handleAdminLogin);
   elements.adminLogoutButton?.addEventListener("click", handleAdminLogout);
@@ -1185,6 +1201,22 @@ function bindEvents() {
       render();
     });
   });
+}
+
+function openSettingsDialog() {
+  elements.googleApiKey.value = getGoogleGeocodingKey();
+  elements.settingsDialog.showModal();
+}
+
+function saveSettings(event) {
+  event.preventDefault();
+  try {
+    localStorage.setItem(GOOGLE_GEOCODING_KEY, elements.googleApiKey.value.trim());
+  } catch {
+    // The app still works without persisted settings.
+  }
+  elements.formHelp.textContent = t("settings.saved");
+  elements.settingsDialog.close();
 }
 
 function closeMobileMenuDetails(element) {
@@ -1719,9 +1751,12 @@ function fillRestaurantForm(restaurant) {
   form.notes.value = restaurant.notes || "";
 }
 
-function closeRestaurantDialog() {
+function closeRestaurantDialog({ force = false } = {}) {
+  if (!force && hasUnsavedRestaurantForm() && !confirm(t("spot.discardConfirm"))) return false;
+  cancelAddDialogSwipeClose();
   elements.addDialog.close();
   resetRestaurantForm();
+  return true;
 }
 
 function resetRestaurantForm() {
@@ -1733,6 +1768,99 @@ function resetRestaurantForm() {
   elements.formHelp.textContent = t("google.help");
   elements.dishEditor.hidden = true;
   elements.dishEditorList.innerHTML = "";
+}
+
+function startAddDialogSwipeClose(event) {
+  if (!elements.addDialog.open || !isMobileMapViewport()) return;
+  if (event.button != null && event.button !== 0) return;
+  if (event.target.closest("button, input, textarea, select, a")) return;
+  addDialogDragStart = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    lastY: 0,
+    locked: false,
+  };
+  elements.restaurantForm.setPointerCapture?.(event.pointerId);
+}
+
+function moveAddDialogSwipeClose(event) {
+  if (!addDialogDragStart || event.pointerId !== addDialogDragStart.pointerId) return;
+  const deltaX = event.clientX - addDialogDragStart.startX;
+  const deltaY = Math.max(0, event.clientY - addDialogDragStart.startY);
+  if (!addDialogDragStart.locked) {
+    if (deltaY < ADD_DIALOG_SWIPE_LOCK_DISTANCE && Math.abs(deltaX) < ADD_DIALOG_SWIPE_LOCK_DISTANCE) return;
+    if (Math.abs(deltaX) > deltaY) {
+      cancelAddDialogSwipeClose();
+      return;
+    }
+    addDialogDragStart.locked = true;
+    elements.restaurantForm.classList.add("is-dragging");
+  }
+  addDialogDragStart.lastY = deltaY;
+  elements.restaurantForm.style.setProperty("--sheet-drag-y", `${deltaY}px`);
+  event.preventDefault();
+}
+
+function finishAddDialogSwipeClose(event) {
+  if (!addDialogDragStart || event.pointerId !== addDialogDragStart.pointerId) return;
+  const shouldClose = addDialogDragStart.lastY >= ADD_DIALOG_SWIPE_CLOSE_DISTANCE;
+  const pointerId = addDialogDragStart.pointerId;
+  addDialogDragStart = null;
+  elements.restaurantForm.releasePointerCapture?.(pointerId);
+  elements.restaurantForm.classList.remove("is-dragging");
+  if (shouldClose) {
+    if (hasUnsavedRestaurantForm() && !confirm(t("spot.discardConfirm"))) {
+      resetAddDialogDragStyles();
+      return;
+    }
+    elements.restaurantForm.classList.add("is-dismissing");
+    window.setTimeout(() => closeRestaurantDialog({ force: true }), 170);
+    return;
+  }
+  resetAddDialogDragStyles();
+}
+
+function cancelAddDialogSwipeClose() {
+  addDialogDragStart = null;
+  resetAddDialogDragStyles();
+}
+
+function resetAddDialogDragStyles() {
+  elements.restaurantForm?.classList.remove("is-dragging", "is-dismissing");
+  elements.restaurantForm?.style.removeProperty("--sheet-drag-y");
+}
+
+function hasUnsavedRestaurantForm() {
+  const payload = getRestaurantPayload();
+  if (editingRestaurantId) return hasEditedRestaurantFormChanges(payload);
+  return Boolean(
+    payload.name ||
+      payload.address ||
+      payload.google_url ||
+      payload.lat ||
+      payload.lng ||
+      payload.notes ||
+      payload.visit_count > 0 ||
+      payload.status !== "visited" ||
+      payload.personal_rating !== 4.5,
+  );
+}
+
+function hasEditedRestaurantFormChanges(payload) {
+  const original = selectedRestaurant();
+  if (!original) return true;
+  return (
+    payload.name !== String(original.name || "") ||
+    payload.address !== String(original.address || "") ||
+    payload.google_url !== String(original.google_url || "") ||
+    payload.lat !== String(original.lat ?? "") ||
+    payload.lng !== String(original.lng ?? "") ||
+    payload.status !== String(original.status || "want_to_go") ||
+    payload.visit_count !== Number(original.visit_count || 0) ||
+    payload.personal_rating !== Number(original.personal_rating || 0) ||
+    payload.notes !== String(original.notes || "")
+  );
 }
 
 async function saveRestaurantFromForm(event) {
@@ -1761,7 +1889,7 @@ async function saveRestaurantFromForm(event) {
     setSpotCardOpen(true);
     if (!editingRestaurantId) {
       resetRestaurantForm();
-      elements.addDialog.close();
+      closeRestaurantDialog({ force: true });
     } else {
       editingRestaurantId = data.restaurant.id;
       fillRestaurantForm(data.restaurant);
@@ -2453,7 +2581,7 @@ async function pasteAndAddFromClipboard() {
     if (!confirmedCreate && !confirm(t("paste.addConfirm", { name }))) return;
     const body = {
       name,
-      address: "",
+      address: parsed.address || "",
       lat: parsed.lat,
       lng: parsed.lng,
       google_url: parsed.url || googleUrl,
@@ -2487,10 +2615,10 @@ async function autofillFromGoogleMapsUrl() {
       try {
         const parsed = await parseAnyGoogleMapsLink(googleUrl);
         form.googleUrl.value = parsed.url || googleUrl;
-        form.name.value = parsed.name || form.name.value;
+        fillGoogleMapsFields(form, parsed);
         form.lat.value = parsed.lat ?? form.lat.value;
         form.lng.value = parsed.lng ?? form.lng.value;
-        elements.formHelp.textContent = t("google.shortExpanded");
+        elements.formHelp.textContent = parsed.address ? t("google.shortExpanded") : t("google.addressLookupFailed");
       } catch (error) {
         elements.formHelp.textContent = error.message;
       }
@@ -2498,17 +2626,23 @@ async function autofillFromGoogleMapsUrl() {
     return;
   }
 
-  const parsed = parseGoogleMapsUrl(googleUrl);
+  let parsed = parseGoogleMapsUrl(googleUrl);
   if (!parsed) {
     elements.formHelp.textContent = t("google.help");
     return;
   }
-  if (parsed.name && !form.name.value.trim()) form.name.value = parsed.name;
+  parsed = await enrichGoogleMapsPlace(parsed, { reportStatus: true });
+  fillGoogleMapsFields(form, parsed);
   if (parsed.lat != null && parsed.lng != null) {
     form.lat.value = parsed.lat;
     form.lng.value = parsed.lng;
-    elements.formHelp.textContent = t("google.coordsFound");
+    elements.formHelp.textContent = parsed.address ? t("google.coordsFound") : t("google.addressLookupFailed");
   }
+}
+
+function fillGoogleMapsFields(form, parsed) {
+  if (parsed.name && !form.name.value.trim()) form.name.value = parsed.name;
+  if (parsed.address && !form.address.value.trim()) form.address.value = parsed.address;
 }
 
 async function parseAnyGoogleMapsLink(url) {
@@ -2519,10 +2653,41 @@ async function parseAnyGoogleMapsLink(url) {
     url = data.url;
   }
   const parsed = parseGoogleMapsUrl(url);
-  if (!parsed?.lat || !parsed?.lng) {
+  if (parsed?.lat == null || parsed?.lng == null) {
     throw new Error(t("google.noCoords"));
   }
-  return { ...parsed, url };
+  return { ...(await enrichGoogleMapsPlace(parsed)), url };
+}
+
+async function enrichGoogleMapsPlace(parsed, { reportStatus = false } = {}) {
+  if (parsed.address || parsed.lat == null || parsed.lng == null) return parsed;
+  if (reportStatus) elements.formHelp.textContent = t("google.addressLookup");
+  const address = await reverseGeocodeAddress(parsed.lat, parsed.lng);
+  if (!address) {
+    if (reportStatus) elements.formHelp.textContent = t("google.addressLookupFailed");
+    return parsed;
+  }
+  return { ...parsed, address };
+}
+
+async function reverseGeocodeAddress(lat, lng) {
+  const body = { lat, lng };
+  const key = getGoogleGeocodingKey();
+  if (key) body.key = key;
+  try {
+    const data = await api("/api/reverse-geocode", { method: "POST", body: JSON.stringify(body) });
+    return String(data.address || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function getGoogleGeocodingKey() {
+  try {
+    return localStorage.getItem(GOOGLE_GEOCODING_KEY)?.trim() || "";
+  } catch {
+    return "";
+  }
 }
 
 async function checkShortLinkService() {
@@ -2556,14 +2721,55 @@ function parseGoogleMapsUrl(url) {
   const bangMatch = decoded.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
   const queryMatch = decoded.match(/[?&](?:q|query|destination|ll)=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
   const coordinates = atMatch || bangMatch || queryMatch;
-  const name = parseGoogleMapsName(decoded);
-  if (!coordinates) return name ? { name } : null;
-  return { lat: Number(coordinates[1]), lng: Number(coordinates[2]), name };
+  const place = parseGoogleMapsPlace(decoded);
+  if (!coordinates) return place.name || place.address ? place : null;
+  return { lat: Number(coordinates[1]), lng: Number(coordinates[2]), ...place };
 }
 
 function parseGoogleMapsName(url) {
-  const match = url.match(/\/maps\/place\/([^/@?]+)/);
-  return match ? safeDecode(match[1].replace(/\+/g, " ")).trim() : "";
+  return parseGoogleMapsPlace(url).name;
+}
+
+function parseGoogleMapsPlace(url) {
+  const pathMatch = url.match(/\/maps\/place\/([^/@?]+)/);
+  const queryText = parseGoogleMapsQueryText(url);
+  const dataAddress = parseGoogleMapsDataAddress(url);
+  const pathPlace = pathMatch ? splitPlaceAddressText(pathMatch[1].replace(/\+/g, " ")) : {};
+  const queryPlace = queryText ? splitPlaceAddressText(queryText) : {};
+  return {
+    name: pathPlace.name || queryPlace.name || "",
+    address: pathPlace.address || dataAddress || queryPlace.address || "",
+  };
+}
+
+function parseGoogleMapsQueryText(url) {
+  const query = url.split("?")[1] || "";
+  if (!query) return "";
+  const params = new URLSearchParams(query.split("#")[0]);
+  const value = params.get("query") || params.get("q") || params.get("destination") || "";
+  if (!value || /^-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?$/.test(value)) return "";
+  return value.replace(/\+/g, " ").trim();
+}
+
+function parseGoogleMapsDataAddress(url) {
+  const match = url.match(/!2s([^!]+)/);
+  if (!match) return "";
+  const value = match[1].replace(/\+/g, " ").trim();
+  return looksLikeAddress(value) ? value : "";
+}
+
+function splitPlaceAddressText(value) {
+  const text = safeDecode(value).replace(/\s+/g, " ").trim();
+  if (!text) return {};
+  const parts = text.split(",").map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 2 && parts.slice(1).some(looksLikeAddress)) {
+    return { name: parts[0], address: parts.slice(1).join(", ") };
+  }
+  return { name: text };
+}
+
+function looksLikeAddress(value) {
+  return /\b\d{1,6}\b/.test(value) || /\b(?:street|st|road|rd|avenue|ave|boulevard|blvd|drive|dr|lane|ln|court|ct|way|place|pl|highway|hwy|king|queen|yonge|dundas)\b/i.test(value);
 }
 
 function safeDecode(value) {
@@ -3057,6 +3263,7 @@ function renderDiscoveryView() {
     elements.discoveryDetail.innerHTML = loadingPanel(t("discovery.loading"));
     return;
   }
+  elements.discoveryDetail.classList.toggle("is-empty", !selected);
   elements.discoveryDetail.innerHTML = selected ? discoveryDetailTemplate(selected) : discoveryEmptyStateTemplate(term).detail;
   elements.discoveryDetail.querySelector("[data-copy-public]")?.addEventListener("click", copyPublicList);
 }

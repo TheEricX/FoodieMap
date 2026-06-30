@@ -450,6 +450,7 @@
 
       <dialog class="modal" id="addDialog">
         <form class="modal-card" id="restaurantForm" method="dialog">
+          <div class="modal-drag-handle" aria-hidden="true"></div>
           <div class="modal-head">
             <div>
               <p class="eyebrow" id="formModeLabel">NEW_SPOT</p>
@@ -469,7 +470,7 @@
           </label>
           <label>
             <span data-i18n="spot.googleUrl">Google Maps link</span>
-            <input name="googleUrl" placeholder="Paste a full Google Maps link to detect name and coordinates" data-i18n-placeholder="spot.googleUrlPlaceholder" />
+            <input name="googleUrl" placeholder="Paste a full Google Maps link to detect name, address, and coordinates" data-i18n-placeholder="spot.googleUrlPlaceholder" />
           </label>
           <div class="two-col">
             <label>
@@ -609,7 +610,7 @@
             <input name="googleApiKey" id="googleApiKey" placeholder="AIza..." />
           </label>
           <p class="form-help" data-i18n="settings.help">
-            The MVP prefers Google Maps links and manual coordinates. A Google Geocoding API key is only needed when you enter an address without coordinates.
+            A Google Geocoding API key lets FoodieMap fill an address when a Maps link only contains coordinates.
           </p>
           <button class="primary-button" type="submit" data-i18n="button.saveSettings">Save Settings</button>
         </form>
