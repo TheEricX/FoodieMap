@@ -16,6 +16,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Compacted mobile menu-note entry and saved dish cards so Add Menu and menu lists match the denser List View layout.
 - Reworked the mobile Discovery view to use the same fixed-height mobile shell, compact topbar, internal scrolling, and bottom-navigation spacing as Map View and List View.
 - Compacted the mobile sign-in dialog with smaller actions, tighter tabs, and shorter form fields.
 - Let the mobile List View use the space behind the floating bottom navigation while preserving bottom scroll padding.
