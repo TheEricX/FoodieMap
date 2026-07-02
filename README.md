@@ -1,11 +1,11 @@
 # Gourmet Map / FoodieMap MVP
 
-Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱密码和邮箱验证码登录，云端保存餐厅、记录菜品和图片、生成分享链接、自定义餐厅清单，以及公开 Discovery 清单浏览；前端使用木质手账风 UI，并支持同一餐厅分类在地图和列表两种模式之间切换。
+Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱密码和邮箱验证码登录，云端保存餐厅、记录菜品和图片、生成分享链接和二维码、自定义餐厅清单，以及公开 Discovery 清单浏览；前端使用木质手账风 UI，并支持同一餐厅分类在地图和列表两种模式之间切换。
 
 ## 功能
 
 - 支持 Google OAuth、邮箱+密码、邮箱验证码三种登录方式；同邮箱会自动合并为同一账号
-- SQLite 保存用户、餐厅、菜品、分享链接、自定义 list 和公开 Discovery list
+- SQLite 保存用户、餐厅、菜品、分享链接、私密推荐分享包、自定义 list 和公开 Discovery list
 - 保存餐厅状态、去过次数、个人评分、备注、Google Maps 链接和坐标
 - 每家店可记录菜品：`Liked` / `Tried`、5 星评分、备注、1 张压缩图片
 - `Paste & Add` 支持 Google Maps 完整链接和 `maps.app.goo.gl` 短链接，并会尽量识别店名、地址和坐标；链接只有坐标时可用 Google Geocoding API Key 反查地址
@@ -16,10 +16,12 @@ Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱
 - `List View` 行内操作保持统一：`Map` 打开当前分类地图，`Google` 打开 Google Maps；系统分类里的 `Delete` 会删除餐厅记录，自定义 list 里的 `Remove` 只从当前清单移除餐厅
 - 自定义 list 默认私密，可手动 `Publish` 到 Discovery；公开 list 可被其他用户复制到自己的 My Lists
 - `Discovery` 支持浏览公开清单、按 Popular / Recent 排序、搜索公开清单，并提供独立手机布局；没有公开清单时会根据登录和 list 状态引导创建、添加餐厅或手动发布
+- `Discovery` 可创建私密推荐分享包，选择要推荐的餐厅和菜品后生成链接与可保存的 PNG 推荐图；别人无需登录即可预览，登录后可一键复制到自己的 My Lists
 - 系统语言默认英文，顶部 globe 菜单可切换 English / 中文，并会在当前浏览器中记住选择
 - 管理员可通过独立 `/admin` 地址登录后台，管理账号状态、手动切换 Free/Paid 计划、暂停账号、软删除账号和恢复账号
 - Free 用户默认最多保存 50 个餐厅；Paid 用户不受该额度限制
 - 分享链接 `/share/{token}` 支持未登录预览
+- 私密推荐链接 `/share-pack/{token}` 支持未登录预览，推荐图 `/api/share-packs/{token}/card.png` 可单独打开和保存
 - 朋友登录后可一键添加分享店铺到自己的列表，默认分类为 `Want to Go`
 - 木质手账风响应式布局，支持桌面、平板和手机；桌面 topbar 固定在顶部，只有内容滚动到其下方时才显示阴影
 
@@ -156,11 +158,14 @@ docker compose down
 10. 自定义 list 默认私密；在 `Manage` 菜单里点击 `Publish` 后会进入 `Discovery`。
 11. 如果 `Discovery` 还没有公开清单，页面会提示下一步；有可发布私密 list 时，`Publish a list` 会跳回对应清单，但仍需要用户手动通过 `Manage > Publish` 发布。
 12. 在 `Discovery` 浏览公开清单；登录后可 `Copy to My Lists` 复制到自己的私密清单。
-13. 点击顶部 globe 菜单可切换 English / 中文；选择会保存到当前浏览器。
-14. 打开 `/admin`，用 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 登录后台后，可暂停、软删除、恢复账号，并手动切换 Free/Paid。
-15. Free 用户达到餐厅额度后，新增餐厅、复制公开清单或从分享链接添加餐厅会被阻止；删除餐厅或升级为 Paid 后可继续添加。
-16. 在店铺详情卡点击 `Share`，手动选择要推荐的菜品，生成分享链接。
-17. 朋友打开分享链接可以预览；登录后点 `Add to My List` 加入自己的列表。
+13. 在 `Discovery` 点击 `Create Share Pack`，选择餐厅和菜品后生成私密链接和 PNG 推荐图。
+14. `Discovery` 会保留当前账号创建过的私密推荐历史，可重新复制链接、打开推荐图或打开预览页。
+15. 朋友打开 `/share-pack/{token}` 或扫描推荐图二维码可以预览整组推荐；登录后点 `Add to My Lists` 会复制成自己的私密清单。
+16. 点击顶部 globe 菜单可切换 English / 中文；选择会保存到当前浏览器。
+17. 打开 `/admin`，用 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 登录后台后，可暂停、软删除、恢复账号，并手动切换 Free/Paid。
+18. Free 用户达到餐厅额度后，新增餐厅、复制公开清单、复制私密推荐包或从分享链接添加餐厅会被阻止；删除餐厅或升级为 Paid 后可继续添加。
+19. 在店铺详情卡点击 `Share`，手动选择要推荐的菜品，生成单店分享链接。
+20. 朋友打开单店分享链接可以预览；登录后点 `Add to My List` 加入自己的列表。
 
 ## API
 
@@ -196,6 +201,12 @@ docker compose down
 - `POST /api/restaurants/{id}/share`
 - `GET /api/share/{token}`
 - `POST /api/share/{token}/add`
+- `POST /api/share-packs`
+- `GET /api/share-packs`
+- `GET /api/share-packs/{token}`
+- `GET /api/share-packs/{token}/qr.svg`
+- `GET /api/share-packs/{token}/card.png`
+- `POST /api/share-packs/{token}/add`
 - `GET /api/lists`
 - `POST /api/lists`
 - `GET /api/lists/{id}`

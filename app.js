@@ -134,6 +134,11 @@ const translations = {
     "button.deleteList": "Delete List",
     "button.copyToMyLists": "Copy to My Lists",
     "button.createShareLink": "Create Share Link",
+    "button.createSharePack": "Create Share Pack",
+    "button.generateSharePack": "Generate Link",
+    "button.addSharedPack": "Add to My Lists",
+    "button.openImage": "Open Image",
+    "button.downloadImage": "Download Image",
     "button.saveSettings": "Save Settings",
     "button.addMenu": "+ Add Menu",
     "button.saveMenu": "Save Menu",
@@ -309,6 +314,32 @@ const translations = {
     "share.noDishes": "This spot has no dishes yet. Edit the spot and add dishes before sharing.",
     "share.link": "Share link",
     "share.linkPlaceholder": "Link appears after creation",
+    "sharePack.mode": "PRIVATE SHARE",
+    "sharePack.title": "Create Share Pack",
+    "sharePack.help": "Choose restaurants and dishes, then generate a private link and QR code.",
+    "sharePack.nameLabel": "Title",
+    "sharePack.namePlaceholder": "Weekend ramen picks",
+    "sharePack.descriptionLabel": "Description",
+    "sharePack.descriptionPlaceholder": "Why these spots are worth trying",
+    "sharePack.link": "Private link",
+    "sharePack.qrAlt": "Share QR code",
+    "sharePack.cardAlt": "Share recommendation card",
+    "sharePack.historyTitle": "My Share Packs",
+    "sharePack.historyEyebrow": "PRIVATE HISTORY",
+    "sharePack.historyHelp": "Links and cards you generated from Discovery.",
+    "sharePack.noHistory": "No private recommendations yet.",
+    "sharePack.openPreview": "Open Preview",
+    "sharePack.imageAction": "Image",
+    "sharePack.previewAction": "Preview",
+    "sharePack.noSpots": "Add at least one restaurant before creating a share pack.",
+    "sharePack.chooseOne": "Choose at least one restaurant.",
+    "sharePack.generated": "Private link and QR code are ready.",
+    "sharePack.routeMissing": "The server has not loaded Share Pack yet. Restart or deploy the latest backend, then try again.",
+    "sharePack.saved": "Share pack copied to your My Lists.",
+    "sharePack.previewEyebrow": "PRIVATE RECOMMENDATION",
+    "sharePack.byOwner": "Recommended by {name}",
+    "sharePack.empty": "This share pack has no visible restaurants.",
+    "sharePack.addedSource": "Added from a private share pack.",
     "listForm.titleLabel": "Title",
     "listForm.descriptionLabel": "Description",
     "listForm.descriptionPlaceholder": "Describe the occasion or theme for this restaurant group.",
@@ -499,6 +530,11 @@ const translations = {
     "button.deleteList": "删除清单",
     "button.copyToMyLists": "复制到我的清单",
     "button.createShareLink": "生成分享链接",
+    "button.createSharePack": "创建私密推荐",
+    "button.generateSharePack": "生成链接",
+    "button.addSharedPack": "加入我的清单",
+    "button.openImage": "打开图片",
+    "button.downloadImage": "下载图片",
     "button.saveSettings": "保存设置",
     "button.addMenu": "+ 添加菜品",
     "button.saveMenu": "保存菜单",
@@ -674,6 +710,32 @@ const translations = {
     "share.noDishes": "这家店还没有菜品。可以先编辑店铺添加菜品，再分享。",
     "share.link": "分享链接",
     "share.linkPlaceholder": "生成后显示链接",
+    "sharePack.mode": "私密分享",
+    "sharePack.title": "创建私密推荐",
+    "sharePack.help": "选择要推荐的餐厅和菜品，然后生成私密链接和二维码。",
+    "sharePack.nameLabel": "标题",
+    "sharePack.namePlaceholder": "周末拉面推荐",
+    "sharePack.descriptionLabel": "说明",
+    "sharePack.descriptionPlaceholder": "为什么推荐这些店",
+    "sharePack.link": "私密链接",
+    "sharePack.qrAlt": "分享二维码",
+    "sharePack.cardAlt": "推荐分享图",
+    "sharePack.historyTitle": "我的私密推荐",
+    "sharePack.historyEyebrow": "私密历史",
+    "sharePack.historyHelp": "你从 Discovery 生成过的链接和推荐图。",
+    "sharePack.noHistory": "还没有私密推荐。",
+    "sharePack.openPreview": "打开预览",
+    "sharePack.imageAction": "图片",
+    "sharePack.previewAction": "预览",
+    "sharePack.noSpots": "至少添加一家餐厅后才能创建推荐。",
+    "sharePack.chooseOne": "请至少选择一家餐厅。",
+    "sharePack.generated": "私密链接和二维码已生成。",
+    "sharePack.routeMissing": "后端还没有加载私密推荐功能。请重启或部署最新后端后再试。",
+    "sharePack.saved": "已复制到你的 My Lists。",
+    "sharePack.previewEyebrow": "私密推荐",
+    "sharePack.byOwner": "来自 {name} 的推荐",
+    "sharePack.empty": "这个推荐里没有可见餐厅。",
+    "sharePack.addedSource": "来自私密推荐。",
     "listForm.titleLabel": "标题",
     "listForm.descriptionLabel": "描述",
     "listForm.descriptionPlaceholder": "记录这组餐厅适合什么场景。",
@@ -834,9 +896,13 @@ let editingRestaurantId = null;
 let shortLinkResolveTimer = null;
 let shareToken = getShareToken();
 let shareData = null;
+let sharePackToken = getSharePackToken();
+let sharePackData = null;
+let pendingAddSharePack = false;
 let activeView = getInitialView();
 let lists = [];
 let discoveryLists = [];
+let sharePacks = [];
 let selectedListId = null;
 let activeMyListKey = "system:all";
 let selectedDiscoveryListId = null;
@@ -858,6 +924,7 @@ let detailCloseTimer = null;
 
 const DISH_AUTOSAVE_DELAY = 700;
 const REVIEW_AUTOSAVE_DELAY = 700;
+const PENDING_SHARE_PACK_LIST_KEY = "foodieMapPendingSharePackList";
 const editingDetailDishIds = new Set();
 const dishAutosaveTimers = new Map();
 let reviewAutosaveTimer = null;
@@ -989,11 +1056,27 @@ const elements = {
   shareUrlInput: document.querySelector("#shareUrlInput"),
   createShareButton: document.querySelector("#createShareButton"),
   copyShareButton: document.querySelector("#copyShareButton"),
+  sharePackView: document.querySelector("#sharePackView"),
+  sharePackPage: document.querySelector("#sharePackPage"),
+  sharePackDialog: document.querySelector("#sharePackDialog"),
+  sharePackForm: document.querySelector("#sharePackForm"),
+  closeSharePackDialog: document.querySelector("#closeSharePackDialog"),
+  sharePackHelp: document.querySelector("#sharePackHelp"),
+  sharePackPicker: document.querySelector("#sharePackPicker"),
+  sharePackResult: document.querySelector("#sharePackResult"),
+  sharePackUrlInput: document.querySelector("#sharePackUrlInput"),
+  sharePackCardImage: document.querySelector("#sharePackCardImage"),
+  sharePackImageLink: document.querySelector("#sharePackImageLink"),
+  createSharePackButton: document.querySelector("#createSharePackButton"),
+  copySharePackButton: document.querySelector("#copySharePackButton"),
+  openSharePackImage: document.querySelector("#openSharePackImage"),
+  downloadSharePackImage: document.querySelector("#downloadSharePackImage"),
   navLinks: document.querySelectorAll("[data-view]"),
   viewPanels: document.querySelectorAll("[data-view-panel]"),
   mapView: document.querySelector("#mapView"),
   listsView: document.querySelector("#listsView"),
   discoveryView: document.querySelector("#discoveryView"),
+  openSharePackDialog: document.querySelector("#openSharePackDialog"),
   adminLoginView: document.querySelector("#adminLoginView"),
   adminLoginForm: document.querySelector("#adminLoginForm"),
   adminUsernameInput: document.querySelector("#adminUsernameInput"),
@@ -1004,6 +1087,8 @@ const elements = {
   sidebarListFilters: document.querySelector("#sidebarListFilters"),
   myListDetail: document.querySelector("#myListDetail"),
   discoveryGrid: document.querySelector("#discoveryGrid"),
+  sharePackHistoryPanel: document.querySelector("#sharePackHistoryPanel"),
+  sharePackHistoryList: document.querySelector("#sharePackHistoryList"),
   discoveryDetail: document.querySelector("#discoveryDetail"),
   listDialog: document.querySelector("#listDialog"),
   listForm: document.querySelector("#listForm"),
@@ -1038,13 +1123,17 @@ async function boot() {
     return;
   }
   await loadMe();
-  if (shareToken) {
+  if (sharePackToken) {
+    activeView = "share-pack";
+    await loadSharePackPage(sharePackToken);
+  } else if (shareToken) {
     activeView = "my-map";
     await loadSharePage(shareToken);
   } else {
     await loadRestaurants();
     await loadLists();
     await loadDiscoveryLists();
+    await loadSharePacks();
   }
   setActiveView(activeView, { push: false });
   checkShortLinkService();
@@ -1173,12 +1262,16 @@ function bindEvents() {
       renderDiscoveryView();
     });
   });
+  elements.openSharePackDialog?.addEventListener("click", openSharePackDialog);
   elements.googleUrlInput.addEventListener("input", autofillFromGoogleMapsUrl);
   elements.restaurantForm.addEventListener("submit", saveRestaurantFromForm);
   elements.addDishButton.addEventListener("click", addDishFromEditor);
   elements.closeShareDialog.addEventListener("click", () => elements.shareDialog.close());
   elements.shareForm.addEventListener("submit", createShareLink);
   elements.copyShareButton.addEventListener("click", copyShareLink);
+  elements.closeSharePackDialog?.addEventListener("click", () => elements.sharePackDialog.close());
+  elements.sharePackForm?.addEventListener("submit", createSharePack);
+  elements.copySharePackButton?.addEventListener("click", copySharePackLink);
   elements.exportButton.addEventListener("click", exportRestaurants);
   elements.importButton.addEventListener("click", () => alert(t("import.cloudOnly")));
   elements.resetButton.addEventListener("click", resetDemoData);
@@ -1320,6 +1413,7 @@ function setLanguage(language) {
   }
   translateStaticDom();
   renderShareChrome();
+  renderSharePackChrome();
   renderAuth();
   render();
   refreshOpenDialogLanguage();
@@ -1357,6 +1451,9 @@ function translateStaticDom() {
   });
   document.querySelectorAll("[data-i18n-title]").forEach((node) => {
     node.setAttribute("title", t(node.dataset.i18nTitle));
+  });
+  document.querySelectorAll("[data-i18n-alt]").forEach((node) => {
+    node.setAttribute("alt", t(node.dataset.i18nAlt));
   });
   document.querySelectorAll("[data-i18n-aria-label]").forEach((node) => {
     node.setAttribute("aria-label", t(node.dataset.i18nAriaLabel));
@@ -1445,7 +1542,9 @@ function renderAuth() {
   elements.loginButton.textContent = currentUser ? shortUserName(currentUser) : t("auth.signIn");
   elements.loginButton.title = currentUser ? t("auth.signOutTitle", { email: currentUser.email }) : t("auth.signInTitle");
   elements.loginButton.classList.toggle("is-signed-in", Boolean(currentUser));
-  elements.pasteStatus.textContent = shareToken
+  elements.pasteStatus.textContent = sharePackToken
+    ? t("paste.shared")
+    : shareToken
     ? t("paste.shared")
     : currentUser
     ? t("paste.help")
@@ -1522,9 +1621,15 @@ function authEmailValue(input = elements.authEmailInput) {
 
 async function refreshAfterAuth() {
   await loadMe();
+  if (pendingAddSharePack && sharePackToken) {
+    closeAuthDialog();
+    await addSharedPackToMyLists();
+    return;
+  }
   await loadRestaurants();
   await loadLists();
   await loadDiscoveryLists();
+  await loadSharePacks();
   closeAuthDialog();
   render();
 }
@@ -1640,6 +1745,12 @@ async function loadLists() {
   }
   const data = await api("/api/lists");
   lists = data.lists.map(normalizeList);
+  const pendingListId = takePendingSharePackListId();
+  if (pendingListId && lists.some((list) => list.id === pendingListId)) {
+    selectedListId = pendingListId;
+    activeMyListKey = `custom:${pendingListId}`;
+    saveListFilterOrder([pendingListId, ...orderedLists().filter((item) => item.id !== pendingListId).map((item) => item.id)]);
+  }
   selectedListId = selectedListId && lists.some((list) => list.id === selectedListId) ? selectedListId : lists[0]?.id ?? null;
   if (activeMyListKey.startsWith("custom:") && !lists.some((list) => `custom:${list.id}` === activeMyListKey)) {
     setActiveCategory("system:all");
@@ -1662,6 +1773,15 @@ async function loadDiscoveryLists() {
     selectedDiscoveryListId && discoveryLists.some((list) => list.id === selectedDiscoveryListId)
       ? selectedDiscoveryListId
       : discoveryLists[0]?.id ?? null;
+}
+
+async function loadSharePacks() {
+  if (!currentUser) {
+    sharePacks = [];
+    return;
+  }
+  const data = await api("/api/share-packs");
+  sharePacks = (data.share_packs || []).map(normalizeSharePackSummary);
 }
 
 async function loadDiscoveryDetail(listId) {
@@ -1712,6 +1832,10 @@ async function addSharedRestaurant() {
 }
 
 function openCreateDialog() {
+  if (sharePackToken) {
+    addSharedPackToMyLists();
+    return;
+  }
   if (shareToken) {
     addSharedRestaurant();
     return;
@@ -2083,6 +2207,134 @@ async function copyShareLink() {
   await navigator.clipboard.writeText(elements.shareUrlInput.value);
   elements.copyShareButton.textContent = t("button.copied");
   window.setTimeout(() => (elements.copyShareButton.textContent = t("button.copy")), 1200);
+}
+
+function openSharePackDialog() {
+  if (!requireLogin()) return;
+  if (!restaurants.length) {
+    alert(t("sharePack.noSpots"));
+    return;
+  }
+  elements.sharePackForm.reset();
+  elements.sharePackResult.hidden = true;
+  elements.sharePackUrlInput.value = "";
+  elements.sharePackCardImage.removeAttribute("src");
+  elements.sharePackImageLink.href = "#";
+  elements.openSharePackImage.href = "#";
+  elements.downloadSharePackImage.href = "#";
+  elements.openSharePackImage.hidden = true;
+  elements.downloadSharePackImage.hidden = true;
+  elements.sharePackHelp.textContent = t("sharePack.help");
+  elements.sharePackPicker.innerHTML = restaurants.map(sharePackRestaurantOptionTemplate).join("");
+  elements.sharePackDialog.showModal();
+}
+
+function sharePackRestaurantOptionTemplate(restaurant) {
+  const dishes = restaurant.dishes ?? [];
+  return `
+    <article class="share-pack-option" data-share-pack-restaurant="${restaurant.id}">
+      <label class="share-pack-restaurant-check">
+        <input type="checkbox" data-share-pack-restaurant-check value="${restaurant.id}" />
+        <span>
+          <strong>${escapeHtml(restaurant.name)}</strong>
+          <small>${escapeHtml(restaurant.address || statusLabel(restaurant.status))}</small>
+        </span>
+      </label>
+      <div class="share-pack-dishes">
+        ${
+          dishes.length
+            ? dishes.map((dish) => `
+                <label>
+                  <input type="checkbox" data-share-pack-dish value="${dish.id}" />
+                  <span>${escapeHtml(dish.name)} · ☆ ${Number(dish.rating || 0).toFixed(1)}</span>
+                </label>
+              `).join("")
+            : `<p>${escapeHtml(t("detail.noMenu"))}</p>`
+        }
+      </div>
+    </article>
+  `;
+}
+
+function sharePackPayloadFromForm() {
+  const form = new FormData(elements.sharePackForm);
+  const items = [...elements.sharePackPicker.querySelectorAll("[data-share-pack-restaurant]")].flatMap((card) => {
+    const restaurantCheck = card.querySelector("[data-share-pack-restaurant-check]");
+    if (!restaurantCheck.checked) return [];
+    return [
+      {
+        restaurant_id: restaurantCheck.value,
+        dish_ids: [...card.querySelectorAll("[data-share-pack-dish]:checked")].map((input) => input.value),
+        note: "",
+      },
+    ];
+  });
+  if (!items.length) throw new Error(t("sharePack.chooseOne"));
+  return {
+    title: String(form.get("title") || "").trim(),
+    description: String(form.get("description") || "").trim(),
+    items,
+  };
+}
+
+async function createSharePack(event) {
+  event.preventDefault();
+  try {
+    const payload = sharePackPayloadFromForm();
+    const data = await api("/api/share-packs", { method: "POST", body: JSON.stringify(payload) });
+    elements.sharePackUrlInput.value = data.share_url;
+    elements.sharePackCardImage.src = data.card_url;
+    elements.sharePackImageLink.href = data.card_url;
+    elements.openSharePackImage.href = data.card_url;
+    elements.downloadSharePackImage.href = data.card_url;
+    elements.openSharePackImage.hidden = false;
+    elements.downloadSharePackImage.hidden = false;
+    elements.downloadSharePackImage.setAttribute("download", `${slugifyText(payload.title || "share-pack")}.png`);
+    elements.sharePackResult.hidden = false;
+    elements.sharePackHelp.textContent = t("sharePack.generated");
+    await loadSharePacks();
+    renderDiscoveryView();
+  } catch (error) {
+    elements.sharePackHelp.textContent = /method not allowed/i.test(error.message)
+      ? t("sharePack.routeMissing")
+      : error.message;
+  }
+}
+
+async function copySharePackLink() {
+  if (!elements.sharePackUrlInput.value) return;
+  await navigator.clipboard.writeText(elements.sharePackUrlInput.value);
+  elements.copySharePackButton.textContent = t("button.copied");
+  window.setTimeout(() => (elements.copySharePackButton.textContent = t("button.copy")), 1200);
+}
+
+async function loadSharePackPage(token) {
+  const data = await api(`/api/share-packs/${token}`);
+  sharePackData = normalizeSharePack(data.share_pack);
+  renderSharePackChrome();
+  render();
+}
+
+function renderSharePackChrome() {
+  if (!sharePackToken) return;
+  document.querySelector(".brand span:last-child").textContent = t("app.sharedBrand");
+  elements.pasteAddButton.hidden = true;
+  elements.openAddPanel.textContent = t("button.addSharedPack");
+  elements.openAddPanel.onclick = addSharedPackToMyLists;
+}
+
+async function addSharedPackToMyLists() {
+  if (!sharePackToken) return;
+  if (!currentUser) {
+    pendingAddSharePack = true;
+    openAuthDialog();
+    return;
+  }
+  const data = await api(`/api/share-packs/${sharePackToken}/add`, { method: "POST" });
+  pendingAddSharePack = false;
+  rememberPendingSharePackListId(data.list?.id);
+  window.location.href = `/#my-lists`;
+  return data;
 }
 
 async function deleteSelectedRestaurant() {
@@ -2855,22 +3107,24 @@ function render() {
   renderSpotCard();
   renderListsView();
   renderDiscoveryView();
+  renderSharePackView();
   renderAdminView();
   updateTopbarElevation();
 }
 
 function getInitialView() {
   if (isAdminPortal) return "admin-login";
+  if (sharePackToken) return "share-pack";
   const hash = window.location.hash.replace("#", "");
   return ["my-map", "my-lists", "discovery"].includes(hash) ? hash : "my-map";
 }
 
 function setActiveView(view, options = {}) {
-  const allowedViews = isAdminPortal ? ["admin-login", "admin"] : ["my-map", "my-lists", "discovery"];
+  const allowedViews = isAdminPortal ? ["admin-login", "admin"] : ["my-map", "my-lists", "discovery", "share-pack"];
   if (!allowedViews.includes(view)) view = isAdminPortal ? "admin-login" : "my-map";
   if (isAdminPortal && view === "admin" && !currentAdmin) view = "admin-login";
-  activeView = shareToken ? "my-map" : view;
-  if (!isAdminPortal && options.push !== false && window.location.hash !== `#${activeView}`) {
+  activeView = sharePackToken ? "share-pack" : shareToken ? "my-map" : view;
+  if (!isAdminPortal && !sharePackToken && options.push !== false && window.location.hash !== `#${activeView}`) {
     window.location.hash = activeView;
   }
   if (activeView === "my-lists" && currentUser && !lists.length) {
@@ -2907,6 +3161,7 @@ function renderViewShell() {
     "my-map": t("search.category"),
     "my-lists": t("search.category"),
     discovery: t("search.discovery"),
+    "share-pack": t("search.discovery"),
     admin: t("admin.searchPlaceholder"),
     "admin-login": t("admin.usernamePlaceholder"),
   }[activeView];
@@ -3268,6 +3523,51 @@ function renderDiscoveryView() {
   elements.discoveryDetail.classList.toggle("is-empty", !selected);
   elements.discoveryDetail.innerHTML = selected ? discoveryDetailTemplate(selected) : discoveryEmptyStateTemplate(term).detail;
   elements.discoveryDetail.querySelector("[data-copy-public]")?.addEventListener("click", copyPublicList);
+  renderSharePackHistory();
+}
+
+function renderSharePackHistory() {
+  if (!elements.sharePackHistoryPanel || !elements.sharePackHistoryList) return;
+  elements.sharePackHistoryPanel.hidden = !currentUser;
+  if (!currentUser) return;
+  elements.sharePackHistoryList.innerHTML = sharePacks.length
+    ? sharePacks.map(sharePackHistoryTemplate).join("")
+    : emptyStateTemplate(t("sharePack.noHistory"), "");
+  elements.sharePackHistoryList.querySelectorAll("[data-copy-share-pack]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(button.dataset.copySharePack || "");
+      button.textContent = t("button.copied");
+      window.setTimeout(() => (button.textContent = t("button.copy")), 1200);
+    });
+  });
+  elements.sharePackHistoryList.querySelectorAll("[data-share-pack-card-image]").forEach((image) => {
+    image.addEventListener("error", () => {
+      image.hidden = true;
+      image.closest(".share-pack-history-poster")?.classList.add("is-missing");
+    }, { once: true });
+  });
+}
+
+function sharePackHistoryTemplate(pack) {
+  return `
+    <article class="share-pack-history-card">
+      <a class="share-pack-history-poster" href="${escapeAttribute(pack.card_url)}" target="_blank" rel="noreferrer" aria-label="${escapeAttribute(t("button.openImage"))}">
+        <img src="${escapeAttribute(pack.card_url)}" alt="${escapeAttribute(t("sharePack.cardAlt"))}" loading="lazy" data-share-pack-card-image />
+      </a>
+      <div class="share-pack-history-main">
+        <div>
+          <strong>${escapeHtml(pack.title)}</strong>
+          <small>${t("count.spots", { count: pack.item_count })} · ${formatDate(pack.created_at)}</small>
+        </div>
+        <p>${escapeHtml(pack.description || t("list.noDescription"))}</p>
+        <div class="share-pack-history-actions">
+          <button class="share-pack-history-action" type="button" data-copy-share-pack="${escapeAttribute(pack.share_url)}">${t("button.copy")}</button>
+          <a class="share-pack-history-action" href="${escapeAttribute(pack.card_url)}" target="_blank" rel="noreferrer">${t("sharePack.imageAction")}</a>
+          <a class="share-pack-history-action" href="${escapeAttribute(pack.share_url)}" target="_blank" rel="noreferrer">${t("sharePack.previewAction")}</a>
+        </div>
+      </div>
+    </article>
+  `;
 }
 
 function scheduleAdminLoad() {
@@ -3672,6 +3972,69 @@ function publicListItemTemplate(item) {
       <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">${t("button.map")}</a>
     `,
   });
+}
+
+function renderSharePackView() {
+  if (!elements.sharePackPage || activeView !== "share-pack") return;
+  if (!sharePackData) {
+    elements.sharePackPage.innerHTML = loadingPanel(t("discovery.loading"));
+    return;
+  }
+  const ownerName = escapeHtml(sharePackData.owner?.name || t("discovery.foodie"));
+  elements.sharePackPage.innerHTML = `
+    <div class="share-pack-public-head">
+      <div>
+        <p class="eyebrow">${t("sharePack.previewEyebrow")}</p>
+        <h1>${escapeHtml(sharePackData.title)}</h1>
+        <p>${escapeHtml(sharePackData.description || t("list.noDescription"))}</p>
+        <div class="meta-row compact-meta">
+          <span>${t("sharePack.byOwner", { name: ownerName })}</span>
+          <span>${t("count.spots", { count: sharePackData.items.length })}</span>
+        </div>
+      </div>
+      <button class="primary-button" type="button" data-add-share-pack>${t("button.addSharedPack")}</button>
+    </div>
+    <div class="share-pack-public-list">
+      ${
+        sharePackData.items.length
+          ? sharePackData.items.map(sharePackPublicItemTemplate).join("")
+          : emptyStateTemplate(t("sharePack.empty"), "")
+      }
+    </div>
+  `;
+  elements.sharePackPage.querySelector("[data-add-share-pack]")?.addEventListener("click", addSharedPackToMyLists);
+}
+
+function sharePackPublicItemTemplate(item) {
+  const restaurant = item.restaurant;
+  if (!restaurant) return "";
+  const googleUrl = restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`;
+  return `
+    <article class="share-pack-public-card">
+      ${restaurantThumbTemplate(restaurant)}
+      <div class="share-pack-public-main">
+        <div class="spot-row-title">
+          <strong>${escapeHtml(restaurant.name)}</strong>
+          <span class="tag-pill want_to_go">☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}</span>
+        </div>
+        <small>${escapeHtml(restaurant.address || t("discovery.addressHidden"))}</small>
+        ${item.note ? `<p>${escapeHtml(item.note)}</p>` : ""}
+        <div class="share-pack-public-dishes">
+          ${
+            item.dishes.length
+              ? item.dishes.map((dish) => `
+                  <span>
+                    ${dish.image_url ? `<img src="${escapeAttribute(dish.image_url)}" alt="">` : ""}
+                    ${escapeHtml(dish.name)} · ☆ ${Number(dish.rating || 0).toFixed(1)}
+                  </span>
+                `).join("")
+              : ""
+          }
+        </div>
+        <a class="icon-link" href="${escapeAttribute(googleUrl)}" target="_blank" rel="noreferrer">${t("button.google")}</a>
+      </div>
+    </article>
+  `;
 }
 
 function restaurantRowTemplate(restaurant, options = {}) {
@@ -4140,6 +4503,40 @@ function normalizeList(item) {
   };
 }
 
+function normalizeSharePack(item) {
+  return {
+    token: String(item.token || ""),
+    title: String(item.title || t("sharePack.title")),
+    description: String(item.description || ""),
+    owner: item.owner || null,
+    share_url: String(item.share_url || ""),
+    qr_url: String(item.qr_url || ""),
+    created_at: Number(item.created_at || 0),
+    items: Array.isArray(item.items)
+      ? item.items.map((entry) => ({
+          id: String(entry.id || ""),
+          note: String(entry.note || ""),
+          sort_order: Number(entry.sort_order || 0),
+          restaurant: entry.restaurant ? normalizeRestaurant({ ...entry.restaurant, dishes: entry.dishes || [] }) : null,
+          dishes: Array.isArray(entry.dishes) ? entry.dishes.map(normalizeDish) : [],
+        }))
+      : [],
+  };
+}
+
+function normalizeSharePackSummary(item) {
+  return {
+    token: String(item.token || ""),
+    title: String(item.title || t("sharePack.title")),
+    description: String(item.description || ""),
+    created_at: Number(item.created_at || 0),
+    item_count: Number(item.item_count || 0),
+    share_url: String(item.share_url || ""),
+    qr_url: String(item.qr_url || ""),
+    card_url: String(item.card_url || ""),
+  };
+}
+
 function listFilterOrder() {
   try {
     const parsed = JSON.parse(localStorage.getItem(LIST_FILTER_ORDER_KEY) || "[]");
@@ -4219,6 +4616,30 @@ function exportRestaurants() {
 function getShareToken() {
   const match = location.pathname.match(/^\/share\/([^/]+)/);
   return match ? match[1] : "";
+}
+
+function getSharePackToken() {
+  const match = location.pathname.match(/^\/share-pack\/([^/]+)/);
+  return match ? match[1] : "";
+}
+
+function rememberPendingSharePackListId(listId) {
+  if (!listId) return;
+  try {
+    sessionStorage.setItem(PENDING_SHARE_PACK_LIST_KEY, String(listId));
+  } catch {
+    // Ignore storage failures; the copied list still exists in My Lists.
+  }
+}
+
+function takePendingSharePackListId() {
+  try {
+    const listId = sessionStorage.getItem(PENDING_SHARE_PACK_LIST_KEY);
+    sessionStorage.removeItem(PENDING_SHARE_PACK_LIST_KEY);
+    return listId || "";
+  } catch {
+    return "";
+  }
 }
 
 function shortUserName(user) {

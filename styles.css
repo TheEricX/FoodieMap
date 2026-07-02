@@ -1000,6 +1000,7 @@ body.is-topbar-elevated .layout::before {
 
 .lists-stage,
 .discovery-stage,
+.share-pack-stage,
 .admin-login-stage,
 .admin-stage {
   min-width: 0;
@@ -1016,6 +1017,7 @@ body.is-topbar-elevated .layout::before {
 
 .lists-stage::-webkit-scrollbar,
 .discovery-stage::-webkit-scrollbar,
+.share-pack-stage::-webkit-scrollbar,
 .admin-login-stage::-webkit-scrollbar,
 .admin-stage::-webkit-scrollbar,
 .add-spots-list::-webkit-scrollbar {
@@ -1024,6 +1026,7 @@ body.is-topbar-elevated .layout::before {
 
 .lists-stage::-webkit-scrollbar-track,
 .discovery-stage::-webkit-scrollbar-track,
+.share-pack-stage::-webkit-scrollbar-track,
 .admin-login-stage::-webkit-scrollbar-track,
 .admin-stage::-webkit-scrollbar-track,
 .add-spots-list::-webkit-scrollbar-track {
@@ -1032,6 +1035,7 @@ body.is-topbar-elevated .layout::before {
 
 .lists-stage::-webkit-scrollbar-thumb,
 .discovery-stage::-webkit-scrollbar-thumb,
+.share-pack-stage::-webkit-scrollbar-thumb,
 .admin-login-stage::-webkit-scrollbar-thumb,
 .admin-stage::-webkit-scrollbar-thumb,
 .add-spots-list::-webkit-scrollbar-thumb {
@@ -2879,6 +2883,292 @@ body.is-topbar-elevated .layout::before {
 
 .share-dish-item small {
   color: var(--secondary-dark);
+}
+
+.share-pack-form {
+  width: min(760px, calc(100vw - 24px));
+}
+
+.share-pack-picker {
+  display: grid;
+  gap: 10px;
+  max-height: min(42dvh, 360px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.share-pack-option {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(217, 197, 183, 0.86);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 250, 244, 0.9);
+  padding: 12px;
+}
+
+.share-pack-restaurant-check,
+.share-pack-dishes label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+}
+
+.share-pack-restaurant-check strong,
+.share-pack-restaurant-check small {
+  display: block;
+}
+
+.share-pack-restaurant-check small,
+.share-pack-dishes p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.share-pack-dishes {
+  display: grid;
+  gap: 6px;
+  padding-left: 26px;
+}
+
+.share-pack-dishes label {
+  min-height: 32px;
+  border: 1px solid rgba(217, 197, 183, 0.74);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.84);
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.share-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  gap: 12px;
+  align-items: end;
+  border: 1px solid rgba(217, 197, 183, 0.86);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 250, 244, 0.82);
+  padding: 12px;
+}
+
+.share-pack-card-preview {
+  display: grid;
+  max-height: 220px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.share-pack-card-preview img {
+  width: 100%;
+  max-height: 204px;
+  height: auto;
+  object-fit: contain;
+}
+
+.share-actions [hidden] {
+  display: none;
+}
+
+.share-pack-history-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.share-pack-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.share-pack-history-card {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  border: 1px solid rgba(217, 197, 183, 0.86);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 250, 244, 0.9);
+  padding: 9px;
+}
+
+.share-pack-history-poster {
+  position: relative;
+  display: block;
+  width: 76px;
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background:
+    linear-gradient(rgba(255, 250, 244, 0.62), rgba(255, 250, 244, 0.62)),
+    repeating-linear-gradient(135deg, #fffdf8 0 9px, #efe4d8 9px 18px);
+  overflow: hidden;
+}
+
+.share-pack-history-poster::after {
+  content: "QR";
+  position: absolute;
+  inset: auto 8px 8px;
+  display: grid;
+  height: 26px;
+  place-items: center;
+  border: 1px solid rgba(139, 106, 87, 0.38);
+  border-radius: 999px;
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.share-pack-history-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.share-pack-history-poster img[hidden] {
+  display: none;
+}
+
+.share-pack-history-main {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.share-pack-history-main strong,
+.share-pack-history-main small {
+  display: block;
+}
+
+.share-pack-history-main small,
+.share-pack-history-main p {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.share-pack-history-main p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.share-pack-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.share-pack-history-action {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(139, 106, 87, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.92);
+  color: var(--primary-dark);
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.share-pack-stage {
+  min-width: 0;
+  overflow: auto;
+  padding: clamp(16px, 1.8vw, 28px);
+}
+
+.share-pack-page {
+  display: grid;
+  gap: 16px;
+  width: min(860px, 100%);
+  margin: 0 auto;
+}
+
+.share-pack-public-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+}
+
+.share-pack-public-head h1 {
+  margin: 4px 0 8px;
+  color: var(--primary-dark);
+  font-size: clamp(34px, 7vw, 56px);
+  line-height: 1;
+}
+
+.share-pack-public-head p:not(.eyebrow) {
+  margin: 0 0 10px;
+  color: #594a42;
+}
+
+.share-pack-public-list {
+  display: grid;
+  gap: 12px;
+}
+
+.share-pack-public-card {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  border: 1px solid rgba(217, 197, 183, 0.86);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 250, 244, 0.9);
+  padding: 12px;
+}
+
+.share-pack-public-main {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.share-pack-public-main small,
+.share-pack-public-main p {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.share-pack-public-dishes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.share-pack-public-dishes span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(139, 106, 87, 0.46);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.88);
+  padding: 4px 8px;
+  color: var(--primary-dark);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.share-pack-public-dishes img {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .meta-row span,
@@ -4822,6 +5112,74 @@ body.is-topbar-elevated .layout::before {
 @media (max-width: 720px) {
   .detail-drawer {
     width: 100vw;
+  }
+
+  .share-pack-form {
+    width: 100%;
+  }
+
+  .share-pack-picker {
+    max-height: 38dvh;
+  }
+
+  .share-pack-option {
+    gap: 7px;
+    border-radius: 14px;
+    padding: 10px;
+  }
+
+  .share-pack-dishes {
+    padding-left: 0;
+  }
+
+  .share-result {
+    grid-template-columns: 1fr;
+  }
+
+  .share-pack-card-preview {
+    width: min(220px, 100%);
+    max-height: 260px;
+    justify-self: center;
+  }
+
+  .share-pack-card-preview img {
+    max-height: 244px;
+  }
+
+  .share-pack-history-card {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 9px;
+    border-radius: 14px;
+    padding: 8px;
+  }
+
+  .share-pack-history-poster {
+    width: 64px;
+    border-radius: 9px;
+  }
+
+  .share-pack-history-action {
+    min-height: 31px;
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .share-pack-public-head {
+    grid-template-columns: 1fr;
+  }
+
+  .share-pack-public-head h1 {
+    font-size: clamp(30px, 9vw, 42px);
+  }
+
+  .share-pack-public-head .primary-button {
+    width: 100%;
+  }
+
+  .share-pack-public-card {
+    grid-template-columns: 50px minmax(0, 1fr);
+    border-radius: 14px;
+    padding: 10px;
   }
 
   .detail-form-grid,

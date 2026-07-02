@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260628-map-pan" />
+    <link rel="stylesheet" href="/styles.css?v=20260701-share-pack" />
   </head>
   <body>
     <main class="app-shell">
@@ -229,11 +229,26 @@
                   <p class="eyebrow" data-i18n="discovery.publicLists">PUBLIC LISTS</p>
                   <strong data-i18n="discovery.publishedBy">Published by food explorers</strong>
                 </div>
+                <button class="secondary-button compact-action" id="openSharePackDialog" type="button" data-i18n="button.createSharePack">Create Share Pack</button>
               </div>
               <div class="list-grid discovery-grid" id="discoveryGrid"></div>
+              <section class="share-pack-history-panel" id="sharePackHistoryPanel" hidden>
+                <div class="section-head">
+                  <div>
+                    <p class="eyebrow" data-i18n="sharePack.historyEyebrow">PRIVATE HISTORY</p>
+                    <strong data-i18n="sharePack.historyTitle">My Share Packs</strong>
+                  </div>
+                </div>
+                <p class="form-help" data-i18n="sharePack.historyHelp">Links and cards you generated from Discovery.</p>
+                <div class="share-pack-history-list" id="sharePackHistoryList"></div>
+              </section>
             </section>
             <section class="panel-surface list-detail-panel" id="discoveryDetail"></section>
           </div>
+        </section>
+
+        <section class="share-pack-stage app-view" id="sharePackView" data-view-panel="share-pack" hidden>
+          <section class="panel-surface share-pack-page" id="sharePackPage"></section>
         </section>
 
         <section class="admin-login-stage app-view" id="adminLoginView" data-view-panel="admin-login" hidden>
@@ -551,6 +566,45 @@
         </form>
       </dialog>
 
+      <dialog class="modal" id="sharePackDialog">
+        <form class="modal-card share-pack-form" id="sharePackForm" method="dialog">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow" data-i18n="sharePack.mode">PRIVATE SHARE</p>
+              <h2 data-i18n="sharePack.title">Create Share Pack</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeSharePackDialog">×</button>
+          </div>
+          <p class="form-help" id="sharePackHelp" data-i18n="sharePack.help">
+            Choose restaurants and dishes, then generate a private link and QR code.
+          </p>
+          <label>
+            <span data-i18n="sharePack.nameLabel">Title</span>
+            <input name="title" required maxlength="160" placeholder="Weekend ramen picks" data-i18n-placeholder="sharePack.namePlaceholder" />
+          </label>
+          <label>
+            <span data-i18n="sharePack.descriptionLabel">Description</span>
+            <textarea name="description" rows="3" placeholder="Why these spots are worth trying" data-i18n-placeholder="sharePack.descriptionPlaceholder"></textarea>
+          </label>
+          <div class="share-pack-picker" id="sharePackPicker"></div>
+          <div class="share-result" id="sharePackResult" hidden>
+            <label>
+              <span data-i18n="sharePack.link">Private link</span>
+              <input id="sharePackUrlInput" readonly />
+            </label>
+            <a class="share-pack-card-preview" id="sharePackImageLink" href="#" target="_blank" rel="noreferrer">
+              <img id="sharePackCardImage" alt="Share recommendation card" data-i18n-alt="sharePack.cardAlt" />
+            </a>
+          </div>
+          <div class="share-actions">
+            <button class="primary-button" id="createSharePackButton" type="submit" data-i18n="button.generateSharePack">Generate Link</button>
+            <button class="outline-button" id="copySharePackButton" type="button" data-i18n="button.copy">Copy</button>
+            <a class="outline-button" id="openSharePackImage" href="#" target="_blank" rel="noreferrer" data-i18n="button.openImage" hidden>Open Image</a>
+            <a class="outline-button" id="downloadSharePackImage" href="#" download data-i18n="button.downloadImage" hidden>Download Image</a>
+          </div>
+        </form>
+      </dialog>
+
       <dialog class="modal" id="listDialog">
         <form class="modal-card" id="listForm" method="dialog">
           <div class="modal-head">
@@ -616,6 +670,6 @@
         </form>
       </dialog>
     </main>
-    <script src="/app.js?v=20260628-map-pan"></script>
+    <script src="/app.js?v=20260701-share-pack"></script>
   </body>
 </html>

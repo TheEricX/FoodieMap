@@ -8,6 +8,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added private Discovery share packs with selected restaurants/dishes, public preview links, saveable PNG recommendation cards, personal history, and login-gated one-click copying into My Lists.
 - Added Google Maps link autofill for restaurant name, address, and coordinates, with optional Google Geocoding reverse lookup when links only include coordinates.
 - Added mouse and touch panning, touchpad pinch zoom, and a one-tap control to center the relative map back on the user marker.
 - Added an admin user management area for account suspension, soft deletion/restoration, manual Free/Paid plan changes, and Free account restaurant limits.

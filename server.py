@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 import os
+import io
 import secrets
 import smtplib
 import sqlite3
@@ -20,7 +21,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -72,6 +73,8 @@ PASSWORD_HASH_ITERATIONS = 310_000
 EMAIL_CODE_TTL_SECONDS = 10 * 60
 EMAIL_CODE_REQUEST_INTERVAL_SECONDS = 60
 EMAIL_CODE_MAX_ATTEMPTS = 5
+SHARE_CARD_WIDTH = 960
+SHARE_CARD_HEIGHT = 1280
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -125,6 +128,18 @@ class DishPatch(BaseModel):
 
 class ShareIn(BaseModel):
     selected_dish_ids: list[str] = Field(default_factory=list)
+
+
+class SharePackItemIn(BaseModel):
+    restaurant_id: str
+    dish_ids: list[str] = Field(default_factory=list)
+    note: str = ""
+
+
+class SharePackIn(BaseModel):
+    title: str = Field(min_length=1, max_length=160)
+    description: str = ""
+    items: list[SharePackItemIn] = Field(default_factory=list)
 
 
 class ListIn(BaseModel):
@@ -296,6 +311,34 @@ def init_db() -> None:
               created_at INTEGER NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS share_packs (
+              id TEXT PRIMARY KEY,
+              owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              token TEXT NOT NULL UNIQUE,
+              title TEXT NOT NULL,
+              description TEXT NOT NULL DEFAULT '',
+              snapshot_json TEXT NOT NULL DEFAULT '',
+              created_at INTEGER NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS share_pack_items (
+              id TEXT PRIMARY KEY,
+              share_pack_id TEXT NOT NULL REFERENCES share_packs(id) ON DELETE CASCADE,
+              restaurant_id TEXT NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+              note TEXT NOT NULL DEFAULT '',
+              snapshot_json TEXT NOT NULL DEFAULT '',
+              sort_order INTEGER NOT NULL DEFAULT 0,
+              created_at INTEGER NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS share_pack_dishes (
+              id TEXT PRIMARY KEY,
+              share_pack_item_id TEXT NOT NULL REFERENCES share_pack_items(id) ON DELETE CASCADE,
+              dish_id TEXT NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
+              sort_order INTEGER NOT NULL DEFAULT 0,
+              created_at INTEGER NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS lists (
               id TEXT PRIMARY KEY,
               owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -339,6 +382,8 @@ def init_db() -> None:
         ensure_column(db, "users", "last_login_at", "INTEGER")
         ensure_column(db, "users", "suspended_at", "INTEGER")
         ensure_column(db, "users", "deleted_at", "INTEGER")
+        ensure_column(db, "share_packs", "snapshot_json", "TEXT NOT NULL DEFAULT ''")
+        ensure_column(db, "share_pack_items", "snapshot_json", "TEXT NOT NULL DEFAULT ''")
         db.execute("UPDATE users SET updated_at = created_at WHERE updated_at = 0")
         duplicate = db.execute(
             """
@@ -784,6 +829,74 @@ def restaurant_json(db: sqlite3.Connection, row: sqlite3.Row, include_dishes: bo
         ).fetchall()
         payload["dishes"] = [dish_json(dish) for dish in dishes]
     return payload
+
+
+def share_pack_card_url(token: str) -> str:
+    return f"{APP_BASE_URL}/api/share-packs/{token}/card.png"
+
+
+def share_pack_qr_url(token: str) -> str:
+    return f"{APP_BASE_URL}/api/share-packs/{token}/qr.svg"
+
+
+def share_pack_item_snapshot(restaurant: dict[str, Any], dishes: list[dict[str, Any]]) -> str:
+    payload = {
+        "restaurant": {key: restaurant.get(key) for key in [
+            "id",
+            "name",
+            "address",
+            "lat",
+            "lng",
+            "google_url",
+            "status",
+            "visit_count",
+            "personal_rating",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]},
+        "dishes": [
+            {key: dish.get(key) for key in [
+                "id",
+                "restaurant_id",
+                "name",
+                "dish_status",
+                "rating",
+                "image_url",
+                "notes",
+                "created_at",
+                "updated_at",
+            ]}
+            for dish in dishes
+        ],
+    }
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def parse_share_pack_snapshot(raw: str) -> Optional[dict[str, Any]]:
+    if not raw:
+        return None
+    try:
+        snapshot = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(snapshot, dict) or not isinstance(snapshot.get("restaurant"), dict):
+        return None
+    dishes = snapshot.get("dishes")
+    if not isinstance(dishes, list):
+        snapshot["dishes"] = []
+    return snapshot
+
+
+def parse_share_pack_items_snapshot(raw: str) -> list[dict[str, Any]]:
+    if not raw:
+        return []
+    try:
+        snapshot = json.loads(raw)
+    except json.JSONDecodeError:
+        return []
+    items = snapshot.get("items") if isinstance(snapshot, dict) else None
+    return items if isinstance(items, list) else []
 
 
 def owned_restaurant(db: sqlite3.Connection, restaurant_id: str, user_id: str) -> sqlite3.Row:
@@ -1464,6 +1577,356 @@ def share_payload(token: str) -> dict[str, Any]:
                 "dishes": dishes,
             }
         }
+
+
+def share_pack_url(token: str) -> str:
+    return f"{APP_BASE_URL}/share-pack/{token}"
+
+
+def share_pack_summary(row: sqlite3.Row, item_count: int) -> dict[str, Any]:
+    return {
+        "token": row["token"],
+        "title": row["title"],
+        "description": row["description"],
+        "created_at": row["created_at"],
+        "item_count": item_count,
+        "share_url": share_pack_url(row["token"]),
+        "qr_url": share_pack_qr_url(row["token"]),
+        "card_url": share_pack_card_url(row["token"]),
+    }
+
+
+def share_pack_payload(token: str) -> dict[str, Any]:
+    with connect() as db:
+        pack = db.execute("SELECT * FROM share_packs WHERE token = ?", (token,)).fetchone()
+        if not pack:
+            raise HTTPException(status_code=404, detail="Share pack not found")
+        owner = db.execute("SELECT * FROM users WHERE id = ?", (pack["owner_user_id"],)).fetchone()
+        items = db.execute(
+            "SELECT * FROM share_pack_items WHERE share_pack_id = ? ORDER BY sort_order ASC, created_at ASC",
+            (pack["id"],),
+        ).fetchall()
+        item_payloads: list[dict[str, Any]] = []
+        for item in items:
+            snapshot = parse_share_pack_snapshot(item["snapshot_json"])
+            if snapshot:
+                restaurant_payload = snapshot["restaurant"]
+                dish_payloads = snapshot["dishes"]
+            else:
+                restaurant = db.execute("SELECT * FROM restaurants WHERE id = ?", (item["restaurant_id"],)).fetchone()
+                if not restaurant:
+                    continue
+                dish_rows = db.execute(
+                    """
+                    SELECT dishes.* FROM share_pack_dishes
+                    JOIN dishes ON dishes.id = share_pack_dishes.dish_id
+                    WHERE share_pack_dishes.share_pack_item_id = ? AND dishes.restaurant_id = ?
+                    ORDER BY share_pack_dishes.sort_order ASC, share_pack_dishes.created_at ASC
+                    """,
+                    (item["id"], restaurant["id"]),
+                ).fetchall()
+                restaurant_payload = restaurant_json(db, restaurant, include_dishes=False)
+                dish_payloads = [dish_json(row) for row in dish_rows]
+            item_payloads.append(
+                {
+                    "id": item["id"],
+                    "note": item["note"],
+                    "sort_order": item["sort_order"],
+                    "restaurant": restaurant_payload,
+                    "dishes": dish_payloads,
+                }
+            )
+        if not item_payloads:
+            item_payloads = parse_share_pack_items_snapshot(pack["snapshot_json"])
+        return {
+            "share_pack": {
+                "token": pack["token"],
+                "title": pack["title"],
+                "description": pack["description"],
+                "created_at": pack["created_at"],
+                "owner": public_owner(dict(owner)) if owner else None,
+                "share_url": share_pack_url(pack["token"]),
+                "qr_url": share_pack_qr_url(pack["token"]),
+                "card_url": share_pack_card_url(pack["token"]),
+                "items": item_payloads,
+            }
+        }
+
+
+@app.get("/api/share-packs")
+def get_share_packs(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    with connect() as db:
+        rows = db.execute(
+            "SELECT * FROM share_packs WHERE owner_user_id = ? ORDER BY created_at DESC",
+            (user["id"],),
+        ).fetchall()
+        packs = []
+        for row in rows:
+            item_count = db.execute("SELECT COUNT(*) AS count FROM share_pack_items WHERE share_pack_id = ?", (row["id"],)).fetchone()
+            count = item_count["count"] if item_count else 0
+            if not count:
+                count = len(parse_share_pack_items_snapshot(row["snapshot_json"]))
+            packs.append(share_pack_summary(row, count))
+        return {"share_packs": packs}
+
+
+@app.post("/api/share-packs")
+def create_share_pack(payload: SharePackIn, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    if not payload.items:
+        raise HTTPException(status_code=422, detail="Choose at least one restaurant")
+    token = secrets.token_urlsafe(16)
+    timestamp = now()
+    pack_id = new_id()
+    pack_snapshot_items: list[dict[str, Any]] = []
+    with connect() as db:
+        db.execute(
+            "INSERT INTO share_packs (id, owner_user_id, token, title, description, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (pack_id, user["id"], token, payload.title.strip(), payload.description.strip(), timestamp),
+        )
+        for index, item in enumerate(payload.items):
+            restaurant = owned_restaurant(db, item.restaurant_id, user["id"])
+            selected_dishes: list[dict[str, Any]] = []
+            valid_ids: set[str] = set()
+            if item.dish_ids:
+                placeholders = ",".join("?" for _ in item.dish_ids)
+                dish_rows = db.execute(
+                    f"SELECT * FROM dishes WHERE restaurant_id = ? AND id IN ({placeholders})",
+                    [restaurant["id"], *item.dish_ids],
+                ).fetchall()
+                dish_by_id = {row["id"]: dish_json(row) for row in dish_rows}
+                valid_ids = set(dish_by_id)
+                selected_dishes = [dish_by_id[dish_id] for dish_id in item.dish_ids if dish_id in dish_by_id]
+            item_id = new_id()
+            db.execute(
+                """
+                INSERT INTO share_pack_items (id, share_pack_id, restaurant_id, note, snapshot_json, sort_order, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    item_id,
+                    pack_id,
+                    restaurant["id"],
+                    item.note.strip(),
+                    share_pack_item_snapshot(restaurant_json(db, restaurant, include_dishes=False), selected_dishes),
+                    index,
+                    timestamp,
+                ),
+            )
+            if valid_ids:
+                for dish_index, dish_id in enumerate([dish_id for dish_id in item.dish_ids if dish_id in valid_ids]):
+                    db.execute(
+                        """
+                        INSERT INTO share_pack_dishes (id, share_pack_item_id, dish_id, sort_order, created_at)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (new_id(), item_id, dish_id, dish_index, timestamp),
+                    )
+            pack_snapshot_items.append(
+                {
+                    "id": item_id,
+                    "note": item.note.strip(),
+                    "sort_order": index,
+                    "restaurant": restaurant_json(db, restaurant, include_dishes=False),
+                    "dishes": selected_dishes,
+                }
+            )
+        db.execute(
+            "UPDATE share_packs SET snapshot_json = ? WHERE id = ?",
+            (json.dumps({"items": pack_snapshot_items}, ensure_ascii=False), pack_id),
+        )
+    return {"share_url": share_pack_url(token), "qr_url": share_pack_qr_url(token), "card_url": share_pack_card_url(token), "token": token}
+
+
+@app.get("/api/share-packs/{token}")
+def get_share_pack(token: str) -> dict[str, Any]:
+    return share_pack_payload(token)
+
+
+def share_card_font(size: int, bold: bool = False):
+    from PIL import ImageFont
+
+    candidates = [
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc" if bold else "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc" if bold else "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+        "/System/Library/Fonts/PingFang.ttc",
+        "/Library/Fonts/Arial Unicode.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    ]
+    for path in candidates:
+        if path and Path(path).exists():
+            try:
+                return ImageFont.truetype(path, size=size)
+            except OSError:
+                continue
+    return ImageFont.load_default()
+
+
+def wrap_card_text(draw: Any, text: str, font: Any, max_width: int, max_lines: int) -> list[str]:
+    words = list(text) if any("\u4e00" <= character <= "\u9fff" for character in text) else text.split()
+    lines: list[str] = []
+    current = ""
+    separator = "" if words and len(words[0]) == 1 else " "
+    for word in words:
+        candidate = f"{current}{separator if current else ''}{word}".strip()
+        if draw.textlength(candidate, font=font) <= max_width:
+            current = candidate
+            continue
+        if current:
+            lines.append(current)
+        current = word
+        if len(lines) >= max_lines:
+            break
+    if current and len(lines) < max_lines:
+        lines.append(current)
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+    if lines and draw.textlength(lines[-1], font=font) > max_width:
+        while lines[-1] and draw.textlength(f"{lines[-1]}...", font=font) > max_width:
+            lines[-1] = lines[-1][:-1]
+        lines[-1] = f"{lines[-1]}..."
+    elif len(lines) == max_lines and current and current != lines[-1]:
+        while lines[-1] and draw.textlength(f"{lines[-1]}...", font=font) > max_width:
+            lines[-1] = lines[-1][:-1]
+        lines[-1] = f"{lines[-1]}..."
+    return lines
+
+
+def share_pack_card_png(token: str) -> bytes:
+    from PIL import Image, ImageDraw
+    import qrcode
+
+    payload = share_pack_payload(token)["share_pack"]
+    image = Image.new("RGB", (SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT), "#fffaf4")
+    draw = ImageDraw.Draw(image)
+    background_dot = "#efe4d8"
+    for x in range(28, SHARE_CARD_WIDTH, 48):
+        for y in range(28, SHARE_CARD_HEIGHT, 48):
+            draw.ellipse((x, y, x + 4, y + 4), fill=background_dot)
+
+    margin = 72
+    card_box = (margin, margin, SHARE_CARD_WIDTH - margin, SHARE_CARD_HEIGHT - margin)
+    draw.rounded_rectangle(card_box, radius=34, fill="#fffdf8", outline="#d9c5b7", width=3)
+    draw.rounded_rectangle((margin + 26, margin + 28, margin + 268, margin + 84), radius=0, fill="#e7dfbf")
+
+    eyebrow_font = share_card_font(24, bold=True)
+    title_font = share_card_font(58, bold=True)
+    body_font = share_card_font(30)
+    meta_font = share_card_font(24, bold=True)
+    small_font = share_card_font(21)
+    draw.text((margin + 42, margin + 44), "PRIVATE RECOMMENDATION", fill="#647144", font=eyebrow_font)
+
+    y = margin + 118
+    for line in wrap_card_text(draw, payload["title"], title_font, SHARE_CARD_WIDTH - margin * 2 - 80, 2):
+        draw.text((margin + 42, y), line, fill="#3b2e2a", font=title_font)
+        y += 68
+    description = payload["description"] or "Scan to open this Gourmet Map recommendation."
+    y += 12
+    for line in wrap_card_text(draw, description, body_font, SHARE_CARD_WIDTH - margin * 2 - 80, 3):
+        draw.text((margin + 42, y), line, fill="#67554a", font=body_font)
+        y += 40
+
+    y += 24
+    items = payload["items"][:4]
+    for index, item in enumerate(items, start=1):
+        restaurant = item["restaurant"]
+        line = f"{index}. {restaurant['name']}"
+        draw.rounded_rectangle((margin + 42, y, SHARE_CARD_WIDTH - margin - 42, y + 72), radius=22, fill="#f6eee5", outline="#e0cbbd", width=2)
+        draw.text((margin + 66, y + 18), line, fill="#6b422d", font=meta_font)
+        y += 86
+    if len(payload["items"]) > 4:
+        draw.text((margin + 52, y + 4), f"+ {len(payload['items']) - 4} more spots in the link", fill="#8c7b70", font=small_font)
+
+    qr = qrcode.QRCode(border=1, box_size=12)
+    qr.add_data(payload["share_url"])
+    qr.make(fit=True)
+    qr_image = qr.make_image(fill_color="#3b2e2a", back_color="#fffdf8").convert("RGB")
+    qr_image = qr_image.resize((320, 320))
+    qr_x = (SHARE_CARD_WIDTH - 320) // 2
+    qr_y = SHARE_CARD_HEIGHT - margin - 420
+    draw.rounded_rectangle((qr_x - 24, qr_y - 24, qr_x + 344, qr_y + 344), radius=28, fill="#ffffff", outline="#d9c5b7", width=3)
+    image.paste(qr_image, (qr_x, qr_y))
+    draw.text((margin + 42, SHARE_CARD_HEIGHT - margin - 58), "Scan to view, sign in to save it to My Lists", fill="#8c7b70", font=small_font)
+
+    stream = io.BytesIO()
+    image.save(stream, format="PNG", optimize=True)
+    return stream.getvalue()
+
+
+@app.get("/api/share-packs/{token}/qr.svg")
+def get_share_pack_qr(token: str) -> Response:
+    share_pack_payload(token)
+    try:
+        import qrcode
+        import qrcode.image.svg
+    except ImportError as error:
+        raise HTTPException(status_code=500, detail="QR generation is not installed") from error
+    image = qrcode.make(share_pack_url(token), image_factory=qrcode.image.svg.SvgPathImage)
+    stream = io.BytesIO()
+    image.save(stream)
+    return Response(content=stream.getvalue(), media_type="image/svg+xml")
+
+
+@app.get("/api/share-packs/{token}/card.png")
+def get_share_pack_card(token: str) -> Response:
+    return Response(content=share_pack_card_png(token), media_type="image/png")
+
+
+@app.post("/api/share-packs/{token}/add")
+def add_share_pack(token: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    payload = share_pack_payload(token)["share_pack"]
+    timestamp = now()
+    new_list_id = new_id()
+    items = payload["items"]
+    with connect() as db:
+        require_restaurant_capacity(db, user, len(items))
+        db.execute(
+            """
+            INSERT INTO lists
+            (id, owner_user_id, title, description, visibility, cover_image_url, created_at, updated_at)
+            VALUES (?, ?, ?, ?, 'private', '', ?, ?)
+            """,
+            (new_list_id, user["id"], payload["title"], payload["description"], timestamp, timestamp),
+        )
+        for index, item in enumerate(items):
+            source = item["restaurant"]
+            restaurant_id = new_id()
+            db.execute(
+                """
+                INSERT INTO restaurants
+                (id, owner_user_id, name, address, lat, lng, google_url, status, visit_count, personal_rating, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'want_to_go', 0, ?, ?, ?, ?)
+                """,
+                (
+                    restaurant_id,
+                    user["id"],
+                    source["name"],
+                    source["address"],
+                    source["lat"],
+                    source["lng"],
+                    source["google_url"],
+                    source["personal_rating"],
+                    f"From share pack: {payload['title']}",
+                    timestamp,
+                    timestamp,
+                ),
+            )
+            for dish in item["dishes"]:
+                db.execute(
+                    """
+                    INSERT INTO dishes (id, restaurant_id, name, dish_status, rating, image_path, notes, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, '', ?, ?, ?)
+                    """,
+                    (new_id(), restaurant_id, dish["name"], dish["dish_status"], dish["rating"], dish["notes"], timestamp, timestamp),
+                )
+            db.execute(
+                """
+                INSERT INTO list_items (id, list_id, restaurant_id, note, sort_order, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (new_id(), new_list_id, restaurant_id, item["note"], index, timestamp),
+            )
+        row = owned_list(db, new_list_id, user["id"])
+        return {"list": list_json(db, row, include_items=True)}
 
 
 @app.get("/api/share/{token}")
