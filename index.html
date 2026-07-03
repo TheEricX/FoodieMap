@@ -500,16 +500,17 @@
 
           <input name="id" type="hidden" />
           <label>
+            <span data-i18n="spot.googleUrl">Maps link</span>
+            <input name="googleUrl" placeholder="Paste a Google Maps or Apple Maps link to detect name, address, and coordinates" data-i18n-placeholder="spot.googleUrlPlaceholder" />
+            <small class="form-help map-link-hint" data-i18n="maps.pasteHint">Paste a Google Maps or Apple Maps link here to auto-detect the restaurant name and location.</small>
+          </label>
+          <label>
             <span data-i18n="spot.name">Name</span>
             <input name="name" required placeholder="Auto-detected, or enter a restaurant name" data-i18n-placeholder="spot.namePlaceholder" />
           </label>
           <label>
             <span data-i18n="spot.address">Address</span>
             <input name="address" placeholder="Optional: record the address manually" data-i18n-placeholder="spot.addressPlaceholder" />
-          </label>
-          <label>
-            <span data-i18n="spot.googleUrl">Maps link</span>
-            <input name="googleUrl" placeholder="Paste a Google Maps or Apple Maps link to detect name, address, and coordinates" data-i18n-placeholder="spot.googleUrlPlaceholder" />
           </label>
           <div class="two-col">
             <label>

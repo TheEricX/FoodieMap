@@ -18,6 +18,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Moved the add-spot Maps link field to the top of the form so paste-first autofill is the primary flow.
+- Added an inline Maps link hint explaining that pasted links auto-detect restaurant name and location.
 - Added a compact mobile custom-list create button inside the Map/List list drawer.
 - Added a privacy notice and owner-only revoke action for private Share Packs so shared links, QR codes, and card images can be invalidated.
 - Added an initial signed-out login page while keeping public share links viewable without an account.
@@ -37,6 +39,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Made pasted map short links trigger autofill more reliably and use resolved Google Maps page metadata as a fallback for name and coordinates.
 - Kept the mobile language switch visible and horizontally aligned with the topbar actions in Map View and List View.
 - Let the mobile add-spot dialog close with a downward swipe while confirming before discarding unsaved form input.
 - Made the mobile selected spot sheet close on outside taps or downward swipes without triggering controls behind it.

@@ -3956,6 +3956,11 @@ body[data-view="login"] .top-actions {
   line-height: 1.45;
 }
 
+.map-link-hint {
+  font-weight: 600;
+  text-transform: none;
+}
+
 @media (max-width: 1100px) {
   .topbar {
     grid-template-columns: minmax(210px, 1fr) auto;

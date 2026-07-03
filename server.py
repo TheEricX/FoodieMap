@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import html as html_lib
 import hmac
 import json
 import os
 import io
+import re
 import secrets
 import smtplib
 import sqlite3
@@ -2211,7 +2213,7 @@ def copy_discovery_list(list_id: str, user: dict[str, Any] = Depends(require_use
 
 
 @app.get("/api/resolve-map-link")
-def resolve_map_link(url: str) -> dict[str, str]:
+def resolve_map_link(url: str) -> dict[str, Any]:
     target = urllib.parse.urlparse(url.strip())
     if target.scheme not in {"http", "https"} or target.netloc not in ALLOWED_SHORT_HOSTS:
         raise HTTPException(status_code=400, detail="Only Google Maps and Apple Maps links are supported.")
@@ -2225,14 +2227,63 @@ def resolve_map_link(url: str) -> dict[str, str]:
         )
         with urllib.request.urlopen(request, timeout=8) as response:
             final_url = response.geturl()
+            content_type = response.headers.get("Content-Type", "")
+            body = response.read(700_000) if "text/html" in content_type else b""
     except (urllib.error.URLError, TimeoutError) as error:
         raise HTTPException(status_code=502, detail="Short link expansion failed. Open it in a browser and copy the full link.") from error
-    return {"url": final_url}
+    return {"url": final_url, "place": resolved_map_place(final_url, body)}
 
 
 @app.get("/api/resolve-google-link")
-def resolve_google_link(url: str) -> dict[str, str]:
+def resolve_google_link(url: str) -> dict[str, Any]:
     return resolve_map_link(url)
+
+
+def resolved_map_place(final_url: str, html_body: bytes) -> dict[str, Any]:
+    html_text = html_body.decode("utf-8", errors="ignore") if html_body else ""
+    name = google_maps_meta_title(html_text)
+    lat, lng = extract_coordinates_from_text(final_url) or extract_coordinates_from_text(html_text) or (None, None)
+    place: dict[str, Any] = {}
+    if name:
+        place["name"] = name
+    if lat is not None and lng is not None:
+        place["lat"] = lat
+        place["lng"] = lng
+    return place
+
+
+def google_maps_meta_title(html_text: str) -> str:
+    for pattern in [
+        r'<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']',
+        r'<meta\s+content=["\']([^"\']+)["\']\s+property=["\']og:title["\']',
+        r"<title>(.*?)</title>",
+    ]:
+        match = re.search(pattern, html_text, flags=re.I | re.S)
+        if match:
+            title = html_lib.unescape(match.group(1)).strip()
+            title = re.sub(r"\s*[-|]\s*Google Maps\s*$", "", title, flags=re.I).strip()
+            if title.lower() in {"google maps", "maps", "google"}:
+                continue
+            return title
+    return ""
+
+
+def extract_coordinates_from_text(text: str) -> tuple[float | None, float | None] | None:
+    decoded = urllib.parse.unquote(text or "")
+    patterns = [
+        r"!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)",
+        r"(?:center|markers|ll|q)=(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)",
+        r"@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, decoded)
+        if not match:
+            continue
+        lat = float(match.group(1))
+        lng = float(match.group(2))
+        if abs(lat) <= 90 and abs(lng) <= 180:
+            return lat, lng
+    return None
 
 
 @app.post("/api/reverse-geocode")

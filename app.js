@@ -106,6 +106,7 @@ const translations = {
     "google.addressLookup": "Looking up the address from coordinates...",
     "google.addressLookupFailed": "Coordinates found. Address was not available in the link; add a Google Geocoding API key in settings to auto-fill it.",
     "maps.help": "Paste a Google Maps or Apple Maps link. Short links will be expanded by the local service.",
+    "maps.pasteHint": "Paste a Google Maps or Apple Maps link here to auto-detect the restaurant name and location.",
     "maps.shortExpanding": "Expanding map link...",
     "maps.shortExpanded": "Map link expanded and detectable restaurant details filled.",
     "maps.coordsFound": "Restaurant details detected from the map link.",
@@ -529,6 +530,7 @@ const translations = {
     "google.addressLookup": "正在用坐标查询地址...",
     "google.addressLookupFailed": "已识别坐标。这个链接里没有地址；如需自动填地址，请在设置里填写 Google Geocoding API Key。",
     "maps.help": "可粘贴 Google Maps 或 Apple Maps 链接；短链接会由本地服务自动展开。",
+    "maps.pasteHint": "在这里粘贴 Google Maps 或 Apple Maps 链接，会自动识别餐厅名称和位置。",
     "maps.shortExpanding": "正在展开地图链接...",
     "maps.shortExpanded": "地图链接已展开，并已填入可识别的餐厅信息。",
     "maps.coordsFound": "已从地图链接识别餐厅信息。",
@@ -1354,6 +1356,8 @@ function bindEvents() {
   });
   elements.openSharePackDialog?.addEventListener("click", openSharePackDialog);
   elements.googleUrlInput.addEventListener("input", autofillFromMapsUrl);
+  elements.googleUrlInput.addEventListener("change", autofillFromMapsUrl);
+  elements.googleUrlInput.addEventListener("paste", () => window.setTimeout(autofillFromMapsUrl, 0));
   elements.restaurantForm.addEventListener("submit", saveRestaurantFromForm);
   elements.addDishButton.addEventListener("click", addDishFromEditor);
   elements.closeShareDialog.addEventListener("click", () => elements.shareDialog.close());
@@ -2911,7 +2915,7 @@ async function pasteAndAddFromClipboard() {
   if (!canAddOneRestaurant()) return;
   try {
     const text = (await navigator.clipboard.readText()).trim();
-    const mapUrl = extractMapUrl(text);
+    const mapUrl = sanitizeMapUrl(extractMapUrl(text));
     if (!mapUrl) throw new Error(t("paste.noMapUrl"));
     const parsed = await parseAnyMapLink(mapUrl);
     const name = parsed.name || "New Spot";
@@ -2964,7 +2968,10 @@ function setPasteStatus(message) {
 
 async function autofillFromMapsUrl() {
   const form = elements.restaurantForm.elements;
-  const mapUrl = elements.googleUrlInput.value.trim();
+  const mapUrl = sanitizeMapUrl(elements.googleUrlInput.value);
+  if (mapUrl && mapUrl !== elements.googleUrlInput.value.trim()) {
+    elements.googleUrlInput.value = mapUrl;
+  }
   if (isResolvableMapLink(mapUrl)) {
     elements.formHelp.textContent = t("maps.shortExpanding");
     window.clearTimeout(shortLinkResolveTimer);
@@ -3005,17 +3012,32 @@ function fillMapFields(form, parsed) {
 }
 
 async function parseAnyMapLink(url) {
+  url = sanitizeMapUrl(url);
+  let resolvedPlace = null;
   if (isResolvableMapLink(url)) {
     const endpoint = new URL("/api/resolve-map-link", window.location.origin);
     endpoint.searchParams.set("url", url);
     const data = await api(endpoint.toString());
     url = data.url;
+    resolvedPlace = normalizeResolvedMapPlace(data.place);
   }
   const parsed = parseMapUrl(url);
-  if (parsed?.lat == null || parsed?.lng == null) {
+  const place = { ...(resolvedPlace || {}), ...(parsed || {}) };
+  if (place?.lat == null || place?.lng == null) {
     throw new Error(t("maps.noCoords"));
   }
-  return { ...(await enrichMapPlace(parsed)), url };
+  return { ...(await enrichMapPlace(place)), url };
+}
+
+function normalizeResolvedMapPlace(place) {
+  if (!place || typeof place !== "object") return null;
+  const coordinates = validateCoordinates(place.lat, place.lng);
+  const normalized = { ...(coordinates || {}) };
+  const name = String(place.name || "").trim();
+  const address = String(place.address || "").trim();
+  if (name) normalized.name = name;
+  if (address) normalized.address = address;
+  return Object.keys(normalized).length ? normalized : null;
 }
 
 async function enrichMapPlace(parsed, { reportStatus = false } = {}) {
@@ -3080,7 +3102,7 @@ function parseGoogleMapsUrl(url) {
   const atMatch = decoded.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
   const bangMatch = decoded.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
   const queryMatch = decoded.match(/[?&](?:q|query|destination|ll)=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
-  const coordinates = atMatch || bangMatch || queryMatch;
+  const coordinates = bangMatch || queryMatch || atMatch;
   const place = parseGoogleMapsPlace(decoded);
   if (!coordinates) return place.name || place.address ? place : null;
   return { lat: Number(coordinates[1]), lng: Number(coordinates[2]), ...place };
@@ -3207,6 +3229,15 @@ function extractAppleMapsUrl(text) {
 
 function extractMapUrl(text) {
   return extractGoogleMapsUrl(text) || extractAppleMapsUrl(text);
+}
+
+function sanitizeMapUrl(value) {
+  let url = String(value || "").trim();
+  url = url.replace(/^[<"'“”‘’\s]+/, "");
+  while (/[>"'“”‘’\s),.;:!?，。；：！？]+$/.test(url)) {
+    url = url.slice(0, -1);
+  }
+  return url;
 }
 
 async function getLocationPermissionState() {
