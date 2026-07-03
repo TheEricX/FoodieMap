@@ -3850,6 +3850,10 @@ body[data-view="login"] .top-actions {
   max-width: 560px;
 }
 
+.share-card {
+  max-width: 640px;
+}
+
 .map-choice-card {
   max-width: 420px;
 }
@@ -5772,6 +5776,112 @@ body[data-view="login"] .top-actions {
     min-height: 42px;
     border-radius: 14px;
     padding: 9px 12px;
+    font-size: 16px;
+  }
+
+  .share-card,
+  .map-choice-card {
+    align-content: start;
+    gap: 12px;
+    min-height: auto;
+    max-height: calc(100dvh - 20px);
+    width: min(100%, calc(100vw - 18px));
+    margin: 10px auto;
+    border: 1px solid rgba(217, 197, 183, 0.86);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .share-card .modal-head,
+  .map-choice-card .modal-head {
+    align-items: start;
+    gap: 12px;
+  }
+
+  .share-card .modal-head h2,
+  .map-choice-card .modal-head h2 {
+    font-size: clamp(30px, 9vw, 40px);
+    line-height: 1.04;
+  }
+
+  .share-card .modal-head .eyebrow,
+  .map-choice-card .modal-head .eyebrow {
+    margin-bottom: 3px;
+    font-size: 11px;
+  }
+
+  .share-card #closeShareDialog,
+  .map-choice-card #closeMapChoiceDialog {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    border: 2px solid var(--line);
+    background: rgba(255, 250, 244, 0.9);
+    box-shadow: 0 3px 0 rgba(139, 106, 87, 0.18);
+  }
+
+  .share-card > .form-help,
+  .map-choice-card > .form-help {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .map-choice-card {
+    width: min(100%, calc(100vw - 28px));
+    margin: 14px auto;
+  }
+
+  .map-choice-card .map-choice-actions {
+    gap: 10px;
+  }
+
+  .map-choice-card .map-choice-actions .primary-button,
+  .map-choice-card .map-choice-actions .secondary-button {
+    min-height: 50px;
+    padding: 10px 14px;
+    font-size: 16px;
+  }
+
+  .share-card .share-dish-list {
+    gap: 8px;
+  }
+
+  .share-card .share-dish-item {
+    min-height: 64px;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 6px 10px;
+    border-radius: 16px;
+    padding: 10px 12px;
+  }
+
+  .share-card .share-dish-item small {
+    grid-column: 2;
+    font-size: 12px;
+  }
+
+  .share-card label {
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .share-card input {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+
+  .share-card .card-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(104px, 0.85fr);
+    gap: 10px;
+  }
+
+  .share-card .card-actions .primary-button,
+  .share-card .card-actions .outline-button {
+    min-width: 0;
+    min-height: 48px;
+    padding: 10px 12px;
     font-size: 16px;
   }
 

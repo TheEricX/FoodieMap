@@ -18,6 +18,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Compacted the mobile single-restaurant share and map-choice dialogs to remove excess whitespace and keep actions visible.
 - Moved the add-spot Maps link field to the top of the form so paste-first autofill is the primary flow.
 - Added an inline Maps link hint explaining that pasted links auto-detect restaurant name and location.
 - Added a compact mobile custom-list create button inside the Map/List list drawer.
