@@ -16,7 +16,7 @@ Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱
 - `List View` 行内操作保持统一：`Map` 打开当前分类地图，`Google` 打开 Google Maps；系统分类里的 `Delete` 会删除餐厅记录，自定义 list 里的 `Remove` 只从当前清单移除餐厅
 - 自定义 list 默认私密，可手动 `Publish` 到 Discovery；公开 list 可被其他用户复制到自己的 My Lists
 - `Discovery` 支持浏览公开清单、按 Popular / Recent 排序、搜索公开清单，并提供独立手机布局；没有公开清单时会根据登录和 list 状态引导创建、添加餐厅或手动发布
-- `Discovery` 可创建私密推荐分享包，选择要推荐的餐厅和菜品后生成链接与可保存的 PNG 推荐图；别人无需登录即可预览，登录后可一键复制到自己的 My Lists
+- `Discovery` 可创建私密推荐分享包，选择要推荐的餐厅和菜品后生成链接与可保存的 PNG 推荐图；别人无需登录即可预览，登录后可一键复制到自己的 My Lists，创建者可在历史记录里撤销分享
 - 系统语言默认英文，顶部 globe 菜单可切换 English / 中文，并会在当前浏览器中记住选择
 - 管理员可通过独立 `/admin` 地址登录后台，管理账号状态、手动切换 Free/Paid 计划、暂停账号、软删除账号和恢复账号
 - Free 用户默认最多保存 50 个餐厅；Paid 用户不受该额度限制
@@ -146,7 +146,7 @@ docker compose down
 
 ## 使用流程
 
-1. 点击右上角 `Sign in`，可选择 Google、邮箱密码或邮箱验证码登录。
+1. 打开主站会先进入登录页，可选择 Google、邮箱密码或邮箱验证码登录；朋友分享的 `/share/{token}` 和 `/share-pack/{token}` 仍可免登录预览。
 2. 点击 `New Spot` 或复制 Google Maps 链接后点 `Paste & Add`。
 3. 如果自动添加时发现相似餐厅，确认是否继续创建重复记录。
 4. 编辑店铺时可以记录去过次数、个人评分和菜品。
@@ -159,8 +159,8 @@ docker compose down
 11. 如果 `Discovery` 还没有公开清单，页面会提示下一步；有可发布私密 list 时，`Publish a list` 会跳回对应清单，但仍需要用户手动通过 `Manage > Publish` 发布。
 12. 在 `Discovery` 浏览公开清单；登录后可 `Copy to My Lists` 复制到自己的私密清单。
 13. 在 `Discovery` 点击 `Create Share Pack`，选择餐厅和菜品后生成私密链接和 PNG 推荐图。
-14. `Discovery` 会保留当前账号创建过的私密推荐历史，可重新复制链接、打开推荐图或打开预览页。
-15. 朋友打开 `/share-pack/{token}` 或扫描推荐图二维码可以预览整组推荐；登录后点 `Add to My Lists` 会复制成自己的私密清单。
+14. `Discovery` 会保留当前账号创建过的私密推荐历史，可重新复制链接、打开推荐图、打开预览页或撤销分享。
+15. 朋友打开 `/share-pack/{token}` 或扫描推荐图二维码可以预览整组推荐；登录后点 `Add to My Lists` 会复制成自己的私密清单。撤销后旧链接、二维码和图片都会失效。
 16. 点击顶部 globe 菜单可切换 English / 中文；选择会保存到当前浏览器。
 17. 打开 `/admin`，用 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 登录后台后，可暂停、软删除、恢复账号，并手动切换 Free/Paid。
 18. Free 用户达到餐厅额度后，新增餐厅、复制公开清单、复制私密推荐包或从分享链接添加餐厅会被阻止；删除餐厅或升级为 Paid 后可继续添加。
@@ -207,6 +207,7 @@ docker compose down
 - `GET /api/share-packs/{token}/qr.svg`
 - `GET /api/share-packs/{token}/card.png`
 - `POST /api/share-packs/{token}/add`
+- `DELETE /api/share-packs/{token}`
 - `GET /api/lists`
 - `POST /api/lists`
 - `GET /api/lists/{id}`

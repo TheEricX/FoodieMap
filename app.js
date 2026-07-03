@@ -40,6 +40,14 @@ const translations = {
     "location.unsupported": "This browser does not support location. Using downtown Toronto for now.",
     "location.button": "Get current location",
     "settings.button": "Google API settings",
+    "login.eyebrow": "PRIVATE FOOD MAP",
+    "login.title": "Sign in to save your map.",
+    "login.body": "Keep restaurants, menu notes, photos, private lists, and share cards synced in the cloud.",
+    "login.google": "Continue with Google",
+    "login.password": "Email and password",
+    "login.code": "Email code",
+    "login.create": "Create account",
+    "login.note": "Public Share Pack links can still be viewed without signing in.",
     "auth.signIn": "Sign in",
     "auth.signOutTitle": "{email}, click to sign out",
     "auth.signInTitle": "Sign in",
@@ -331,6 +339,10 @@ const translations = {
     "sharePack.openPreview": "Open Preview",
     "sharePack.imageAction": "Image",
     "sharePack.previewAction": "Preview",
+    "sharePack.privacyNotice": "Anyone with this link or QR code can view the selected restaurants, dishes, addresses, and notes.",
+    "sharePack.revokeAction": "Revoke",
+    "sharePack.revokeConfirm": "Revoke \"{title}\"? The link, QR code, and image will stop working.",
+    "sharePack.revoked": "Share pack revoked.",
     "sharePack.noSpots": "Add at least one restaurant before creating a share pack.",
     "sharePack.chooseOne": "Choose at least one restaurant.",
     "sharePack.generated": "Private link and QR code are ready.",
@@ -436,6 +448,14 @@ const translations = {
     "location.unsupported": "浏览器不支持定位，使用多伦多市中心作为临时位置。",
     "location.button": "获取当前位置",
     "settings.button": "Google API 设置",
+    "login.eyebrow": "私人美食地图",
+    "login.title": "登录后保存你的美食地图。",
+    "login.body": "餐厅、菜单记录、照片、私密清单和分享卡片都会同步到云端。",
+    "login.google": "用 Google 继续",
+    "login.password": "邮箱密码登录",
+    "login.code": "邮箱验证码登录",
+    "login.create": "创建账号",
+    "login.note": "别人发来的 Share Pack 链接仍可免登录查看。",
     "auth.signIn": "登录",
     "auth.signOutTitle": "{email}，点击退出登录",
     "auth.signInTitle": "登录",
@@ -727,6 +747,10 @@ const translations = {
     "sharePack.openPreview": "打开预览",
     "sharePack.imageAction": "图片",
     "sharePack.previewAction": "预览",
+    "sharePack.privacyNotice": "拿到链接或二维码的人都可以查看你选择的餐厅、菜品、地址和备注。",
+    "sharePack.revokeAction": "撤销",
+    "sharePack.revokeConfirm": "撤销“{title}”吗？链接、二维码和图片都会失效。",
+    "sharePack.revoked": "私密推荐已撤销。",
     "sharePack.noSpots": "至少添加一家餐厅后才能创建推荐。",
     "sharePack.chooseOne": "请至少选择一家餐厅。",
     "sharePack.generated": "私密链接和二维码已生成。",
@@ -941,6 +965,11 @@ const elements = {
   languageLabel: document.querySelector("#languageLabel"),
   languageOptions: document.querySelectorAll("[data-language-option]"),
   loginButton: document.querySelector("#loginButton"),
+  loginView: document.querySelector("#loginView"),
+  loginPageGoogle: document.querySelector("#loginPageGoogle"),
+  loginPagePassword: document.querySelector("#loginPagePassword"),
+  loginPageCode: document.querySelector("#loginPageCode"),
+  loginPageRegister: document.querySelector("#loginPageRegister"),
   authDialog: document.querySelector("#authDialog"),
   authForm: document.querySelector("#authForm"),
   closeAuthDialog: document.querySelector("#closeAuthDialog"),
@@ -1129,6 +1158,8 @@ async function boot() {
   } else if (shareToken) {
     activeView = "my-map";
     await loadSharePage(shareToken);
+  } else if (!currentUser) {
+    activeView = "login";
   } else {
     await loadRestaurants();
     await loadLists();
@@ -1137,13 +1168,17 @@ async function boot() {
   }
   setActiveView(activeView, { push: false });
   checkShortLinkService();
-  requestLocation();
+  if (activeView !== "login") requestLocation();
 }
 
 function bindEvents() {
   elements.locateButton.addEventListener("click", requestLocation);
   elements.mapLocateButton?.addEventListener("click", requestLocation);
   elements.loginButton.addEventListener("click", handleLoginButton);
+  elements.loginPageGoogle?.addEventListener("click", startGoogleSignIn);
+  elements.loginPagePassword?.addEventListener("click", () => openAuthDialog("password", "login"));
+  elements.loginPageCode?.addEventListener("click", () => openAuthDialog("code"));
+  elements.loginPageRegister?.addEventListener("click", () => openAuthDialog("password", "register"));
   elements.authForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     const codePanelOpen = [...elements.authPanels].some((panel) => panel.dataset.authPanelView === "code" && !panel.hidden);
@@ -1551,9 +1586,9 @@ function renderAuth() {
     : t("paste.demo");
 }
 
-function openAuthDialog() {
-  setAuthPanel("password");
-  setAuthPasswordMode("login");
+function openAuthDialog(panel = "password", mode = "login") {
+  setAuthPanel(panel);
+  setAuthPasswordMode(mode);
   elements.authStatusText.textContent = t("auth.help");
   elements.authDialog?.showModal();
 }
@@ -1574,14 +1609,19 @@ async function handleLoginButton() {
   if (!confirm(t("auth.signOutConfirm", { email: currentUser.email }))) return;
   await api("/auth/logout", { method: "POST" });
   currentUser = null;
-  restaurants = demoRestaurants.map(cloneRestaurant);
+  restaurants = [];
   lists = [];
+  sharePacks = [];
   selectedListId = null;
   activeMyListKey = "system:all";
   activeFilter = "all";
-  selectedRestaurantId = restaurants[0]?.id ?? null;
+  selectedRestaurantId = null;
   renderAuth();
-  render();
+  if (!shareToken && !sharePackToken) {
+    setActiveView("login", { push: false });
+  } else {
+    render();
+  }
 }
 
 function setAuthPanel(panel) {
@@ -1631,7 +1671,11 @@ async function refreshAfterAuth() {
   await loadDiscoveryLists();
   await loadSharePacks();
   closeAuthDialog();
-  render();
+  if (activeView === "login") {
+    setActiveView("my-map", { push: false });
+  } else {
+    render();
+  }
 }
 
 async function submitPasswordAuth() {
@@ -2224,7 +2268,7 @@ function openSharePackDialog() {
   elements.downloadSharePackImage.href = "#";
   elements.openSharePackImage.hidden = true;
   elements.downloadSharePackImage.hidden = true;
-  elements.sharePackHelp.textContent = t("sharePack.help");
+  elements.sharePackHelp.textContent = `${t("sharePack.help")} ${t("sharePack.privacyNotice")}`;
   elements.sharePackPicker.innerHTML = restaurants.map(sharePackRestaurantOptionTemplate).join("");
   elements.sharePackDialog.showModal();
 }
@@ -3116,15 +3160,16 @@ function getInitialView() {
   if (isAdminPortal) return "admin-login";
   if (sharePackToken) return "share-pack";
   const hash = window.location.hash.replace("#", "");
-  return ["my-map", "my-lists", "discovery"].includes(hash) ? hash : "my-map";
+  return ["login", "my-map", "my-lists", "discovery"].includes(hash) ? hash : "my-map";
 }
 
 function setActiveView(view, options = {}) {
-  const allowedViews = isAdminPortal ? ["admin-login", "admin"] : ["my-map", "my-lists", "discovery", "share-pack"];
+  const allowedViews = isAdminPortal ? ["admin-login", "admin"] : ["login", "my-map", "my-lists", "discovery", "share-pack"];
   if (!allowedViews.includes(view)) view = isAdminPortal ? "admin-login" : "my-map";
   if (isAdminPortal && view === "admin" && !currentAdmin) view = "admin-login";
+  if (!isAdminPortal && !currentUser && !shareToken && !sharePackToken) view = "login";
   activeView = sharePackToken ? "share-pack" : shareToken ? "my-map" : view;
-  if (!isAdminPortal && !sharePackToken && options.push !== false && window.location.hash !== `#${activeView}`) {
+  if (!isAdminPortal && !sharePackToken && activeView !== "login" && options.push !== false && window.location.hash !== `#${activeView}`) {
     window.location.hash = activeView;
   }
   if (activeView === "my-lists" && currentUser && !lists.length) {
@@ -3162,6 +3207,7 @@ function renderViewShell() {
     "my-lists": t("search.category"),
     discovery: t("search.discovery"),
     "share-pack": t("search.discovery"),
+    login: t("auth.signIn"),
     admin: t("admin.searchPlaceholder"),
     "admin-login": t("admin.usernamePlaceholder"),
   }[activeView];
@@ -3546,6 +3592,9 @@ function renderSharePackHistory() {
       image.closest(".share-pack-history-poster")?.classList.add("is-missing");
     }, { once: true });
   });
+  elements.sharePackHistoryList.querySelectorAll("[data-revoke-share-pack]").forEach((button) => {
+    button.addEventListener("click", () => revokeSharePack(button.dataset.revokeSharePack));
+  });
 }
 
 function sharePackHistoryTemplate(pack) {
@@ -3564,10 +3613,19 @@ function sharePackHistoryTemplate(pack) {
           <button class="share-pack-history-action" type="button" data-copy-share-pack="${escapeAttribute(pack.share_url)}">${t("button.copy")}</button>
           <a class="share-pack-history-action" href="${escapeAttribute(pack.card_url)}" target="_blank" rel="noreferrer">${t("sharePack.imageAction")}</a>
           <a class="share-pack-history-action" href="${escapeAttribute(pack.share_url)}" target="_blank" rel="noreferrer">${t("sharePack.previewAction")}</a>
+          <button class="share-pack-history-action danger" type="button" data-revoke-share-pack="${escapeAttribute(pack.token)}">${t("sharePack.revokeAction")}</button>
         </div>
       </div>
     </article>
   `;
+}
+
+async function revokeSharePack(token) {
+  const pack = sharePacks.find((item) => item.token === token);
+  if (!pack || !confirm(t("sharePack.revokeConfirm", { title: pack.title }))) return;
+  await api(`/api/share-packs/${token}`, { method: "DELETE" });
+  sharePacks = sharePacks.filter((item) => item.token !== token);
+  renderSharePackHistory();
 }
 
 function scheduleAdminLoad() {

@@ -55,6 +55,28 @@
         </div>
       </header>
 
+      <section class="login-stage app-view" id="loginView" data-view-panel="login" hidden>
+        <div class="login-panel">
+          <div class="login-copy">
+            <p class="eyebrow" data-i18n="login.eyebrow">PRIVATE FOOD MAP</p>
+            <h1 data-i18n="login.title">Sign in to save your map.</h1>
+            <p data-i18n="login.body">Keep restaurants, menu notes, photos, private lists, and share cards synced in the cloud.</p>
+            <div class="login-receipt" aria-hidden="true">
+              <span class="paper-label">TODAY</span>
+              <strong>Ramen night</strong>
+              <small>3 spots · 2 menu notes · 1 share card</small>
+            </div>
+          </div>
+          <div class="login-actions-panel">
+            <button class="primary-button" id="loginPageGoogle" type="button" data-i18n="login.google">Continue with Google</button>
+            <button class="secondary-button" id="loginPagePassword" type="button" data-i18n="login.password">Email and password</button>
+            <button class="secondary-button" id="loginPageCode" type="button" data-i18n="login.code">Email code</button>
+            <button class="outline-button" id="loginPageRegister" type="button" data-i18n="login.create">Create account</button>
+            <p class="form-help" data-i18n="login.note">Public Share Pack links can still be viewed without signing in.</p>
+          </div>
+        </div>
+      </section>
+
       <section class="layout">
         <aside class="sidebar">
           <section class="profile-card">

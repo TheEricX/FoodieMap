@@ -1742,6 +1742,16 @@ def get_share_pack(token: str) -> dict[str, Any]:
     return share_pack_payload(token)
 
 
+@app.delete("/api/share-packs/{token}")
+def delete_share_pack(token: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    with connect() as db:
+        pack = db.execute("SELECT * FROM share_packs WHERE token = ? AND owner_user_id = ?", (token, user["id"])).fetchone()
+        if not pack:
+            raise HTTPException(status_code=404, detail="Share pack not found")
+        db.execute("DELETE FROM share_packs WHERE id = ? AND owner_user_id = ?", (pack["id"], user["id"]))
+        return {"ok": True}
+
+
 def share_card_font(size: int, bold: bool = False):
     from PIL import ImageFont
 
