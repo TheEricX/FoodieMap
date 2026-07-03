@@ -87,10 +87,11 @@ const translations = {
     "auth.enterCode": "Enter the code from your email.",
     "api.loginRequired": "Please sign in first.",
     "api.requestFailed": "Request failed.",
-    "paste.help": "Copy a Google Maps link, then click Paste & Add.",
+    "paste.help": "Copy a Google or Apple Maps link, then click Paste & Add.",
     "paste.demo": "Demo mode. Sign in to save cloud data, upload photos, and share spots.",
     "paste.shared": "A spot shared with you. Preview it here, then sign in to add it to your list.",
     "paste.noGoogleUrl": "No Google Maps link found in the clipboard.",
+    "paste.noMapUrl": "No supported map link found in the clipboard.",
     "paste.duplicateConfirm": "A similar spot already exists:\n\n\"{name}\"\n{address}\nAbout {distance} from the new link coordinates.\n\nCreate a duplicate spot anyway?",
     "paste.noAddress": "No address",
     "paste.cancelledDuplicate": "Creation cancelled. Selected existing spot: {name}",
@@ -104,6 +105,17 @@ const translations = {
     "google.noCoords": "No coordinates found in the link. Open the short link, then copy the full Google Maps address bar URL.",
     "google.addressLookup": "Looking up the address from coordinates...",
     "google.addressLookupFailed": "Coordinates found. Address was not available in the link; add a Google Geocoding API key in settings to auto-fill it.",
+    "maps.help": "Paste a Google Maps or Apple Maps link. Short links will be expanded by the local service.",
+    "maps.shortExpanding": "Expanding map link...",
+    "maps.shortExpanded": "Map link expanded and detectable restaurant details filled.",
+    "maps.coordsFound": "Restaurant details detected from the map link.",
+    "maps.noCoords": "No coordinates found in the link. Paste a full Google Maps or Apple Maps link that includes coordinates, or enter coordinates manually.",
+    "maps.addressLookup": "Looking up the address from coordinates...",
+    "maps.addressLookupFailed": "Coordinates found. Address was not available in the link; add a Google Geocoding API key in settings to auto-fill it.",
+    "maps.openEyebrow": "OPEN MAP",
+    "maps.openTitle": "Choose a map app",
+    "maps.openGoogle": "Google Maps",
+    "maps.openApple": "Apple Maps",
     "spot.discardConfirm": "Discard this unfinished spot?",
     "sidebar.myPantry": "MY PANTRY",
     "sidebar.smartLists": "SMART LISTS",
@@ -134,6 +146,7 @@ const translations = {
     "button.done": "Done",
     "button.close": "Close",
     "button.openMap": "Open on Map",
+    "button.openMaps": "Open Maps",
     "button.createList": "Create List",
     "button.updateList": "Update List",
     "button.publish": "Publish",
@@ -156,6 +169,7 @@ const translations = {
     "button.more": "More",
     "button.addSpotShort": "+ Add",
     "button.pasteGoogleLink": "Paste Google link",
+    "button.pasteMapLink": "Paste map link",
     "mobileFilter.all": "All",
     "mobileFilter.visited": "Visited",
     "mobileFilter.want": "Want",
@@ -165,13 +179,14 @@ const translations = {
     "map.summary": "{count} spots · sorted by distance from you",
     "map.sorted": "Sorted by distance from you",
     "map.emptyTitle": "Add your first restaurant",
-    "map.emptyBody": "Save an address or Google Maps link, and it will appear on this playful relative map.",
+    "map.emptyBody": "Save an address or map link, and it will appear on this playful relative map.",
     "map.selectedSpot": "SELECTED SPOT",
     "map.selected": "Selected",
     "map.chooseSpot": "Choose a restaurant",
     "map.spotHint": "Click a restaurant marker to view details.",
     "map.noNotes": "No notes yet.",
     "map.openGoogle": "Open Google Maps ›",
+    "map.openMaps": "Open Maps ›",
     "map.noMatches": "No matching restaurants",
     "map.zoomOut": "Zoom out",
     "map.zoomIn": "Zoom in",
@@ -301,8 +316,8 @@ const translations = {
     "spot.namePlaceholder": "Auto-detected, or enter a restaurant name",
     "spot.address": "Address",
     "spot.addressPlaceholder": "Optional: record the address manually",
-    "spot.googleUrl": "Google Maps link",
-    "spot.googleUrlPlaceholder": "Paste a full Google Maps link to detect name, address, and coordinates",
+    "spot.googleUrl": "Maps link",
+    "spot.googleUrlPlaceholder": "Paste a Google Maps or Apple Maps link to detect name, address, and coordinates",
     "spot.lat": "Latitude",
     "spot.lng": "Longitude",
     "spot.coordPlaceholder": "Auto-filled",
@@ -495,10 +510,11 @@ const translations = {
     "auth.enterCode": "请输入邮箱里的验证码。",
     "api.loginRequired": "请先登录。",
     "api.requestFailed": "请求失败。",
-    "paste.help": "复制 Google Maps 链接后点 Paste & Add。",
+    "paste.help": "复制 Google 或 Apple 地图链接后点 Paste & Add。",
     "paste.demo": "当前是演示模式。登录后可保存云端数据、上传图片和分享。",
     "paste.shared": "朋友分享给你的店铺。可以预览，登录后一键加入自己的列表。",
     "paste.noGoogleUrl": "剪贴板里没有 Google Maps 链接。",
+    "paste.noMapUrl": "剪贴板里没有支持的地图链接。",
     "paste.duplicateConfirm": "已经找到很像的餐厅：\n\n「{name}」\n{address}\n距离新链接坐标约 {distance}\n\n还要继续创建一个新的重复记录吗？",
     "paste.noAddress": "没有地址",
     "paste.cancelledDuplicate": "已取消创建，已选中现有餐厅：{name}",
@@ -512,6 +528,17 @@ const translations = {
     "google.noCoords": "没有从链接识别到坐标。请打开短链接后复制完整 Google Maps 地址栏链接。",
     "google.addressLookup": "正在用坐标查询地址...",
     "google.addressLookupFailed": "已识别坐标。这个链接里没有地址；如需自动填地址，请在设置里填写 Google Geocoding API Key。",
+    "maps.help": "可粘贴 Google Maps 或 Apple Maps 链接；短链接会由本地服务自动展开。",
+    "maps.shortExpanding": "正在展开地图链接...",
+    "maps.shortExpanded": "地图链接已展开，并已填入可识别的餐厅信息。",
+    "maps.coordsFound": "已从地图链接识别餐厅信息。",
+    "maps.noCoords": "没有从链接识别到坐标。请粘贴包含坐标的 Google Maps 或 Apple Maps 完整链接，或手动填写坐标。",
+    "maps.addressLookup": "正在用坐标查询地址...",
+    "maps.addressLookupFailed": "已识别坐标。这个链接里没有地址；如需自动填地址，请在设置里填写 Google Geocoding API Key。",
+    "maps.openEyebrow": "打开地图",
+    "maps.openTitle": "选择地图应用",
+    "maps.openGoogle": "Google Maps",
+    "maps.openApple": "Apple Maps",
     "spot.discardConfirm": "放弃这个还没保存的餐厅吗？",
     "sidebar.myPantry": "我的美食库",
     "sidebar.smartLists": "智能分类",
@@ -542,6 +569,7 @@ const translations = {
     "button.done": "完成",
     "button.close": "关闭",
     "button.openMap": "在地图打开",
+    "button.openMaps": "打开地图",
     "button.createList": "创建清单",
     "button.updateList": "更新清单",
     "button.publish": "发布",
@@ -564,6 +592,7 @@ const translations = {
     "button.more": "更多",
     "button.addSpotShort": "+ 添加",
     "button.pasteGoogleLink": "粘贴 Google 链接",
+    "button.pasteMapLink": "粘贴地图链接",
     "mobileFilter.all": "全部",
     "mobileFilter.visited": "去过",
     "mobileFilter.want": "想去",
@@ -573,13 +602,14 @@ const translations = {
     "map.summary": "{count} 个餐厅 · 按距离排序",
     "map.sorted": "按与你的距离排序",
     "map.emptyTitle": "添加第一家餐厅",
-    "map.emptyBody": "保存地址或 Google Maps 链接后，它会出现在这张 Q 版相对地图上。",
+    "map.emptyBody": "保存地址或地图链接后，它会出现在这张 Q 版相对地图上。",
     "map.selectedSpot": "选中餐厅",
     "map.selected": "已选中",
     "map.chooseSpot": "选择一家餐厅",
     "map.spotHint": "点击地图上的餐厅图标查看详情。",
     "map.noNotes": "还没有记录想法。",
     "map.openGoogle": "打开 Google Maps ›",
+    "map.openMaps": "打开地图 ›",
     "map.noMatches": "没有匹配餐厅",
     "map.zoomOut": "缩小",
     "map.zoomIn": "放大",
@@ -709,8 +739,8 @@ const translations = {
     "spot.namePlaceholder": "自动识别，或手动输入店名",
     "spot.address": "地址",
     "spot.addressPlaceholder": "可选：手动记录地址",
-    "spot.googleUrl": "Google Maps 链接",
-    "spot.googleUrlPlaceholder": "粘贴 Google Maps 完整链接，自动识别店名、地址和坐标",
+    "spot.googleUrl": "地图链接",
+    "spot.googleUrlPlaceholder": "粘贴 Google Maps 或 Apple Maps 链接，自动识别店名、地址和坐标",
     "spot.lat": "纬度",
     "spot.lng": "经度",
     "spot.coordPlaceholder": "自动填入",
@@ -1056,6 +1086,11 @@ const elements = {
   spotNotes: document.querySelector("#spotNotes"),
   spotDishes: document.querySelector("#spotDishes"),
   openGoogleMaps: document.querySelector("#openGoogleMaps"),
+  mapChoiceDialog: document.querySelector("#mapChoiceDialog"),
+  closeMapChoiceDialog: document.querySelector("#closeMapChoiceDialog"),
+  mapChoiceName: document.querySelector("#mapChoiceName"),
+  openGoogleMapChoice: document.querySelector("#openGoogleMapChoice"),
+  openAppleMapChoice: document.querySelector("#openAppleMapChoice"),
   openSpotDetail: document.querySelector("#openSpotDetail"),
   closeCard: document.querySelector("#closeCard"),
   editSpot: document.querySelector("#editSpot"),
@@ -1236,6 +1271,19 @@ function bindEvents() {
   elements.spotCardTab.addEventListener("click", () => {
     setSpotCardOpen(true, { render: true });
   });
+  elements.openGoogleMaps?.addEventListener("click", () => openMapChoice(selectedRestaurant()));
+  elements.closeMapChoiceDialog?.addEventListener("click", () => elements.mapChoiceDialog?.close());
+  elements.mapChoiceDialog?.addEventListener("click", (event) => {
+    if (event.target === elements.mapChoiceDialog) elements.mapChoiceDialog.close();
+  });
+  document.addEventListener("click", (event) => {
+    const trigger = event.target.closest("[data-open-map-restaurant]");
+    if (!trigger) return;
+    const restaurant = findRestaurantById(trigger.dataset.openMapRestaurant);
+    if (!restaurant) return;
+    event.preventDefault();
+    openMapChoice(restaurant);
+  });
   elements.openSpotDetail.addEventListener("click", openSpotDetail);
   elements.closeSpotDetail.addEventListener("click", closeSpotDetail);
   elements.spotDetailDialog.addEventListener("click", closeSpotDetailFromBackdrop);
@@ -1273,6 +1321,13 @@ function bindEvents() {
     scrollArea?.addEventListener("scroll", updateTopbarElevation, { passive: true });
   });
   elements.createListButton.addEventListener("click", openCreateListDialog);
+  document.querySelectorAll("[data-mobile-create-list]").forEach((button) => {
+    button.addEventListener("click", () => {
+      closeMobileMenuDetails(elements.mobileListDrawer);
+      closeMobileMenuDetails(elements.mobileMyListDrawer);
+      openCreateListDialog();
+    });
+  });
   elements.closeListDialog.addEventListener("click", () => closeListDialog());
   elements.listForm.addEventListener("submit", saveListFromForm);
   elements.closeAddSpotsDialog.addEventListener("click", () => elements.addSpotsDialog.close());
@@ -1298,7 +1353,7 @@ function bindEvents() {
     });
   });
   elements.openSharePackDialog?.addEventListener("click", openSharePackDialog);
-  elements.googleUrlInput.addEventListener("input", autofillFromGoogleMapsUrl);
+  elements.googleUrlInput.addEventListener("input", autofillFromMapsUrl);
   elements.restaurantForm.addEventListener("submit", saveRestaurantFromForm);
   elements.addDishButton.addEventListener("click", addDishFromEditor);
   elements.closeShareDialog.addEventListener("click", () => elements.shareDialog.close());
@@ -1359,10 +1414,14 @@ function closeMobileTransientOverlays() {
   closeMobileMenuDetails(elements.mobileMapMenu);
   closeMobileMenuDetails(elements.mobileListDrawer);
   closeMobileMenuDetails(elements.mobileMyListDrawer);
+  closeMobileMenuDetails(elements.languageMenu);
   closeOpenDetailsMenus(".manage-list-menu");
 }
 
 function closeMobileMenusFromOutside(event) {
+  if (elements.languageMenu?.hasAttribute("open") && !elements.languageMenu.contains(event.target)) {
+    closeMobileMenuDetails(elements.languageMenu);
+  }
   if (elements.mobileMapMenu?.hasAttribute("open") && !elements.mobileMapMenu.contains(event.target)) {
     closeMobileMenuDetails(elements.mobileMapMenu);
   }
@@ -1462,7 +1521,7 @@ function refreshOpenDialogLanguage() {
     elements.formModeLabel.textContent = editingRestaurantId ? t("spot.editMode") : t("spot.newMode");
     elements.formTitle.textContent = editingRestaurantId ? t("spot.editTitle") : t("spot.saveTitle");
     elements.saveSpotButton.textContent = editingRestaurantId ? t("spot.updateButton") : t("spot.saveButton");
-    elements.formHelp.textContent = editingRestaurantId ? t("spot.editHelp") : t("google.help");
+    elements.formHelp.textContent = editingRestaurantId ? t("spot.editHelp") : t("maps.help");
   }
   if (elements.listDialog.open) {
     elements.listFormMode.textContent = editingListId ? t("list.editMode") : t("list.newMode");
@@ -1935,7 +1994,7 @@ function resetRestaurantForm() {
   elements.formModeLabel.textContent = t("spot.newMode");
   elements.formTitle.textContent = t("spot.saveTitle");
   elements.saveSpotButton.textContent = t("spot.saveButton");
-  elements.formHelp.textContent = t("google.help");
+  elements.formHelp.textContent = t("maps.help");
   elements.dishEditor.hidden = true;
   elements.dishEditorList.innerHTML = "";
 }
@@ -2852,13 +2911,13 @@ async function pasteAndAddFromClipboard() {
   if (!canAddOneRestaurant()) return;
   try {
     const text = (await navigator.clipboard.readText()).trim();
-    const googleUrl = extractGoogleMapsUrl(text);
-    if (!googleUrl) throw new Error(t("paste.noGoogleUrl"));
-    const parsed = await parseAnyGoogleMapsLink(googleUrl);
+    const mapUrl = extractMapUrl(text);
+    if (!mapUrl) throw new Error(t("paste.noMapUrl"));
+    const parsed = await parseAnyMapLink(mapUrl);
     const name = parsed.name || "New Spot";
     const duplicate = findDuplicateRestaurant({
       name,
-      google_url: parsed.url || googleUrl,
+      google_url: parsed.url || mapUrl,
       lat: parsed.lat,
       lng: parsed.lng,
     });
@@ -2882,7 +2941,7 @@ async function pasteAndAddFromClipboard() {
       address: parsed.address || "",
       lat: parsed.lat,
       lng: parsed.lng,
-      google_url: parsed.url || googleUrl,
+      google_url: parsed.url || mapUrl,
       status: "want_to_go",
       visit_count: 0,
       personal_rating: 0,
@@ -2903,20 +2962,20 @@ function setPasteStatus(message) {
   elements.pasteStatus.textContent = message;
 }
 
-async function autofillFromGoogleMapsUrl() {
+async function autofillFromMapsUrl() {
   const form = elements.restaurantForm.elements;
-  const googleUrl = elements.googleUrlInput.value.trim();
-  if (isGoogleMapsShortLink(googleUrl)) {
-        elements.formHelp.textContent = t("google.shortExpanding");
+  const mapUrl = elements.googleUrlInput.value.trim();
+  if (isResolvableMapLink(mapUrl)) {
+    elements.formHelp.textContent = t("maps.shortExpanding");
     window.clearTimeout(shortLinkResolveTimer);
     shortLinkResolveTimer = window.setTimeout(async () => {
       try {
-        const parsed = await parseAnyGoogleMapsLink(googleUrl);
-        form.googleUrl.value = parsed.url || googleUrl;
-        fillGoogleMapsFields(form, parsed);
+        const parsed = await parseAnyMapLink(mapUrl);
+        form.googleUrl.value = parsed.url || mapUrl;
+        fillMapFields(form, parsed);
         form.lat.value = parsed.lat ?? form.lat.value;
         form.lng.value = parsed.lng ?? form.lng.value;
-        elements.formHelp.textContent = parsed.address ? t("google.shortExpanded") : t("google.addressLookupFailed");
+        elements.formHelp.textContent = parsed.address ? t("maps.shortExpanded") : t("maps.addressLookupFailed");
       } catch (error) {
         elements.formHelp.textContent = error.message;
       }
@@ -2924,45 +2983,47 @@ async function autofillFromGoogleMapsUrl() {
     return;
   }
 
-  let parsed = parseGoogleMapsUrl(googleUrl);
+  let parsed = parseMapUrl(mapUrl);
   if (!parsed) {
-    elements.formHelp.textContent = t("google.help");
+    elements.formHelp.textContent = t("maps.help");
     return;
   }
-  parsed = await enrichGoogleMapsPlace(parsed, { reportStatus: true });
-  fillGoogleMapsFields(form, parsed);
+  parsed = await enrichMapPlace(parsed, { reportStatus: true });
+  fillMapFields(form, parsed);
   if (parsed.lat != null && parsed.lng != null) {
     form.lat.value = parsed.lat;
     form.lng.value = parsed.lng;
-    elements.formHelp.textContent = parsed.address ? t("google.coordsFound") : t("google.addressLookupFailed");
+    elements.formHelp.textContent = parsed.address ? t("maps.coordsFound") : t("maps.addressLookupFailed");
+  } else {
+    elements.formHelp.textContent = t("maps.noCoords");
   }
 }
 
-function fillGoogleMapsFields(form, parsed) {
+function fillMapFields(form, parsed) {
   if (parsed.name && !form.name.value.trim()) form.name.value = parsed.name;
   if (parsed.address && !form.address.value.trim()) form.address.value = parsed.address;
 }
 
-async function parseAnyGoogleMapsLink(url) {
-  if (isGoogleMapsShortLink(url)) {
-    const endpoint = new URL("/api/resolve-google-link", window.location.origin);
+async function parseAnyMapLink(url) {
+  if (isResolvableMapLink(url)) {
+    const endpoint = new URL("/api/resolve-map-link", window.location.origin);
     endpoint.searchParams.set("url", url);
     const data = await api(endpoint.toString());
     url = data.url;
   }
-  const parsed = parseGoogleMapsUrl(url);
+  const parsed = parseMapUrl(url);
   if (parsed?.lat == null || parsed?.lng == null) {
-    throw new Error(t("google.noCoords"));
+    throw new Error(t("maps.noCoords"));
   }
-  return { ...(await enrichGoogleMapsPlace(parsed)), url };
+  return { ...(await enrichMapPlace(parsed)), url };
 }
 
-async function enrichGoogleMapsPlace(parsed, { reportStatus = false } = {}) {
+async function enrichMapPlace(parsed, { reportStatus = false } = {}) {
   if (parsed.address || parsed.lat == null || parsed.lng == null) return parsed;
-  if (reportStatus) elements.formHelp.textContent = t("google.addressLookup");
+  if (reportStatus) elements.formHelp.textContent = t("maps.addressLookup");
   const address = await reverseGeocodeAddress(parsed.lat, parsed.lng);
   if (!address) {
-    if (reportStatus) elements.formHelp.textContent = t("google.addressLookupFailed");
+    if (reportStatus) elements.formHelp.textContent = t("maps.addressLookupFailed");
     return parsed;
   }
   return { ...parsed, address };
@@ -2999,7 +3060,7 @@ async function checkShortLinkService() {
 async function resolveCoordinates(payload) {
   const manual = validateCoordinates(payload.lat, payload.lng);
   if (manual) return manual;
-  const parsed = await parseAnyGoogleMapsLink(payload.google_url);
+  const parsed = await parseAnyMapLink(payload.google_url);
   return { lat: parsed.lat, lng: parsed.lng };
 }
 
@@ -3014,6 +3075,7 @@ function validateCoordinates(lat, lng) {
 
 function parseGoogleMapsUrl(url) {
   if (!url) return null;
+  if (!isGoogleMapsUrl(url)) return null;
   let decoded = safeDecode(url);
   const atMatch = decoded.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
   const bangMatch = decoded.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
@@ -3022,6 +3084,47 @@ function parseGoogleMapsUrl(url) {
   const place = parseGoogleMapsPlace(decoded);
   if (!coordinates) return place.name || place.address ? place : null;
   return { lat: Number(coordinates[1]), lng: Number(coordinates[2]), ...place };
+}
+
+function parseAppleMapsUrl(url) {
+  if (!url || !/^https?:\/\/maps\.apple\.com(?:\/|$|\?)/i.test(url)) return null;
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    return null;
+  }
+  const params = parsedUrl.searchParams;
+  const queryCoordinates = parseCoordinatePair(params.get("q"));
+  const coordinates = parseCoordinatePair(params.get("ll")) || parseCoordinatePair(params.get("sll")) || parseCoordinatePair(params.get("center")) || queryCoordinates;
+  const queryText = cleanAppleMapsText(params.get("q") || "");
+  const addressText = cleanAppleMapsText(params.get("address") || "");
+  const result = {
+    provider: "apple",
+    name: queryText && !queryCoordinates && !looksLikeAddress(queryText) ? queryText : "",
+    address: addressText || (queryText && looksLikeAddress(queryText) ? queryText : ""),
+  };
+  if (coordinates) {
+    result.lat = coordinates.lat;
+    result.lng = coordinates.lng;
+  }
+  return result.lat != null || result.lng != null || result.name || result.address ? result : null;
+}
+
+function cleanAppleMapsText(value) {
+  return safeDecode(String(value || "").replace(/\+/g, " ")).replace(/\s+/g, " ").trim();
+}
+
+function parseCoordinatePair(value) {
+  const match = String(value || "").match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if (!match) return null;
+  const lat = Number(match[1]);
+  const lng = Number(match[2]);
+  return validateCoordinates(lat, lng);
+}
+
+function parseMapUrl(url) {
+  return parseGoogleMapsUrl(url) || parseAppleMapsUrl(url);
 }
 
 function parseGoogleMapsName(url) {
@@ -3082,8 +3185,28 @@ function isGoogleMapsShortLink(url) {
   return /^https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps)\//i.test(url);
 }
 
+function isGoogleMapsUrl(url) {
+  return /^https?:\/\/(?:www\.google\.[^\s/]+\/maps|maps\.google\.[^\s/]+|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(url);
+}
+
+function isAppleMapsUrl(url) {
+  return /^https?:\/\/maps\.apple\.com(?:\/|$|\?)/i.test(url);
+}
+
+function isResolvableMapLink(url) {
+  return isGoogleMapsShortLink(url);
+}
+
 function extractGoogleMapsUrl(text) {
   return text.match(/https?:\/\/(?:www\.google\.[^\s/]+\/maps|maps\.google\.[^\s/]+|maps\.app\.goo\.gl|goo\.gl\/maps)[^\s)]*/i)?.[0] ?? "";
+}
+
+function extractAppleMapsUrl(text) {
+  return text.match(/https?:\/\/maps\.apple\.com[^\s)]*/i)?.[0] ?? "";
+}
+
+function extractMapUrl(text) {
+  return extractGoogleMapsUrl(text) || extractAppleMapsUrl(text);
 }
 
 async function getLocationPermissionState() {
@@ -3495,12 +3618,50 @@ function renderSpotCard() {
   elements.spotStatus.textContent = `${statusLabel(selected.status)} · ${t("count.visits", { count: selected.visit_count || 0 })}`;
   elements.spotNotes.textContent = selected.notes || selected.address || t("map.noNotes");
   elements.spotDishes.innerHTML = renderSpotDishes(selected);
-  elements.openGoogleMaps.href = selected.google_url || `https://www.google.com/maps?q=${selected.lat},${selected.lng}`;
   const ownedMode = Boolean(currentUser && !shareToken);
   elements.openSpotDetail.disabled = false;
   elements.editSpot.disabled = !ownedMode;
   elements.shareSpot.disabled = !ownedMode;
   elements.deleteSpot.disabled = !ownedMode;
+}
+
+function findRestaurantById(id) {
+  const restaurantId = String(id || "");
+  const pools = [
+    restaurants,
+    lists.flatMap((list) => (list.items || []).map((item) => item.restaurant).filter(Boolean)),
+    discoveryLists.flatMap((list) => (list.items || []).map((item) => item.restaurant).filter(Boolean)),
+    sharePackData?.items?.map((item) => item.restaurant).filter(Boolean) || [],
+  ];
+  return pools.flat().find((restaurant) => restaurant?.id === restaurantId) || null;
+}
+
+function openMapChoice(restaurant) {
+  if (!restaurant) return;
+  const urls = mapChoiceUrls(restaurant);
+  elements.mapChoiceName.textContent = restaurant.address ? `${restaurant.name} · ${restaurant.address}` : restaurant.name;
+  elements.openGoogleMapChoice.href = urls.google;
+  elements.openAppleMapChoice.href = urls.apple;
+  elements.mapChoiceDialog?.showModal();
+}
+
+function mapChoiceUrls(restaurant) {
+  const coordinates = validateCoordinates(restaurant.lat, restaurant.lng);
+  const label = restaurant.name || restaurant.address || t("spot.untitled");
+  const searchText = [restaurant.name, restaurant.address].filter(Boolean).join(" ") || label;
+  const appleParams = new URLSearchParams();
+  const googleParams = new URLSearchParams();
+  if (coordinates) {
+    appleParams.set("ll", `${coordinates.lat},${coordinates.lng}`);
+    googleParams.set("q", `${coordinates.lat},${coordinates.lng}`);
+  } else {
+    googleParams.set("q", searchText);
+  }
+  appleParams.set("q", coordinates ? label : searchText);
+  return {
+    google: `https://www.google.com/maps?${googleParams.toString()}`,
+    apple: `https://maps.apple.com/?${appleParams.toString()}`,
+  };
 }
 
 function renderSpotDishes(restaurant) {
@@ -3901,7 +4062,7 @@ function systemSpotItemTemplate(restaurant) {
     body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${t("count.visits", { count: restaurant.visit_count || 0 })}`,
     actions: `
       <button class="icon-link" type="button" data-open-spot="${restaurant.id}">${t("button.map")}</button>
-      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">${t("button.google")}</a>
+      <button class="icon-link" type="button" data-open-map-restaurant="${restaurant.id}">${t("button.openMaps")}</button>
       <button class="icon-link danger-text" type="button" data-delete-spot="${restaurant.id}">${t("button.delete")}</button>
     `,
   });
@@ -4015,7 +4176,7 @@ function ownedListItemTemplate(item) {
     body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${t("count.visits", { count: restaurant.visit_count || 0 })}`,
     actions: `
       <button class="icon-link" type="button" data-open-spot="${restaurant.id}">${t("button.map")}</button>
-      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">${t("button.google")}</a>
+      <button class="icon-link" type="button" data-open-map-restaurant="${restaurant.id}">${t("button.openMaps")}</button>
       <button class="icon-link danger-text" type="button" data-remove-list-spot="${restaurant.id}">${t("button.remove")}</button>
     `,
   });
@@ -4027,7 +4188,7 @@ function publicListItemTemplate(item) {
   return restaurantRowTemplate(restaurant, {
     body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${escapeHtml(restaurant.address || t("discovery.addressHidden"))}`,
     actions: `
-      <a class="icon-link" href="${escapeAttribute(restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`)}" target="_blank" rel="noreferrer">${t("button.map")}</a>
+      <button class="icon-link" type="button" data-open-map-restaurant="${restaurant.id}">${t("button.openMaps")}</button>
     `,
   });
 }
@@ -4066,7 +4227,6 @@ function renderSharePackView() {
 function sharePackPublicItemTemplate(item) {
   const restaurant = item.restaurant;
   if (!restaurant) return "";
-  const googleUrl = restaurant.google_url || `https://www.google.com/maps?q=${restaurant.lat},${restaurant.lng}`;
   return `
     <article class="share-pack-public-card">
       ${restaurantThumbTemplate(restaurant)}
@@ -4089,7 +4249,7 @@ function sharePackPublicItemTemplate(item) {
               : ""
           }
         </div>
-        <a class="icon-link" href="${escapeAttribute(googleUrl)}" target="_blank" rel="noreferrer">${t("button.google")}</a>
+        <button class="icon-link" type="button" data-open-map-restaurant="${restaurant.id}">${t("button.openMaps")}</button>
       </div>
     </article>
   `;
@@ -4464,10 +4624,10 @@ function syncRestaurantReferences(restaurant) {
 
 function findDuplicateRestaurant(candidate) {
   const candidateName = normalizePlaceName(candidate.name);
-  const candidateUrlKey = googleMapsPlaceKey(candidate.google_url);
+  const candidateUrlKey = mapPlaceKey(candidate.google_url);
   const candidateCoordinates = validateCoordinates(candidate.lat, candidate.lng);
   return restaurants.find((restaurant) => {
-    const sameUrl = candidateUrlKey && googleMapsPlaceKey(restaurant.google_url) === candidateUrlKey;
+    const sameUrl = candidateUrlKey && mapPlaceKey(restaurant.google_url) === candidateUrlKey;
     if (sameUrl) return true;
     const restaurantCoordinates = validateCoordinates(restaurant.lat, restaurant.lng);
     const nearby =
@@ -4489,9 +4649,9 @@ function normalizePlaceName(name) {
     .replace(/\s+/g, " ");
 }
 
-function googleMapsPlaceKey(url) {
+function mapPlaceKey(url) {
   if (!url) return "";
-  const parsed = parseGoogleMapsUrl(url);
+  const parsed = parseMapUrl(url);
   const name = normalizePlaceName(parsed?.name || "");
   if (parsed?.lat != null && parsed?.lng != null) {
     return `${name}|${Number(parsed.lat).toFixed(5)},${Number(parsed.lng).toFixed(5)}`;

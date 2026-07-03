@@ -9,7 +9,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 ### Added
 
 - Added private Discovery share packs with selected restaurants/dishes, public preview links, saveable PNG recommendation cards, personal history, and login-gated one-click copying into My Lists.
-- Added Google Maps link autofill for restaurant name, address, and coordinates, with optional Google Geocoding reverse lookup when links only include coordinates.
+- Added Apple Maps link detection alongside Google Maps and a single map-opening chooser for Google Maps or Apple Maps.
+- Added map link autofill for restaurant name, address, and coordinates, with optional Google Geocoding reverse lookup when links only include coordinates.
 - Added mouse and touch panning, touchpad pinch zoom, and a one-tap control to center the relative map back on the user marker.
 - Added an admin user management area for account suspension, soft deletion/restoration, manual Free/Paid plan changes, and Free account restaurant limits.
 - Added email account sign-in with password login, one-time email codes, SMTP delivery, password reset, and same-email account merging with Google OAuth.
@@ -17,6 +18,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Added a compact mobile custom-list create button inside the Map/List list drawer.
 - Added a privacy notice and owner-only revoke action for private Share Packs so shared links, QR codes, and card images can be invalidated.
 - Added an initial signed-out login page while keeping public share links viewable without an account.
 - Compacted mobile menu-note entry and saved dish cards so Add Menu and menu lists match the denser List View layout.

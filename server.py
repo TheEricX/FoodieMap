@@ -63,7 +63,7 @@ SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USERNAME)
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").strip().lower() not in {"0", "false", "no", "off"}
-ALLOWED_SHORT_HOSTS = {"maps.app.goo.gl", "goo.gl"}
+ALLOWED_SHORT_HOSTS = {"maps.app.goo.gl", "goo.gl", "maps.apple.com"}
 SESSION_COOKIE = "foodiemap_session"
 ADMIN_SESSION_COOKIE = "foodiemap_admin_session"
 OAUTH_STATE_COOKIE = "foodiemap_oauth_state"
@@ -2210,11 +2210,11 @@ def copy_discovery_list(list_id: str, user: dict[str, Any] = Depends(require_use
         return {"list": list_json(db, row, include_items=True)}
 
 
-@app.get("/api/resolve-google-link")
-def resolve_google_link(url: str) -> dict[str, str]:
+@app.get("/api/resolve-map-link")
+def resolve_map_link(url: str) -> dict[str, str]:
     target = urllib.parse.urlparse(url.strip())
     if target.scheme not in {"http", "https"} or target.netloc not in ALLOWED_SHORT_HOSTS:
-        raise HTTPException(status_code=400, detail="Only Google Maps short links are supported.")
+        raise HTTPException(status_code=400, detail="Only Google Maps and Apple Maps links are supported.")
     try:
         request = urllib.request.Request(
             url,
@@ -2228,6 +2228,11 @@ def resolve_google_link(url: str) -> dict[str, str]:
     except (urllib.error.URLError, TimeoutError) as error:
         raise HTTPException(status_code=502, detail="Short link expansion failed. Open it in a browser and copy the full link.") from error
     return {"url": final_url}
+
+
+@app.get("/api/resolve-google-link")
+def resolve_google_link(url: str) -> dict[str, str]:
+    return resolve_map_link(url)
 
 
 @app.post("/api/reverse-geocode")

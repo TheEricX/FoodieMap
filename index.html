@@ -33,7 +33,7 @@
             <summary aria-label="Add restaurant" data-i18n="button.addSpotShort">+ Add</summary>
             <div class="mobile-map-actions">
               <button type="button" data-mobile-action="new-spot" data-i18n="button.newSpot">+ New Spot</button>
-              <button type="button" data-mobile-action="paste-add" data-i18n="button.pasteGoogleLink">Paste Google link</button>
+              <button type="button" data-mobile-action="paste-add" data-i18n="button.pasteMapLink">Paste map link</button>
             </div>
           </details>
         </div>
@@ -89,7 +89,7 @@
 
           <button class="primary-button" id="openAddPanel" data-i18n="button.newSpot">+ New Spot</button>
           <button class="primary-button alt" id="pasteAddButton" type="button" data-i18n="button.pasteAdd">Paste & Add</button>
-          <p class="action-status" id="pasteStatus">Copy a Google Maps link, then click Paste & Add.</p>
+          <p class="action-status" id="pasteStatus">Copy a Google or Apple Maps link, then click Paste & Add.</p>
 
           <section class="sidebar-index-panel" aria-label="Pantry index">
             <div class="sidebar-section-head compact">
@@ -141,6 +141,7 @@
                 <div class="mobile-list-panel">
                   <div class="mobile-list-head">
                     <strong data-i18n="sidebar.customLists">CUSTOM LISTS</strong>
+                    <button class="mobile-list-add" type="button" data-mobile-create-list title="Create List" data-i18n-title="button.createList">＋</button>
                   </div>
                   <div class="mobile-list-filters" id="mobileListFilters"></div>
                 </div>
@@ -178,7 +179,7 @@
             <div id="markersLayer"></div>
             <div class="empty-map" id="emptyMap">
               <strong data-i18n="map.emptyTitle">Add your first restaurant</strong>
-              <span data-i18n="map.emptyBody">Save an address or Google Maps link, and it will appear on this playful relative map.</span>
+              <span data-i18n="map.emptyBody">Save an address or map link, and it will appear on this playful relative map.</span>
             </div>
           </div>
 
@@ -200,7 +201,7 @@
               <button class="outline-button" id="shareSpot" type="button" data-i18n="button.share">Share</button>
               <button class="outline-button danger" id="deleteSpot" type="button" data-i18n="button.delete">Delete</button>
             </div>
-            <a class="outline-link" id="openGoogleMaps" href="#" target="_blank" rel="noreferrer" data-i18n="map.openGoogle">Open Google Maps ›</a>
+            <button class="outline-link" id="openGoogleMaps" type="button" data-i18n="map.openMaps">Open Maps ›</button>
           </article>
           <button class="spot-card-tab" id="spotCardTab" type="button" hidden>
             <span data-i18n="map.selected">Selected</span>
@@ -220,6 +221,7 @@
                 <div class="mobile-list-panel">
                   <div class="mobile-list-head">
                     <strong data-i18n="sidebar.customLists">CUSTOM LISTS</strong>
+                    <button class="mobile-list-add" type="button" data-mobile-create-list title="Create List" data-i18n-title="button.createList">＋</button>
                   </div>
                   <div class="mobile-list-filters" id="mobileMyListFilters"></div>
                 </div>
@@ -506,8 +508,8 @@
             <input name="address" placeholder="Optional: record the address manually" data-i18n-placeholder="spot.addressPlaceholder" />
           </label>
           <label>
-            <span data-i18n="spot.googleUrl">Google Maps link</span>
-            <input name="googleUrl" placeholder="Paste a full Google Maps link to detect name, address, and coordinates" data-i18n-placeholder="spot.googleUrlPlaceholder" />
+            <span data-i18n="spot.googleUrl">Maps link</span>
+            <input name="googleUrl" placeholder="Paste a Google Maps or Apple Maps link to detect name, address, and coordinates" data-i18n-placeholder="spot.googleUrlPlaceholder" />
           </label>
           <div class="two-col">
             <label>
@@ -559,11 +561,28 @@
             </div>
             <div class="dish-editor-list" id="dishEditorList"></div>
           </section>
-          <p class="form-help" id="formHelp" data-i18n="google.help">
-            Copy the full Google Maps browser URL. Short share links may need to be opened in a browser first.
+          <p class="form-help" id="formHelp" data-i18n="maps.help">
+            Paste a Google Maps or Apple Maps link. Short links will be expanded by the local service.
           </p>
           <button class="primary-button" id="saveSpotButton" type="submit" data-i18n="spot.saveButton">Save Spot</button>
         </form>
+      </dialog>
+
+      <dialog class="modal" id="mapChoiceDialog">
+        <section class="modal-card map-choice-card">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow" data-i18n="maps.openEyebrow">OPEN MAP</p>
+              <h2 data-i18n="maps.openTitle">Choose a map app</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeMapChoiceDialog">×</button>
+          </div>
+          <p class="form-help" id="mapChoiceName">Open this restaurant in your preferred map app.</p>
+          <div class="map-choice-actions">
+            <a class="primary-button" id="openGoogleMapChoice" href="#" target="_blank" rel="noreferrer" data-i18n="maps.openGoogle">Google Maps</a>
+            <a class="secondary-button" id="openAppleMapChoice" href="#" target="_blank" rel="noreferrer" data-i18n="maps.openApple">Apple Maps</a>
+          </div>
+        </section>
       </dialog>
 
       <dialog class="modal" id="shareDialog">

@@ -3850,6 +3850,21 @@ body[data-view="login"] .top-actions {
   max-width: 560px;
 }
 
+.map-choice-card {
+  max-width: 420px;
+}
+
+.map-choice-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.map-choice-actions .primary-button,
+.map-choice-actions .secondary-button {
+  width: 100%;
+  min-height: 52px;
+}
+
 .auth-tabs {
   width: max-content;
   max-width: 100%;
@@ -5003,9 +5018,30 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .mobile-list-head,
   body[data-view="my-lists"] .mobile-list-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     color: var(--muted);
     font-size: 11px;
     text-transform: uppercase;
+  }
+
+  body[data-view="my-map"] .mobile-list-add,
+  body[data-view="my-lists"] .mobile-list-add {
+    display: inline-grid;
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    place-items: center;
+    border: 1px solid rgba(217, 197, 183, 0.92);
+    border-radius: 999px;
+    background: var(--paper);
+    color: var(--primary-dark);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 2px 0 rgba(139, 106, 87, 0.18);
   }
 
   body[data-view="my-map"] .mobile-list-filters,
