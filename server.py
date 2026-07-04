@@ -144,6 +144,24 @@ class SharePackIn(BaseModel):
     items: list[SharePackItemIn] = Field(default_factory=list)
 
 
+class RecipeIn(BaseModel):
+    title: str = Field(min_length=1, max_length=180)
+    ingredients: str = ""
+    steps: str = ""
+    notes: str = ""
+    rating: float = Field(default=0, ge=0, le=5)
+    cooked_at: int = Field(default=0, ge=0)
+
+
+class RecipePatch(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=1, max_length=180)
+    ingredients: Optional[str] = None
+    steps: Optional[str] = None
+    notes: Optional[str] = None
+    rating: Optional[float] = Field(default=None, ge=0, le=5)
+    cooked_at: Optional[int] = Field(default=None, ge=0)
+
+
 class ListIn(BaseModel):
     title: str = Field(min_length=1, max_length=160)
     description: str = ""
@@ -338,6 +356,29 @@ def init_db() -> None:
               share_pack_item_id TEXT NOT NULL REFERENCES share_pack_items(id) ON DELETE CASCADE,
               dish_id TEXT NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
               sort_order INTEGER NOT NULL DEFAULT 0,
+              created_at INTEGER NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS recipes (
+              id TEXT PRIMARY KEY,
+              owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              title TEXT NOT NULL,
+              ingredients TEXT NOT NULL DEFAULT '',
+              steps TEXT NOT NULL DEFAULT '',
+              notes TEXT NOT NULL DEFAULT '',
+              rating REAL NOT NULL DEFAULT 0,
+              cooked_at INTEGER NOT NULL DEFAULT 0,
+              image_path TEXT NOT NULL DEFAULT '',
+              created_at INTEGER NOT NULL,
+              updated_at INTEGER NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS recipe_shares (
+              id TEXT PRIMARY KEY,
+              owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              recipe_id TEXT REFERENCES recipes(id) ON DELETE SET NULL,
+              token TEXT NOT NULL UNIQUE,
+              snapshot_json TEXT NOT NULL,
               created_at INTEGER NOT NULL
             );
 
@@ -831,6 +872,64 @@ def restaurant_json(db: sqlite3.Connection, row: sqlite3.Row, include_dishes: bo
         ).fetchall()
         payload["dishes"] = [dish_json(dish) for dish in dishes]
     return payload
+
+
+def recipe_json(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
+    image_path = row["image_path"] if isinstance(row, sqlite3.Row) else row.get("image_path", "")
+    image_url = f"/uploads/{image_path}" if image_path else (row.get("image_url", "") if isinstance(row, dict) else "")
+    return {
+        "id": row["id"],
+        "title": row["title"],
+        "ingredients": row["ingredients"],
+        "steps": row["steps"],
+        "notes": row["notes"],
+        "rating": row["rating"],
+        "cooked_at": row["cooked_at"],
+        "image_url": image_url,
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def recipe_snapshot(recipe: dict[str, Any]) -> str:
+    keys = ["id", "title", "ingredients", "steps", "notes", "rating", "cooked_at", "image_url", "created_at", "updated_at"]
+    return json.dumps({"recipe": {key: recipe.get(key) for key in keys}}, ensure_ascii=False)
+
+
+def parse_recipe_snapshot(snapshot_json: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(snapshot_json or "{}")
+    except json.JSONDecodeError:
+        payload = {}
+    recipe = payload.get("recipe") if isinstance(payload, dict) else None
+    if not isinstance(recipe, dict):
+        raise HTTPException(status_code=404, detail="Recipe share is empty")
+    defaults = {
+        "id": "",
+        "title": "Recipe",
+        "ingredients": "",
+        "steps": "",
+        "notes": "",
+        "rating": 0,
+        "cooked_at": 0,
+        "image_url": "",
+        "created_at": 0,
+        "updated_at": 0,
+    }
+    defaults.update(recipe)
+    return defaults
+
+
+def recipe_share_url(token: str) -> str:
+    return f"{APP_BASE_URL}/recipe-share/{token}"
+
+
+def recipe_share_card_url(token: str) -> str:
+    return f"{APP_BASE_URL}/api/recipe-shares/{token}/card.png"
+
+
+def recipe_share_qr_url(token: str) -> str:
+    return f"{APP_BASE_URL}/api/recipe-shares/{token}/qr.svg"
 
 
 def share_pack_card_url(token: str) -> str:
@@ -1535,6 +1634,104 @@ def delete_dish(dish_id: str, user: dict[str, Any] = Depends(require_user)) -> d
     return {"ok": True}
 
 
+def owned_recipe(db: sqlite3.Connection, recipe_id: str, user_id: str) -> sqlite3.Row:
+    row = db.execute("SELECT * FROM recipes WHERE id = ? AND owner_user_id = ?", (recipe_id, user_id)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    return row
+
+
+@app.get("/api/recipes")
+def list_recipes(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    with connect() as db:
+        rows = db.execute(
+            "SELECT * FROM recipes WHERE owner_user_id = ? ORDER BY updated_at DESC, created_at DESC",
+            (user["id"],),
+        ).fetchall()
+        return {"recipes": [recipe_json(row) for row in rows]}
+
+
+@app.post("/api/recipes")
+def create_recipe(payload: RecipeIn, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    recipe_id = new_id()
+    timestamp = now()
+    with connect() as db:
+        db.execute(
+            """
+            INSERT INTO recipes
+            (id, owner_user_id, title, ingredients, steps, notes, rating, cooked_at, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                recipe_id,
+                user["id"],
+                payload.title.strip(),
+                payload.ingredients.strip(),
+                payload.steps.strip(),
+                payload.notes.strip(),
+                payload.rating,
+                payload.cooked_at,
+                timestamp,
+                timestamp,
+            ),
+        )
+        return {"recipe": recipe_json(owned_recipe(db, recipe_id, user["id"]))}
+
+
+@app.get("/api/recipes/{recipe_id}")
+def get_recipe(recipe_id: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    with connect() as db:
+        return {"recipe": recipe_json(owned_recipe(db, recipe_id, user["id"]))}
+
+
+@app.patch("/api/recipes/{recipe_id}")
+def update_recipe(recipe_id: str, payload: RecipePatch, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    updates = model_values(payload)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No changes provided")
+    allowed = ["title", "ingredients", "steps", "notes", "rating", "cooked_at"]
+    fields = [field for field in allowed if field in updates]
+    values = [updates[field].strip() if isinstance(updates[field], str) else updates[field] for field in fields]
+    fields.append("updated_at")
+    values.append(now())
+    values.extend([recipe_id, user["id"]])
+    with connect() as db:
+        owned_recipe(db, recipe_id, user["id"])
+        db.execute(
+            f"UPDATE recipes SET {', '.join(f'{field} = ?' for field in fields)} WHERE id = ? AND owner_user_id = ?",
+            values,
+        )
+        return {"recipe": recipe_json(owned_recipe(db, recipe_id, user["id"]))}
+
+
+@app.delete("/api/recipes/{recipe_id}")
+def delete_recipe(recipe_id: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    with connect() as db:
+        owned_recipe(db, recipe_id, user["id"])
+        db.execute("DELETE FROM recipes WHERE id = ? AND owner_user_id = ?", (recipe_id, user["id"]))
+    return {"ok": True}
+
+
+@app.post("/api/recipes/{recipe_id}/image")
+async def upload_recipe_image(
+    recipe_id: str,
+    image: UploadFile = File(...),
+    user: dict[str, Any] = Depends(require_user),
+) -> dict[str, Any]:
+    if image.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTPException(status_code=415, detail="Only JPEG, PNG, and WebP images are supported")
+    suffix = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}[image.content_type]
+    data = await image.read()
+    if len(data) > 1_200_000:
+        raise HTTPException(status_code=413, detail="Image is too large")
+    with connect() as db:
+        owned_recipe(db, recipe_id, user["id"])
+        filename = f"{recipe_id}-{secrets.token_hex(6)}{suffix}"
+        (UPLOAD_DIR / filename).write_bytes(data)
+        db.execute("UPDATE recipes SET image_path = ?, updated_at = ? WHERE id = ? AND owner_user_id = ?", (filename, now(), recipe_id, user["id"]))
+        return {"recipe": recipe_json(owned_recipe(db, recipe_id, user["id"]))}
+
+
 @app.post("/api/restaurants/{restaurant_id}/share")
 def create_share(restaurant_id: str, payload: ShareIn, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
     token = secrets.token_urlsafe(16)
@@ -1862,6 +2059,154 @@ def share_pack_card_png(token: str) -> bytes:
     stream = io.BytesIO()
     image.save(stream, format="PNG", optimize=True)
     return stream.getvalue()
+
+
+def recipe_share_payload(token: str) -> dict[str, Any]:
+    with connect() as db:
+        share = db.execute("SELECT * FROM recipe_shares WHERE token = ?", (token,)).fetchone()
+        if not share:
+            raise HTTPException(status_code=404, detail="Recipe share not found")
+        owner = db.execute("SELECT * FROM users WHERE id = ?", (share["owner_user_id"],)).fetchone()
+        recipe = parse_recipe_snapshot(share["snapshot_json"])
+        return {
+            "recipe_share": {
+                "token": share["token"],
+                "created_at": share["created_at"],
+                "owner": public_owner(dict(owner)) if owner else None,
+                "share_url": recipe_share_url(share["token"]),
+                "qr_url": recipe_share_qr_url(share["token"]),
+                "card_url": recipe_share_card_url(share["token"]),
+                "recipe": recipe,
+            }
+        }
+
+
+def recipe_share_card_png(token: str) -> bytes:
+    from PIL import Image, ImageDraw
+    import qrcode
+
+    payload = recipe_share_payload(token)["recipe_share"]
+    recipe = payload["recipe"]
+    image = Image.new("RGB", (SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT), "#fffaf4")
+    draw = ImageDraw.Draw(image)
+    for x in range(28, SHARE_CARD_WIDTH, 48):
+        for y in range(28, SHARE_CARD_HEIGHT, 48):
+            draw.ellipse((x, y, x + 4, y + 4), fill="#efe4d8")
+
+    margin = 72
+    draw.rounded_rectangle((margin, margin, SHARE_CARD_WIDTH - margin, SHARE_CARD_HEIGHT - margin), radius=34, fill="#fffdf8", outline="#d9c5b7", width=3)
+    draw.rounded_rectangle((margin + 26, margin + 28, margin + 210, margin + 84), radius=0, fill="#e7dfbf")
+
+    eyebrow_font = share_card_font(24, bold=True)
+    title_font = share_card_font(58, bold=True)
+    body_font = share_card_font(30)
+    meta_font = share_card_font(24, bold=True)
+    small_font = share_card_font(21)
+    draw.text((margin + 42, margin + 44), "HOME RECIPE", fill="#647144", font=eyebrow_font)
+
+    y = margin + 118
+    for line in wrap_card_text(draw, recipe["title"], title_font, SHARE_CARD_WIDTH - margin * 2 - 80, 2):
+        draw.text((margin + 42, y), line, fill="#3b2e2a", font=title_font)
+        y += 68
+    meta = []
+    if recipe.get("rating"):
+        meta.append(f"★ {recipe['rating']}")
+    if recipe.get("cooked_at"):
+        meta.append(time.strftime("%b %-d, %Y", time.localtime(int(recipe["cooked_at"]))))
+    draw.text((margin + 42, y + 8), " · ".join(meta) or "Shared from Gourmet Map", fill="#6b422d", font=meta_font)
+    y += 64
+
+    ingredients = recipe.get("ingredients") or "Scan to view ingredients and steps."
+    draw.text((margin + 42, y), "Ingredients", fill="#6b422d", font=meta_font)
+    y += 40
+    for line in wrap_card_text(draw, ingredients, body_font, SHARE_CARD_WIDTH - margin * 2 - 80, 4):
+        draw.text((margin + 42, y), line, fill="#67554a", font=body_font)
+        y += 40
+
+    qr = qrcode.QRCode(border=1, box_size=12)
+    qr.add_data(payload["share_url"])
+    qr.make(fit=True)
+    qr_image = qr.make_image(fill_color="#3b2e2a", back_color="#fffdf8").convert("RGB")
+    qr_image = qr_image.resize((320, 320))
+    qr_x = (SHARE_CARD_WIDTH - 320) // 2
+    qr_y = SHARE_CARD_HEIGHT - margin - 420
+    draw.rounded_rectangle((qr_x - 24, qr_y - 24, qr_x + 344, qr_y + 344), radius=28, fill="#ffffff", outline="#d9c5b7", width=3)
+    image.paste(qr_image, (qr_x, qr_y))
+    draw.text((margin + 42, SHARE_CARD_HEIGHT - margin - 58), "Scan to view, sign in to save it to My Recipes", fill="#8c7b70", font=small_font)
+
+    stream = io.BytesIO()
+    image.save(stream, format="PNG", optimize=True)
+    return stream.getvalue()
+
+
+@app.post("/api/recipes/{recipe_id}/share")
+def create_recipe_share(recipe_id: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    token = secrets.token_urlsafe(16)
+    timestamp = now()
+    with connect() as db:
+        recipe = recipe_json(owned_recipe(db, recipe_id, user["id"]))
+        db.execute(
+            "INSERT INTO recipe_shares (id, owner_user_id, recipe_id, token, snapshot_json, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (new_id(), user["id"], recipe_id, token, recipe_snapshot(recipe), timestamp),
+        )
+    return {"share_url": recipe_share_url(token), "qr_url": recipe_share_qr_url(token), "card_url": recipe_share_card_url(token), "token": token}
+
+
+@app.get("/api/recipe-shares/{token}")
+def get_recipe_share(token: str) -> dict[str, Any]:
+    return recipe_share_payload(token)
+
+
+@app.get("/api/recipe-shares/{token}/qr.svg")
+def get_recipe_share_qr(token: str) -> Response:
+    recipe_share_payload(token)
+    try:
+        import qrcode
+        import qrcode.image.svg
+    except ImportError as error:
+        raise HTTPException(status_code=500, detail="QR generation is not installed") from error
+    image = qrcode.make(recipe_share_url(token), image_factory=qrcode.image.svg.SvgPathImage)
+    stream = io.BytesIO()
+    image.save(stream)
+    return Response(content=stream.getvalue(), media_type="image/svg+xml")
+
+
+@app.get("/api/recipe-shares/{token}/card.png")
+def get_recipe_share_card(token: str) -> Response:
+    return Response(content=recipe_share_card_png(token), media_type="image/png")
+
+
+@app.post("/api/recipe-shares/{token}/add")
+def add_recipe_share(token: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    recipe = recipe_share_payload(token)["recipe_share"]["recipe"]
+    recipe_id = new_id()
+    timestamp = now()
+    image_path = ""
+    image_url = recipe.get("image_url", "")
+    if image_url.startswith("/uploads/"):
+        image_path = Path(image_url).name
+    with connect() as db:
+        db.execute(
+            """
+            INSERT INTO recipes
+            (id, owner_user_id, title, ingredients, steps, notes, rating, cooked_at, image_path, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                recipe_id,
+                user["id"],
+                recipe["title"],
+                recipe.get("ingredients", ""),
+                recipe.get("steps", ""),
+                recipe.get("notes", ""),
+                float(recipe.get("rating") or 0),
+                int(recipe.get("cooked_at") or 0),
+                image_path,
+                timestamp,
+                timestamp,
+            ),
+        )
+        return {"recipe": recipe_json(owned_recipe(db, recipe_id, user["id"]))}
 
 
 @app.get("/api/share-packs/{token}/qr.svg")

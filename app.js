@@ -22,12 +22,14 @@ const translations = {
   en: {
     "app.brand": "Gourmet Map",
     "app.sharedBrand": "Shared Bite",
-    "nav.map": "Map View",
-    "nav.lists": "List View",
+    "nav.map": "Map",
+    "nav.lists": "Lists",
+    "nav.recipes": "Recipes",
     "nav.discovery": "Discovery",
     "search.default": "Search for tasty treats...",
     "search.category": "Search spots in this category...",
     "search.discovery": "Search curated lists...",
+    "search.recipes": "Search recipes...",
     "language.label": "Language",
     "language.english": "English",
     "language.chinese": "中文",
@@ -368,6 +370,46 @@ const translations = {
     "sharePack.byOwner": "Recommended by {name}",
     "sharePack.empty": "This share pack has no visible restaurants.",
     "sharePack.addedSource": "Added from a private share pack.",
+    "recipes.eyebrow": "HOME COOKING",
+    "recipes.title": "My Recipes",
+    "recipes.body": "Keep photos, ingredients, and notes for dishes you cooked.",
+    "recipes.addTitle": "Add recipe",
+    "recipes.emptyTitle": "Add your first recipe",
+    "recipes.emptyBody": "Save a dish you cooked, then add a photo, ingredients, and steps.",
+    "recipes.newMode": "NEW RECIPE",
+    "recipes.editMode": "EDIT RECIPE",
+    "recipes.formTitle": "Save a Recipe",
+    "recipes.editTitle": "Edit Recipe",
+    "recipes.name": "Dish name",
+    "recipes.namePlaceholder": "Tomato egg noodles",
+    "recipes.rating": "Rating",
+    "recipes.cookedAt": "Cooked date",
+    "recipes.uploadPhoto": "Upload photo",
+    "recipes.ingredients": "Ingredients",
+    "recipes.ingredientsPlaceholder": "Eggs, tomato, noodles, scallion...",
+    "recipes.steps": "Steps",
+    "recipes.stepsPlaceholder": "Write the simple steps so you can remake it.",
+    "recipes.notes": "Notes",
+    "recipes.notesPlaceholder": "What to adjust next time?",
+    "recipes.formHelp": "Recipes are private unless you generate a share link.",
+    "recipes.save": "Save Recipe",
+    "recipes.update": "Update Recipe",
+    "recipes.saved": "Recipe saved.",
+    "recipes.deleted": "Recipe deleted.",
+    "recipes.deleteConfirm": "Delete recipe \"{title}\"?",
+    "recipes.shareEyebrow": "RECIPE SHARE",
+    "recipes.shareTitle": "Share this Recipe",
+    "recipes.shareHelp": "Create a public preview link, QR code, and image card for this recipe.",
+    "recipes.shareLink": "Recipe link",
+    "recipes.generateShare": "Generate Link",
+    "recipes.generated": "Recipe share link and card are ready.",
+    "recipes.cardAlt": "Recipe share card",
+    "recipes.previewEyebrow": "HOME RECIPE",
+    "recipes.byOwner": "Recipe from {name}",
+    "recipes.saveShared": "Save to My Recipes",
+    "recipes.savedShared": "Saved to My Recipes.",
+    "recipes.noIngredients": "No ingredients recorded yet.",
+    "recipes.noSteps": "No steps recorded yet.",
     "listForm.titleLabel": "Title",
     "listForm.descriptionLabel": "Description",
     "listForm.descriptionPlaceholder": "Describe the occasion or theme for this restaurant group.",
@@ -446,12 +488,14 @@ const translations = {
   zh: {
     "app.brand": "美食地图",
     "app.sharedBrand": "分享餐厅",
-    "nav.map": "地图视图",
-    "nav.lists": "列表视图",
+    "nav.map": "地图",
+    "nav.lists": "列表",
+    "nav.recipes": "菜谱",
     "nav.discovery": "发现",
     "search.default": "搜索好吃的...",
     "search.category": "搜索当前分类里的餐厅...",
     "search.discovery": "搜索公开清单...",
+    "search.recipes": "搜索菜谱...",
     "language.label": "语言",
     "language.english": "English",
     "language.chinese": "中文",
@@ -792,6 +836,46 @@ const translations = {
     "sharePack.byOwner": "来自 {name} 的推荐",
     "sharePack.empty": "这个推荐里没有可见餐厅。",
     "sharePack.addedSource": "来自私密推荐。",
+    "recipes.eyebrow": "自己做的菜",
+    "recipes.title": "我的菜谱",
+    "recipes.body": "记录自己做过的菜、照片、食材和做法。",
+    "recipes.addTitle": "添加菜谱",
+    "recipes.emptyTitle": "添加第一道菜谱",
+    "recipes.emptyBody": "记录一道你做过的菜，之后可以补照片、食材和步骤。",
+    "recipes.newMode": "新菜谱",
+    "recipes.editMode": "编辑菜谱",
+    "recipes.formTitle": "保存菜谱",
+    "recipes.editTitle": "编辑菜谱",
+    "recipes.name": "菜名",
+    "recipes.namePlaceholder": "番茄鸡蛋面",
+    "recipes.rating": "评分",
+    "recipes.cookedAt": "做菜日期",
+    "recipes.uploadPhoto": "上传照片",
+    "recipes.ingredients": "食材",
+    "recipes.ingredientsPlaceholder": "鸡蛋、番茄、面条、葱...",
+    "recipes.steps": "做法",
+    "recipes.stepsPlaceholder": "写下简单步骤，方便下次复刻。",
+    "recipes.notes": "备注",
+    "recipes.notesPlaceholder": "下次想调整什么？",
+    "recipes.formHelp": "菜谱默认私密；生成分享链接后，拿到链接的人可以查看。",
+    "recipes.save": "保存菜谱",
+    "recipes.update": "更新菜谱",
+    "recipes.saved": "菜谱已保存。",
+    "recipes.deleted": "菜谱已删除。",
+    "recipes.deleteConfirm": "删除菜谱「{title}」吗？",
+    "recipes.shareEyebrow": "菜谱分享",
+    "recipes.shareTitle": "分享这个菜谱",
+    "recipes.shareHelp": "生成公开预览链接、二维码和分享图片。",
+    "recipes.shareLink": "菜谱链接",
+    "recipes.generateShare": "生成链接",
+    "recipes.generated": "菜谱分享链接和图片已生成。",
+    "recipes.cardAlt": "菜谱分享图",
+    "recipes.previewEyebrow": "家常菜谱",
+    "recipes.byOwner": "来自 {name} 的菜谱",
+    "recipes.saveShared": "保存到我的菜谱",
+    "recipes.savedShared": "已保存到我的菜谱。",
+    "recipes.noIngredients": "还没有记录食材。",
+    "recipes.noSteps": "还没有记录做法。",
     "listForm.titleLabel": "标题",
     "listForm.descriptionLabel": "描述",
     "listForm.descriptionPlaceholder": "记录这组餐厅适合什么场景。",
@@ -954,11 +1038,17 @@ let shareToken = getShareToken();
 let shareData = null;
 let sharePackToken = getSharePackToken();
 let sharePackData = null;
+let recipeShareToken = getRecipeShareToken();
+let recipeShareData = null;
 let pendingAddSharePack = false;
+let pendingAddRecipeShare = false;
 let activeView = getInitialView();
 let lists = [];
 let discoveryLists = [];
 let sharePacks = [];
+let recipes = [];
+let selectedRecipeId = null;
+let editingRecipeId = null;
 let selectedListId = null;
 let activeMyListKey = "system:all";
 let selectedDiscoveryListId = null;
@@ -977,6 +1067,7 @@ let mapGestureStartZoom = null;
 let isDetailAddDishOpen = false;
 let activeDetailRestaurantId = null;
 let detailCloseTimer = null;
+let recipeDialogDragStart = null;
 
 const DISH_AUTOSAVE_DELAY = 700;
 const REVIEW_AUTOSAVE_DELAY = 700;
@@ -1137,6 +1228,33 @@ const elements = {
   copySharePackButton: document.querySelector("#copySharePackButton"),
   openSharePackImage: document.querySelector("#openSharePackImage"),
   downloadSharePackImage: document.querySelector("#downloadSharePackImage"),
+  recipesView: document.querySelector("#recipesView"),
+  recipeList: document.querySelector("#recipeList"),
+  recipeDetail: document.querySelector("#recipeDetail"),
+  openRecipeDialog: document.querySelector("#openRecipeDialog"),
+  recipeDialog: document.querySelector("#recipeDialog"),
+  recipeForm: document.querySelector("#recipeForm"),
+  recipeFormMode: document.querySelector("#recipeFormMode"),
+  recipeFormTitle: document.querySelector("#recipeFormTitle"),
+  recipeFormHelp: document.querySelector("#recipeFormHelp"),
+  recipeImageInput: document.querySelector("#recipeImageInput"),
+  recipeImageName: document.querySelector("#recipeImageName"),
+  saveRecipeButton: document.querySelector("#saveRecipeButton"),
+  closeRecipeDialog: document.querySelector("#closeRecipeDialog"),
+  recipeShareDialog: document.querySelector("#recipeShareDialog"),
+  recipeShareForm: document.querySelector("#recipeShareForm"),
+  closeRecipeShareDialog: document.querySelector("#closeRecipeShareDialog"),
+  recipeShareHelp: document.querySelector("#recipeShareHelp"),
+  recipeShareResult: document.querySelector("#recipeShareResult"),
+  recipeShareUrlInput: document.querySelector("#recipeShareUrlInput"),
+  recipeShareCardImage: document.querySelector("#recipeShareCardImage"),
+  recipeShareImageLink: document.querySelector("#recipeShareImageLink"),
+  createRecipeShareButton: document.querySelector("#createRecipeShareButton"),
+  copyRecipeShareButton: document.querySelector("#copyRecipeShareButton"),
+  openRecipeShareImage: document.querySelector("#openRecipeShareImage"),
+  downloadRecipeShareImage: document.querySelector("#downloadRecipeShareImage"),
+  recipeShareView: document.querySelector("#recipeShareView"),
+  recipeSharePage: document.querySelector("#recipeSharePage"),
   navLinks: document.querySelectorAll("[data-view]"),
   viewPanels: document.querySelectorAll("[data-view-panel]"),
   mapView: document.querySelector("#mapView"),
@@ -1189,7 +1307,10 @@ async function boot() {
     return;
   }
   await loadMe();
-  if (sharePackToken) {
+  if (recipeShareToken) {
+    activeView = "recipe-share";
+    await loadRecipeSharePage(recipeShareToken);
+  } else if (sharePackToken) {
     activeView = "share-pack";
     await loadSharePackPage(sharePackToken);
   } else if (shareToken) {
@@ -1200,6 +1321,7 @@ async function boot() {
   } else {
     await loadRestaurants();
     await loadLists();
+    await loadRecipes();
     await loadDiscoveryLists();
     await loadSharePacks();
   }
@@ -1319,7 +1441,7 @@ function bindEvents() {
   window.addEventListener("hashchange", () => setActiveView(getInitialView(), { push: false }));
   window.addEventListener("scroll", updateTopbarElevation, { passive: true });
   window.addEventListener("resize", recenterMapPanWithinBounds);
-  [elements.sidebar, elements.mapView, elements.listsView, elements.discoveryView, elements.adminView].forEach((scrollArea) => {
+  [elements.sidebar, elements.mapView, elements.listsView, elements.discoveryView, elements.recipesView, elements.adminView].forEach((scrollArea) => {
     scrollArea?.addEventListener("scroll", updateTopbarElevation, { passive: true });
   });
   elements.createListButton.addEventListener("click", openCreateListDialog);
@@ -1355,6 +1477,27 @@ function bindEvents() {
     });
   });
   elements.openSharePackDialog?.addEventListener("click", openSharePackDialog);
+  elements.openRecipeDialog?.addEventListener("click", () => openRecipeDialog());
+  elements.closeRecipeDialog?.addEventListener("click", () => closeRecipeDialog());
+  elements.recipeDialog?.addEventListener("click", (event) => {
+    if (event.target === elements.recipeDialog) closeRecipeDialog();
+  });
+  document.querySelector("#recipeModalHead")?.addEventListener("pointerdown", startRecipeDialogSwipeClose);
+  document.querySelector("#recipeDragHandle")?.addEventListener("pointerdown", startRecipeDialogSwipeClose);
+  elements.recipeForm?.addEventListener("pointermove", moveRecipeDialogSwipeClose);
+  elements.recipeForm?.addEventListener("pointerup", finishRecipeDialogSwipeClose);
+  elements.recipeForm?.addEventListener("pointercancel", cancelRecipeDialogSwipeClose);
+  elements.recipeForm?.addEventListener("submit", saveRecipeFromForm);
+  elements.recipeImageInput?.addEventListener("change", updateRecipeImageName);
+  bindDetailFileDropzone(elements.recipeImageInput?.closest("[data-recipe-file-dropzone]"), elements.recipeImageInput, {
+    onFileSelected: updateRecipeImageName,
+  });
+  elements.closeRecipeShareDialog?.addEventListener("click", () => elements.recipeShareDialog?.close());
+  elements.recipeShareDialog?.addEventListener("click", (event) => {
+    if (event.target === elements.recipeShareDialog) elements.recipeShareDialog.close();
+  });
+  elements.recipeShareForm?.addEventListener("submit", createRecipeShare);
+  elements.copyRecipeShareButton?.addEventListener("click", copyRecipeShareLink);
   elements.googleUrlInput.addEventListener("input", autofillFromMapsUrl);
   elements.googleUrlInput.addEventListener("change", autofillFromMapsUrl);
   elements.googleUrlInput.addEventListener("paste", () => window.setTimeout(autofillFromMapsUrl, 0));
@@ -1644,6 +1787,8 @@ function renderAuth() {
     ? t("paste.shared")
     : shareToken
     ? t("paste.shared")
+    : recipeShareToken
+    ? t("paste.shared")
     : currentUser
     ? t("paste.help")
     : t("paste.demo");
@@ -1675,12 +1820,14 @@ async function handleLoginButton() {
   restaurants = [];
   lists = [];
   sharePacks = [];
+  recipes = [];
   selectedListId = null;
+  selectedRecipeId = null;
   activeMyListKey = "system:all";
   activeFilter = "all";
   selectedRestaurantId = null;
   renderAuth();
-  if (!shareToken && !sharePackToken) {
+  if (!shareToken && !sharePackToken && !recipeShareToken) {
     setActiveView("login", { push: false });
   } else {
     render();
@@ -1729,8 +1876,14 @@ async function refreshAfterAuth() {
     await addSharedPackToMyLists();
     return;
   }
+  if (pendingAddRecipeShare && recipeShareToken) {
+    closeAuthDialog();
+    await addSharedRecipeToMyRecipes();
+    return;
+  }
   await loadRestaurants();
   await loadLists();
+  await loadRecipes();
   await loadDiscoveryLists();
   await loadSharePacks();
   closeAuthDialog();
@@ -1889,6 +2042,17 @@ async function loadSharePacks() {
   }
   const data = await api("/api/share-packs");
   sharePacks = (data.share_packs || []).map(normalizeSharePackSummary);
+}
+
+async function loadRecipes() {
+  if (!currentUser) {
+    recipes = [];
+    selectedRecipeId = null;
+    return;
+  }
+  const data = await api("/api/recipes");
+  recipes = (data.recipes || []).map(normalizeRecipe);
+  selectedRecipeId = selectedRecipeId && recipes.some((recipe) => recipe.id === selectedRecipeId) ? selectedRecipeId : recipes[0]?.id ?? null;
 }
 
 async function loadDiscoveryDetail(listId) {
@@ -2441,6 +2605,37 @@ async function addSharedPackToMyLists() {
   pendingAddSharePack = false;
   rememberPendingSharePackListId(data.list?.id);
   window.location.href = `/#my-lists`;
+  return data;
+}
+
+async function loadRecipeSharePage(token) {
+  const data = await api(`/api/recipe-shares/${token}`);
+  recipeShareData = normalizeRecipeShare(data.recipe_share);
+  renderRecipeShareChrome();
+  render();
+}
+
+function renderRecipeShareChrome() {
+  if (!recipeShareToken) return;
+  document.querySelector(".brand span:last-child").textContent = t("recipes.previewEyebrow");
+  elements.pasteAddButton.hidden = true;
+  elements.openAddPanel.textContent = t("recipes.saveShared");
+  elements.openAddPanel.onclick = addSharedRecipeToMyRecipes;
+}
+
+async function addSharedRecipeToMyRecipes() {
+  if (!recipeShareToken) return;
+  if (!currentUser) {
+    pendingAddRecipeShare = true;
+    openAuthDialog();
+    return;
+  }
+  const data = await api(`/api/recipe-shares/${recipeShareToken}/add`, { method: "POST" });
+  pendingAddRecipeShare = false;
+  const recipe = normalizeRecipe(data.recipe);
+  upsertRecipe(recipe);
+  selectedRecipeId = recipe.id;
+  window.location.href = "/#recipes";
   return data;
 }
 
@@ -3304,26 +3499,29 @@ function render() {
   renderMarkers();
   renderSpotCard();
   renderListsView();
+  renderRecipesView();
   renderDiscoveryView();
   renderSharePackView();
+  renderRecipeShareView();
   renderAdminView();
   updateTopbarElevation();
 }
 
 function getInitialView() {
   if (isAdminPortal) return "admin-login";
+  if (recipeShareToken) return "recipe-share";
   if (sharePackToken) return "share-pack";
   const hash = window.location.hash.replace("#", "");
-  return ["login", "my-map", "my-lists", "discovery"].includes(hash) ? hash : "my-map";
+  return ["login", "my-map", "my-lists", "recipes", "discovery"].includes(hash) ? hash : "my-map";
 }
 
 function setActiveView(view, options = {}) {
-  const allowedViews = isAdminPortal ? ["admin-login", "admin"] : ["login", "my-map", "my-lists", "discovery", "share-pack"];
+  const allowedViews = isAdminPortal ? ["admin-login", "admin"] : ["login", "my-map", "my-lists", "recipes", "discovery", "share-pack", "recipe-share"];
   if (!allowedViews.includes(view)) view = isAdminPortal ? "admin-login" : "my-map";
   if (isAdminPortal && view === "admin" && !currentAdmin) view = "admin-login";
-  if (!isAdminPortal && !currentUser && !shareToken && !sharePackToken) view = "login";
-  activeView = sharePackToken ? "share-pack" : shareToken ? "my-map" : view;
-  if (!isAdminPortal && !sharePackToken && activeView !== "login" && options.push !== false && window.location.hash !== `#${activeView}`) {
+  if (!isAdminPortal && !currentUser && !shareToken && !sharePackToken && !recipeShareToken) view = "login";
+  activeView = recipeShareToken ? "recipe-share" : sharePackToken ? "share-pack" : shareToken ? "my-map" : view;
+  if (!isAdminPortal && !sharePackToken && !recipeShareToken && activeView !== "login" && options.push !== false && window.location.hash !== `#${activeView}`) {
     window.location.hash = activeView;
   }
   if (activeView === "my-lists" && currentUser && !lists.length) {
@@ -3331,6 +3529,9 @@ function setActiveView(view, options = {}) {
   }
   if (activeView === "discovery" && !discoveryLists.length) {
     loadDiscoveryLists().then(render).catch((error) => alert(error.message));
+  }
+  if (activeView === "recipes" && currentUser && !recipes.length) {
+    loadRecipes().then(render).catch((error) => alert(error.message));
   }
   if (activeView === "admin") {
     loadAdminUsers().catch((error) => {
@@ -3359,8 +3560,10 @@ function renderViewShell() {
   elements.searchInput.placeholder = {
     "my-map": t("search.category"),
     "my-lists": t("search.category"),
+    recipes: t("search.recipes"),
     discovery: t("search.discovery"),
     "share-pack": t("search.discovery"),
+    "recipe-share": t("search.recipes"),
     login: t("auth.signIn"),
     admin: t("admin.searchPlaceholder"),
     "admin-login": t("admin.usernamePlaceholder"),
@@ -3787,6 +3990,242 @@ function renderSharePackHistory() {
   elements.sharePackHistoryList.querySelectorAll("[data-revoke-share-pack]").forEach((button) => {
     button.addEventListener("click", () => revokeSharePack(button.dataset.revokeSharePack));
   });
+}
+
+function renderRecipesView() {
+  if (!elements.recipeList || !elements.recipeDetail) return;
+  const term = elements.searchInput.value.trim().toLowerCase();
+  const visible = recipes.filter((recipe) => recipeSearchText(recipe).includes(term));
+  elements.recipeList.innerHTML = visible.length
+    ? visible.map(recipeRowTemplate).join("")
+    : emptyStateTemplate(t("recipes.emptyTitle"), t("recipes.emptyBody"));
+  elements.recipeList.querySelectorAll("[data-recipe-id]").forEach((card) => {
+    card.addEventListener("click", () => {
+      selectedRecipeId = card.dataset.recipeId;
+      renderRecipesView();
+    });
+  });
+  const selected = recipes.find((recipe) => recipe.id === selectedRecipeId) ?? visible[0] ?? recipes[0] ?? null;
+  selectedRecipeId = selected?.id ?? null;
+  elements.recipesView?.classList.toggle("has-selection", Boolean(selected));
+  elements.recipeDetail.hidden = !selected;
+  elements.recipeDetail.innerHTML = selected ? recipeDetailTemplate(selected) : "";
+  elements.recipeDetail.querySelector("[data-edit-recipe]")?.addEventListener("click", () => openRecipeDialog(selected));
+  elements.recipeDetail.querySelector("[data-share-recipe]")?.addEventListener("click", () => openRecipeShareDialog(selected));
+  elements.recipeDetail.querySelector("[data-delete-recipe]")?.addEventListener("click", () => deleteRecipe(selected));
+}
+
+function recipeRowTemplate(recipe) {
+  return `
+    <article class="recipe-row ${recipe.id === selectedRecipeId ? "selected" : ""}" data-recipe-id="${escapeAttribute(recipe.id)}">
+      <img class="recipe-thumb" src="${escapeAttribute(recipeImageUrl(recipe))}" alt="" loading="lazy" />
+      <div class="recipe-row-main">
+        <strong>${escapeHtml(recipe.title)}</strong>
+        <small>☆ ${Number(recipe.rating || 0).toFixed(1)} · ${recipe.cooked_at ? formatDate(recipe.cooked_at) : formatDate(recipe.updated_at)}</small>
+        <p>${escapeHtml(recipe.ingredients || t("recipes.noIngredients"))}</p>
+      </div>
+    </article>
+  `;
+}
+
+function recipeDetailTemplate(recipe) {
+  return `
+    <article class="recipe-detail-card">
+      <img class="recipe-hero-image" src="${escapeAttribute(recipeImageUrl(recipe))}" alt="" />
+      <div class="list-view-head">
+        <div>
+          <p class="eyebrow">${t("recipes.eyebrow")}</p>
+          <h2>${escapeHtml(recipe.title)}</h2>
+          <div class="compact-meta">
+            <span>☆ ${Number(recipe.rating || 0).toFixed(1)}</span>
+            <span>${recipe.cooked_at ? formatDate(recipe.cooked_at) : formatDate(recipe.updated_at)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="detail-actions">
+        <button class="secondary-button" type="button" data-edit-recipe>${t("button.edit")}</button>
+        <button class="secondary-button" type="button" data-share-recipe>${t("button.share")}</button>
+        <button class="outline-button danger" type="button" data-delete-recipe>${t("button.delete")}</button>
+      </div>
+      <section class="recipe-note-section">
+        <p class="eyebrow">${t("recipes.ingredients")}</p>
+        <p>${escapeHtml(recipe.ingredients || t("recipes.noIngredients")).replace(/\n/g, "<br />")}</p>
+      </section>
+      <section class="recipe-note-section">
+        <p class="eyebrow">${t("recipes.steps")}</p>
+        <p>${escapeHtml(recipe.steps || t("recipes.noSteps")).replace(/\n/g, "<br />")}</p>
+      </section>
+      ${recipe.notes ? `<section class="recipe-note-section"><p class="eyebrow">${t("recipes.notes")}</p><p>${escapeHtml(recipe.notes).replace(/\n/g, "<br />")}</p></section>` : ""}
+    </article>
+  `;
+}
+
+function openRecipeDialog(recipe = null) {
+  if (!requireLogin()) return;
+  editingRecipeId = recipe?.id ?? null;
+  elements.recipeForm.reset();
+  elements.recipeForm.elements.id.value = recipe?.id ?? "";
+  elements.recipeForm.elements.title.value = recipe?.title ?? "";
+  elements.recipeForm.elements.rating.value = recipe ? Number(recipe.rating || 0).toFixed(1) : "4.5";
+  elements.recipeForm.elements.cookedAt.value = recipe?.cooked_at ? dateInputValue(recipe.cooked_at) : dateInputValue(Math.floor(Date.now() / 1000));
+  elements.recipeForm.elements.ingredients.value = recipe?.ingredients ?? "";
+  elements.recipeForm.elements.steps.value = recipe?.steps ?? "";
+  elements.recipeForm.elements.notes.value = recipe?.notes ?? "";
+  elements.recipeFormMode.textContent = recipe ? t("recipes.editMode") : t("recipes.newMode");
+  elements.recipeFormTitle.textContent = recipe ? t("recipes.editTitle") : t("recipes.formTitle");
+  elements.saveRecipeButton.textContent = recipe ? t("recipes.update") : t("recipes.save");
+  elements.recipeFormHelp.textContent = t("recipes.formHelp");
+  updateRecipeImageName();
+  elements.recipeDialog.showModal();
+}
+
+function closeRecipeDialog() {
+  editingRecipeId = null;
+  cancelRecipeDialogSwipeClose();
+  elements.recipeDialog?.close();
+}
+
+function startRecipeDialogSwipeClose(event) {
+  if (!elements.recipeDialog.open || !isMobileMapViewport()) return;
+  if (event.button != null && event.button !== 0) return;
+  if (event.target.closest("button, input, textarea, select, a")) return;
+  recipeDialogDragStart = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    lastY: 0,
+    locked: false,
+  };
+  elements.recipeForm.setPointerCapture?.(event.pointerId);
+}
+
+function moveRecipeDialogSwipeClose(event) {
+  if (!recipeDialogDragStart || event.pointerId !== recipeDialogDragStart.pointerId) return;
+  const deltaX = event.clientX - recipeDialogDragStart.startX;
+  const deltaY = Math.max(0, event.clientY - recipeDialogDragStart.startY);
+  if (!recipeDialogDragStart.locked) {
+    if (deltaY < ADD_DIALOG_SWIPE_LOCK_DISTANCE && Math.abs(deltaX) < ADD_DIALOG_SWIPE_LOCK_DISTANCE) return;
+    if (Math.abs(deltaX) > deltaY) {
+      cancelRecipeDialogSwipeClose();
+      return;
+    }
+    recipeDialogDragStart.locked = true;
+    elements.recipeForm.classList.add("is-dragging");
+  }
+  recipeDialogDragStart.lastY = deltaY;
+  elements.recipeForm.style.setProperty("--sheet-drag-y", `${deltaY}px`);
+  event.preventDefault();
+}
+
+function finishRecipeDialogSwipeClose(event) {
+  if (!recipeDialogDragStart || event.pointerId !== recipeDialogDragStart.pointerId) return;
+  const shouldClose = recipeDialogDragStart.lastY >= ADD_DIALOG_SWIPE_CLOSE_DISTANCE;
+  const pointerId = recipeDialogDragStart.pointerId;
+  recipeDialogDragStart = null;
+  elements.recipeForm.releasePointerCapture?.(pointerId);
+  elements.recipeForm.classList.remove("is-dragging");
+  if (shouldClose) {
+    elements.recipeForm.classList.add("is-dismissing");
+    window.setTimeout(closeRecipeDialog, 170);
+    return;
+  }
+  resetRecipeDialogDragStyles();
+}
+
+function cancelRecipeDialogSwipeClose() {
+  recipeDialogDragStart = null;
+  resetRecipeDialogDragStyles();
+}
+
+function resetRecipeDialogDragStyles() {
+  elements.recipeForm?.classList.remove("is-dragging", "is-dismissing");
+  elements.recipeForm?.style.removeProperty("--sheet-drag-y");
+}
+
+async function saveRecipeFromForm(event) {
+  event.preventDefault();
+  try {
+    const form = new FormData(elements.recipeForm);
+    const body = {
+      title: String(form.get("title") || "").trim(),
+      rating: Number(form.get("rating") || 0),
+      cooked_at: timestampFromDateInput(String(form.get("cookedAt") || "")),
+      ingredients: String(form.get("ingredients") || "").trim(),
+      steps: String(form.get("steps") || "").trim(),
+      notes: String(form.get("notes") || "").trim(),
+    };
+    const data = editingRecipeId
+      ? await api(`/api/recipes/${editingRecipeId}`, { method: "PATCH", body: JSON.stringify(body) })
+      : await api("/api/recipes", { method: "POST", body: JSON.stringify(body) });
+    let recipe = normalizeRecipe(data.recipe);
+    if (elements.recipeImageInput.files?.[0]) {
+      recipe = await uploadRecipeImage(recipe.id, elements.recipeImageInput.files[0]);
+    }
+    upsertRecipe(recipe);
+    selectedRecipeId = recipe.id;
+    elements.recipeFormHelp.textContent = t("recipes.saved");
+    closeRecipeDialog();
+    render();
+  } catch (error) {
+    elements.recipeFormHelp.textContent = error.message;
+  }
+}
+
+async function uploadRecipeImage(recipeId, file) {
+  const imageFile = await compressImageFile(file);
+  const form = new FormData();
+  form.append("image", imageFile);
+  const data = await api(`/api/recipes/${recipeId}/image`, { method: "POST", body: form });
+  return normalizeRecipe(data.recipe);
+}
+
+function updateRecipeImageName() {
+  if (!elements.recipeImageName) return;
+  elements.recipeImageName.textContent = elements.recipeImageInput?.files?.[0]?.name || t("detail.uploadHint");
+}
+
+async function deleteRecipe(recipe) {
+  if (!recipe || !confirm(t("recipes.deleteConfirm", { title: recipe.title }))) return;
+  await api(`/api/recipes/${recipe.id}`, { method: "DELETE" });
+  recipes = recipes.filter((item) => item.id !== recipe.id);
+  selectedRecipeId = recipes[0]?.id ?? null;
+  render();
+}
+
+function openRecipeShareDialog(recipe) {
+  if (!requireLogin() || !recipe) return;
+  selectedRecipeId = recipe.id;
+  elements.recipeShareResult.hidden = true;
+  elements.recipeShareUrlInput.value = "";
+  elements.recipeShareCardImage.removeAttribute("src");
+  elements.openRecipeShareImage.hidden = true;
+  elements.downloadRecipeShareImage.hidden = true;
+  elements.recipeShareHelp.textContent = t("recipes.shareHelp");
+  elements.recipeShareDialog.showModal();
+}
+
+async function createRecipeShare(event) {
+  event.preventDefault();
+  const recipe = recipes.find((item) => item.id === selectedRecipeId);
+  if (!recipe) return;
+  const data = await api(`/api/recipes/${recipe.id}/share`, { method: "POST" });
+  elements.recipeShareUrlInput.value = data.share_url;
+  elements.recipeShareCardImage.src = `${data.card_url}?v=${Date.now()}`;
+  elements.recipeShareImageLink.href = data.card_url;
+  elements.openRecipeShareImage.href = data.card_url;
+  elements.downloadRecipeShareImage.href = data.card_url;
+  elements.downloadRecipeShareImage.setAttribute("download", `${slugifyText(recipe.title || "recipe")}.png`);
+  elements.openRecipeShareImage.hidden = false;
+  elements.downloadRecipeShareImage.hidden = false;
+  elements.recipeShareResult.hidden = false;
+  elements.recipeShareHelp.textContent = t("recipes.generated");
+}
+
+async function copyRecipeShareLink() {
+  if (!elements.recipeShareUrlInput.value) return;
+  await navigator.clipboard.writeText(elements.recipeShareUrlInput.value);
+  elements.copyRecipeShareButton.textContent = t("button.copied");
+  window.setTimeout(() => (elements.copyRecipeShareButton.textContent = t("button.copy")), 1200);
 }
 
 function sharePackHistoryTemplate(pack) {
@@ -4255,6 +4694,43 @@ function renderSharePackView() {
   elements.sharePackPage.querySelector("[data-add-share-pack]")?.addEventListener("click", addSharedPackToMyLists);
 }
 
+function renderRecipeShareView() {
+  if (!elements.recipeSharePage || activeView !== "recipe-share") return;
+  if (!recipeShareData) {
+    elements.recipeSharePage.innerHTML = loadingPanel(t("discovery.loading"));
+    return;
+  }
+  const recipe = recipeShareData.recipe;
+  const ownerName = escapeHtml(recipeShareData.owner?.name || t("discovery.foodie"));
+  elements.recipeSharePage.innerHTML = `
+    <div class="share-pack-public-head">
+      <div>
+        <p class="eyebrow">${t("recipes.previewEyebrow")}</p>
+        <h1>${escapeHtml(recipe.title)}</h1>
+        <p>${t("recipes.byOwner", { name: ownerName })}</p>
+        <div class="meta-row compact-meta">
+          <span>☆ ${Number(recipe.rating || 0).toFixed(1)}</span>
+          <span>${recipe.cooked_at ? formatDate(recipe.cooked_at) : formatDate(recipeShareData.created_at)}</span>
+        </div>
+      </div>
+      <button class="primary-button" type="button" data-add-recipe-share>${t("recipes.saveShared")}</button>
+    </div>
+    <article class="recipe-detail-card public-recipe-card">
+      <img class="recipe-hero-image" src="${escapeAttribute(recipeImageUrl(recipe))}" alt="" />
+      <section class="recipe-note-section">
+        <p class="eyebrow">${t("recipes.ingredients")}</p>
+        <p>${escapeHtml(recipe.ingredients || t("recipes.noIngredients")).replace(/\n/g, "<br />")}</p>
+      </section>
+      <section class="recipe-note-section">
+        <p class="eyebrow">${t("recipes.steps")}</p>
+        <p>${escapeHtml(recipe.steps || t("recipes.noSteps")).replace(/\n/g, "<br />")}</p>
+      </section>
+      ${recipe.notes ? `<section class="recipe-note-section"><p class="eyebrow">${t("recipes.notes")}</p><p>${escapeHtml(recipe.notes).replace(/\n/g, "<br />")}</p></section>` : ""}
+    </article>
+  `;
+  elements.recipeSharePage.querySelector("[data-add-recipe-share]")?.addEventListener("click", addSharedRecipeToMyRecipes);
+}
+
 function sharePackPublicItemTemplate(item) {
   const restaurant = item.restaurant;
   if (!restaurant) return "";
@@ -4557,6 +5033,38 @@ function selectedRestaurant() {
   return restaurants.find((restaurant) => restaurant.id === selectedRestaurantId) ?? null;
 }
 
+function selectedRecipe() {
+  return recipes.find((recipe) => recipe.id === selectedRecipeId) ?? null;
+}
+
+function upsertRecipe(recipe) {
+  const normalized = normalizeRecipe(recipe);
+  const index = recipes.findIndex((item) => item.id === normalized.id);
+  if (index >= 0) recipes[index] = normalized;
+  else recipes = [normalized, ...recipes];
+}
+
+function recipeSearchText(recipe) {
+  return [recipe.title, recipe.ingredients, recipe.steps, recipe.notes].join(" ").toLowerCase();
+}
+
+function recipeImageUrl(recipe) {
+  return recipe.image_url || foodPlaceholderUrl({ id: recipe.id || recipe.title || "recipe" });
+}
+
+function dateInputValue(timestamp) {
+  if (!timestamp) return "";
+  const date = new Date(Number(timestamp) * 1000);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+}
+
+function timestampFromDateInput(value) {
+  if (!value) return 0;
+  const timestamp = Math.floor(new Date(`${value}T12:00:00`).getTime() / 1000);
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
 function restaurantsForSystemList(definition) {
   return restaurants.filter((restaurant) => definition.filter === "all" || restaurant.status === definition.filter);
 }
@@ -4786,6 +5294,33 @@ function normalizeSharePackSummary(item) {
   };
 }
 
+function normalizeRecipe(item) {
+  return {
+    id: String(item.id || ""),
+    title: String(item.title || t("recipes.formTitle")),
+    ingredients: String(item.ingredients || ""),
+    steps: String(item.steps || ""),
+    notes: String(item.notes || ""),
+    rating: clampRating(Number(item.rating || 0)),
+    cooked_at: Number(item.cooked_at || 0),
+    image_url: String(item.image_url || ""),
+    created_at: Number(item.created_at || 0),
+    updated_at: Number(item.updated_at || 0),
+  };
+}
+
+function normalizeRecipeShare(item) {
+  return {
+    token: String(item.token || ""),
+    owner: item.owner || null,
+    share_url: String(item.share_url || ""),
+    qr_url: String(item.qr_url || ""),
+    card_url: String(item.card_url || ""),
+    created_at: Number(item.created_at || 0),
+    recipe: normalizeRecipe(item.recipe || {}),
+  };
+}
+
 function listFilterOrder() {
   try {
     const parsed = JSON.parse(localStorage.getItem(LIST_FILTER_ORDER_KEY) || "[]");
@@ -4869,6 +5404,11 @@ function getShareToken() {
 
 function getSharePackToken() {
   const match = location.pathname.match(/^\/share-pack\/([^/]+)/);
+  return match ? match[1] : "";
+}
+
+function getRecipeShareToken() {
+  const match = location.pathname.match(/^\/recipe-share\/([^/]+)/);
   return match ? match[1] : "";
 }
 

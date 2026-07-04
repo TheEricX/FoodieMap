@@ -1104,6 +1104,7 @@ body[data-view="login"] .top-actions {
 .lists-stage,
 .discovery-stage,
 .share-pack-stage,
+.recipes-stage,
 .admin-login-stage,
 .admin-stage {
   min-width: 0;
@@ -1121,6 +1122,7 @@ body[data-view="login"] .top-actions {
 .lists-stage::-webkit-scrollbar,
 .discovery-stage::-webkit-scrollbar,
 .share-pack-stage::-webkit-scrollbar,
+.recipes-stage::-webkit-scrollbar,
 .admin-login-stage::-webkit-scrollbar,
 .admin-stage::-webkit-scrollbar,
 .add-spots-list::-webkit-scrollbar {
@@ -3205,6 +3207,117 @@ body[data-view="login"] .top-actions {
   margin: 0 auto;
 }
 
+.recipes-stage {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(360px, 1.15fr);
+  gap: 18px;
+}
+
+.recipes-stage:not(.has-selection) {
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+}
+
+.recipe-detail-panel[hidden] {
+  display: none;
+}
+
+.recipes-stage:not(.has-selection) .recipes-panel {
+  width: min(1180px, 100%);
+  justify-self: center;
+}
+
+.recipes-stage:not(.has-selection) .recipe-list .empty-panel {
+  min-height: 118px;
+  padding: 18px;
+}
+
+.recipes-stage:not(.has-selection) .recipe-list .empty-panel .secondary-button {
+  width: auto;
+  min-width: min(460px, 100%);
+  max-width: 620px;
+}
+
+.recipe-list {
+  display: grid;
+  gap: 10px;
+}
+
+.recipe-row {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  border: 1px solid rgba(217, 197, 183, 0.82);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 253, 248, 0.78);
+  padding: 10px;
+  cursor: pointer;
+}
+
+.recipe-row.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(167, 113, 78, 0.12);
+}
+
+.recipe-thumb,
+.recipe-hero-image {
+  width: 100%;
+  object-fit: cover;
+  border: 1px solid rgba(217, 197, 183, 0.82);
+  background: var(--paper-warm);
+}
+
+.recipe-thumb {
+  aspect-ratio: 1;
+  border-radius: 16px;
+}
+
+.recipe-row-main {
+  min-width: 0;
+}
+
+.recipe-row-main strong,
+.recipe-row-main small,
+.recipe-row-main p {
+  display: block;
+  min-width: 0;
+}
+
+.recipe-row-main p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.recipe-detail-card {
+  display: grid;
+  gap: 14px;
+}
+
+.recipe-hero-image {
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-sm);
+}
+
+.recipe-note-section {
+  border: 1px solid rgba(217, 197, 183, 0.72);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 253, 248, 0.68);
+  padding: 14px;
+}
+
+.recipe-note-section p:last-child {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 .share-pack-public-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -3337,13 +3450,13 @@ body[data-view="login"] .top-actions {
 .detail-drawer-card {
   display: grid;
   align-content: start;
-  gap: 18px;
+  gap: 14px;
   width: 100%;
   height: 100%;
   overflow: auto;
   border-left: 1px solid rgba(139, 106, 87, 0.48);
   background-color: var(--paper);
-  padding: clamp(18px, 2.2vw, 30px);
+  padding: clamp(16px, 1.8vw, 24px);
   box-shadow: -18px 0 44px rgba(45, 41, 38, 0.2);
   scrollbar-color: rgba(150, 105, 76, 0.34) transparent;
   scrollbar-gutter: stable;
@@ -3388,9 +3501,9 @@ body[data-view="login"] .top-actions {
 .detail-drawer-head {
   position: relative;
   display: grid;
-  gap: 10px;
+  gap: 7px;
   border-bottom: 1px solid rgba(217, 197, 183, 0.82);
-  padding: 8px 48px 18px 0;
+  padding: 4px 48px 12px 0;
 }
 
 .detail-drawer-head .icon-button {
@@ -3402,18 +3515,22 @@ body[data-view="login"] .top-actions {
 }
 
 .detail-drawer-head h2 {
+  display: -webkit-box;
   margin: 0;
   color: var(--ink);
-  font-size: clamp(32px, 4vw, 52px);
-  line-height: 1;
+  font-size: clamp(26px, 2.6vw, 36px);
+  line-height: 1.04;
+  overflow: hidden;
   overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .detail-meta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .detail-meta-row span {
@@ -4043,24 +4160,26 @@ body[data-view="login"] .top-actions {
     left: 10px;
     z-index: 40;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
     min-width: 0;
     border: 1px solid rgba(139, 106, 87, 0.22);
     border-radius: 999px;
     background: rgba(255, 250, 244, 0.94);
-    padding: 6px;
+    padding: 5px;
     box-shadow: 0 14px 32px rgba(82, 61, 48, 0.18);
     backdrop-filter: blur(12px);
   }
 
   .top-nav a {
     display: grid;
-    min-height: 42px;
+    min-height: 38px;
     place-items: center;
     border-radius: 999px;
-    padding: 0 8px;
+    padding: 0 6px;
     text-align: center;
+    font-size: 14px;
+    line-height: 1;
   }
 
   .top-nav a.active {
@@ -4234,11 +4353,13 @@ body[data-view="login"] .top-actions {
   }
 
   body[data-view="my-map"],
+  body[data-view="recipes"],
   body[data-view="discovery"] {
     overflow: hidden;
   }
 
   body[data-view="my-map"] .app-shell,
+  body[data-view="recipes"] .app-shell,
   body[data-view="discovery"] .app-shell {
     height: 100svh;
     min-height: 0;
@@ -4247,6 +4368,7 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .topbar,
   body[data-view="discovery"] .topbar,
+  body[data-view="recipes"] .topbar,
   body[data-view="my-lists"] .topbar {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
@@ -4255,6 +4377,7 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .brand,
   body[data-view="my-lists"] .brand,
+  body[data-view="recipes"] .brand,
   body[data-view="discovery"] .brand {
     gap: 8px;
     font-size: 21px;
@@ -4262,6 +4385,7 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .brand-mark,
   body[data-view="my-lists"] .brand-mark,
+  body[data-view="recipes"] .brand-mark,
   body[data-view="discovery"] .brand-mark {
     width: 32px;
     height: 32px;
@@ -4270,6 +4394,7 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .mobile-search-row,
   body[data-view="my-lists"] .mobile-search-row,
+  body[data-view="recipes"] .mobile-search-row,
   body[data-view="discovery"] .mobile-search-row {
     display: grid;
     grid-column: 1 / -1;
@@ -4281,6 +4406,7 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .mobile-search-row .search-box,
   body[data-view="my-lists"] .mobile-search-row .search-box,
+  body[data-view="recipes"] .mobile-search-row .search-box,
   body[data-view="discovery"] .mobile-search-row .search-box {
     grid-column: 1;
     grid-row: auto;
@@ -4289,10 +4415,12 @@ body[data-view="login"] .top-actions {
     padding: 0 13px;
   }
 
+  body[data-view="recipes"] .mobile-search-row,
   body[data-view="discovery"] .mobile-search-row {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  body[data-view="recipes"] .mobile-search-row .search-box,
   body[data-view="discovery"] .mobile-search-row .search-box {
     grid-column: 1 / -1;
   }
@@ -4311,6 +4439,7 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .top-actions,
   body[data-view="my-lists"] .top-actions,
+  body[data-view="recipes"] .top-actions,
   body[data-view="discovery"] .top-actions {
     grid-column: 2;
     grid-row: 1;
@@ -4325,6 +4454,10 @@ body[data-view="login"] .top-actions {
   body[data-view="my-map"] #settingsButton,
   body[data-view="my-lists"] .top-location-status,
   body[data-view="my-lists"] #settingsButton,
+  body[data-view="recipes"] .top-location-status,
+  body[data-view="recipes"] #settingsButton,
+  body[data-view="recipes"] #locateButton,
+  body[data-view="recipes"] .mobile-map-menu,
   body[data-view="discovery"] .top-location-status,
   body[data-view="discovery"] #settingsButton,
   body[data-view="discovery"] #locateButton,
@@ -4340,6 +4473,10 @@ body[data-view="login"] .top-actions {
   body[data-view="my-lists"] .top-actions .language-menu,
   body[data-view="my-lists"] .top-actions .language-menu summary,
   body[data-view="my-lists"] .top-actions .avatar,
+  body[data-view="recipes"] .top-actions .icon-button,
+  body[data-view="recipes"] .top-actions .language-menu,
+  body[data-view="recipes"] .top-actions .language-menu summary,
+  body[data-view="recipes"] .top-actions .avatar,
   body[data-view="discovery"] .top-actions .icon-button,
   body[data-view="discovery"] .top-actions .language-menu,
   body[data-view="discovery"] .top-actions .language-menu summary,
@@ -4351,6 +4488,7 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .top-actions .language-trigger,
   body[data-view="my-lists"] .top-actions .language-trigger,
+  body[data-view="recipes"] .top-actions .language-trigger,
   body[data-view="discovery"] .top-actions .language-trigger {
     display: grid;
     place-items: center;
@@ -4358,6 +4496,7 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .top-actions .avatar:not(.is-signed-in),
   body[data-view="my-lists"] .top-actions .avatar:not(.is-signed-in),
+  body[data-view="recipes"] .top-actions .avatar:not(.is-signed-in),
   body[data-view="discovery"] .top-actions .avatar:not(.is-signed-in) {
     width: auto;
     min-width: 66px;
@@ -4458,7 +4597,17 @@ body[data-view="login"] .top-actions {
     overflow: hidden;
   }
 
+  body[data-view="recipes"] {
+    overflow: hidden;
+  }
+
   body[data-view="my-lists"] .app-shell {
+    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body[data-view="recipes"] .app-shell {
     height: 100svh;
     min-height: 0;
     overflow: hidden;
@@ -4478,8 +4627,16 @@ body[data-view="login"] .top-actions {
     overflow: hidden;
   }
 
+  body[data-view="recipes"] .layout {
+    display: block;
+    height: calc(100svh - 119px - env(safe-area-inset-bottom, 0px));
+    min-height: 0;
+    overflow: hidden;
+  }
+
   body[data-view="my-map"] .sidebar,
   body[data-view="my-lists"] .sidebar,
+  body[data-view="recipes"] .sidebar,
   body[data-view="discovery"] .sidebar {
     display: none;
   }
@@ -4515,12 +4672,59 @@ body[data-view="login"] .top-actions {
     min-width: 0;
   }
 
+  body[data-view="recipes"] .recipes-stage {
+    display: grid;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    gap: 8px;
+    overflow: hidden;
+    padding: 9px;
+  }
+
+  body[data-view="recipes"] .recipes-stage:not(.has-selection) {
+    grid-template-rows: minmax(0, 1fr);
+    justify-content: stretch;
+  }
+
+  body[data-view="recipes"] .recipes-panel,
+  body[data-view="recipes"] .recipe-detail-panel {
+    min-height: 0;
+    overflow: auto;
+    border-radius: 15px;
+    padding: 12px;
+  }
+
+  body[data-view="recipes"] .recipe-detail-panel {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body[data-view="recipes"] .recipe-list {
+    gap: 8px;
+  }
+
+  body[data-view="recipes"] .recipe-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px;
+  }
+
+  body[data-view="recipes"] .recipe-row-main p {
+    -webkit-line-clamp: 1;
+  }
+
+  body[data-view="recipes"] .recipe-hero-image {
+    aspect-ratio: 4 / 3;
+  }
+
   body[data-view="my-lists"] .list-detail-panel {
     min-height: 0;
     overflow: auto;
     border-radius: 15px;
-    padding: 12px 12px calc(82px + env(safe-area-inset-bottom, 0px));
-    scroll-padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+    padding: 12px 12px calc(72px + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
 
   body[data-view="my-lists"] .list-view-head {
@@ -4620,47 +4824,47 @@ body[data-view="login"] .top-actions {
   body[data-view="discovery"] .discovery-stage {
     display: grid;
     height: 100%;
-    gap: 9px;
+    gap: 7px;
     min-height: 0;
     grid-template-rows: auto auto minmax(0, 1fr);
     overflow: hidden;
-    padding: 9px;
+    padding: 8px;
   }
 
   body[data-view="discovery"] .discovery-hero {
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 0;
     border-width: 1px;
     border-radius: 15px;
-    padding: 12px;
+    padding: 10px 12px;
     box-shadow: 0 6px 16px rgba(82, 61, 48, 0.1);
   }
 
   body[data-view="discovery"] .discovery-hero h1 {
-    font-size: clamp(26px, 7vw, 34px);
+    font-size: clamp(24px, 6.2vw, 31px);
     line-height: 1.02;
   }
 
   body[data-view="discovery"] .discovery-hero p {
     display: -webkit-box;
-    margin-top: 6px;
+    margin-top: 4px;
     overflow: hidden;
-    font-size: 13px;
-    line-height: 1.35;
+    font-size: 12px;
+    line-height: 1.3;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
 
   body[data-view="discovery"] .paper-label {
-    margin-bottom: 7px;
-    padding: 4px 9px;
-    font-size: 10px;
+    margin-bottom: 5px;
+    padding: 3px 8px;
+    font-size: 9px;
   }
 
   body[data-view="discovery"] .hero-mascot {
-    width: 58px;
-    font-size: 31px;
+    width: 50px;
+    font-size: 27px;
   }
 
   body[data-view="discovery"] .discovery-controls {
@@ -4682,25 +4886,28 @@ body[data-view="login"] .top-actions {
   body[data-view="discovery"] .segmented-tabs button {
     flex: 1 1 0;
     border-radius: 10px;
+    min-height: 34px;
+    padding: 5px 10px;
+    font-size: 14px;
   }
 
   body[data-view="discovery"] .discovery-layout {
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr);
-    gap: 9px;
+    gap: 7px;
     min-height: 0;
     min-width: 0;
     overflow: auto;
-    padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
-    scroll-padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
 
   body[data-view="discovery"] .discovery-layout > .panel-surface:first-child {
     display: grid;
-    gap: 8px;
+    gap: 7px;
     border-radius: 15px;
-    padding: 10px;
+    padding: 9px;
   }
 
   body[data-view="discovery"] .discovery-layout > .panel-surface:first-child .section-head {
@@ -4711,6 +4918,20 @@ body[data-view="login"] .top-actions {
 
   body[data-view="discovery"] .discovery-layout > .panel-surface:first-child .section-head strong {
     font-size: 13px;
+  }
+
+  body[data-view="discovery"] .discovery-layout > .panel-surface:first-child .section-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  body[data-view="discovery"] .discovery-layout > .panel-surface:first-child .compact-action {
+    min-height: 36px;
+    padding: 7px 10px;
+    border-width: 1px;
+    font-size: 12px;
+    box-shadow: 0 2px 0 rgba(139, 106, 87, 0.18);
   }
 
   body[data-view="discovery"] .discovery-grid {
@@ -5299,23 +5520,23 @@ body[data-view="login"] .top-actions {
   }
 
   body[data-view="my-map"] .spot-card .card-actions {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
-    margin-top: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
   }
 
   body[data-view="my-map"] .spot-card .card-actions .outline-button {
-    min-height: 32px;
+    min-height: 36px;
     border-width: 1px;
-    padding: 5px 7px;
+    padding: 7px 9px;
     font-size: 12px;
     box-shadow: 0 2px 0 rgba(139, 106, 87, 0.18);
   }
 
   body[data-view="my-map"] .spot-card .outline-link {
-    min-height: 34px;
-    margin-top: 6px;
-    padding: 6px 10px;
+    min-height: 38px;
+    margin-top: 8px;
+    padding: 8px 10px;
     font-size: 13px;
     box-shadow: 0 2px 0 rgba(139, 106, 87, 0.18);
   }
@@ -5348,6 +5569,32 @@ body[data-view="login"] .top-actions {
 @media (max-width: 720px) {
   .detail-drawer {
     width: 100vw;
+  }
+
+  .detail-drawer-card {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .detail-drawer-head {
+    gap: 6px;
+    padding: 2px 46px 10px 0;
+  }
+
+  .detail-drawer-head h2 {
+    font-size: clamp(23px, 7vw, 30px);
+    line-height: 1.04;
+    -webkit-line-clamp: 3;
+  }
+
+  .detail-meta-row {
+    gap: 6px;
+    margin-top: 7px;
+  }
+
+  .detail-meta-row span {
+    padding: 5px 8px;
+    font-size: 11px;
   }
 
   .share-pack-form {

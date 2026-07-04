@@ -8,6 +8,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added a private Recipes tab for home-cooked dishes with photos, ingredients, steps, ratings, dates, public recipe preview links, QR codes, PNG share cards, and login-gated saving into My Recipes.
 - Added private Discovery share packs with selected restaurants/dishes, public preview links, saveable PNG recommendation cards, personal history, and login-gated one-click copying into My Lists.
 - Added Apple Maps link detection alongside Google Maps and a single map-opening chooser for Google Maps or Apple Maps.
 - Added map link autofill for restaurant name, address, and coordinates, with optional Google Geocoding reverse lookup when links only include coordinates.

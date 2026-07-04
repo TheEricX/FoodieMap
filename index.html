@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260701-share-pack" />
+    <link rel="stylesheet" href="/styles.css?v=20260703-recipes" />
   </head>
   <body>
     <main class="app-shell">
@@ -20,8 +20,9 @@
           <span data-i18n="app.brand">Gourmet Map</span>
         </div>
         <nav class="top-nav" aria-label="Primary navigation">
-          <a class="active" href="#my-map" data-view="my-map" data-i18n="nav.map">Map View</a>
-          <a href="#my-lists" data-view="my-lists" data-i18n="nav.lists">List View</a>
+          <a class="active" href="#my-map" data-view="my-map" data-i18n="nav.map">Map</a>
+          <a href="#my-lists" data-view="my-lists" data-i18n="nav.lists">Lists</a>
+          <a href="#recipes" data-view="recipes" data-i18n="nav.recipes">Recipes</a>
           <a href="#discovery" data-view="discovery" data-i18n="nav.discovery">Discovery</a>
         </nav>
         <div class="mobile-search-row">
@@ -271,8 +272,27 @@
           </div>
         </section>
 
+        <section class="recipes-stage app-view" id="recipesView" data-view-panel="recipes" hidden>
+          <section class="panel-surface recipes-panel">
+            <div class="list-view-head recipes-head">
+              <div>
+                <p class="eyebrow" data-i18n="recipes.eyebrow">HOME COOKING</p>
+                <h2 data-i18n="recipes.title">My Recipes</h2>
+                <p data-i18n="recipes.body">Keep photos, ingredients, and notes for dishes you cooked.</p>
+              </div>
+              <button class="icon-button mini-action" id="openRecipeDialog" type="button" title="Add recipe" data-i18n-title="recipes.addTitle">＋</button>
+            </div>
+            <div class="recipe-list" id="recipeList"></div>
+          </section>
+          <section class="panel-surface recipe-detail-panel" id="recipeDetail"></section>
+        </section>
+
         <section class="share-pack-stage app-view" id="sharePackView" data-view-panel="share-pack" hidden>
           <section class="panel-surface share-pack-page" id="sharePackPage"></section>
+        </section>
+
+        <section class="share-pack-stage app-view" id="recipeShareView" data-view-panel="recipe-share" hidden>
+          <section class="panel-surface share-pack-page" id="recipeSharePage"></section>
         </section>
 
         <section class="admin-login-stage app-view" id="adminLoginView" data-view-panel="admin-login" hidden>
@@ -647,6 +667,82 @@
         </form>
       </dialog>
 
+      <dialog class="modal" id="recipeDialog">
+        <form class="modal-card recipe-form" id="recipeForm" method="dialog">
+          <div class="modal-drag-handle" id="recipeDragHandle" aria-hidden="true"></div>
+          <div class="modal-head" id="recipeModalHead">
+            <div>
+              <p class="eyebrow" id="recipeFormMode" data-i18n="recipes.newMode">NEW RECIPE</p>
+              <h2 id="recipeFormTitle" data-i18n="recipes.formTitle">Save a Recipe</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeRecipeDialog">×</button>
+          </div>
+          <input name="id" type="hidden" />
+          <label>
+            <span data-i18n="recipes.name">Dish name</span>
+            <input name="title" required maxlength="180" placeholder="Tomato egg noodles" data-i18n-placeholder="recipes.namePlaceholder" />
+          </label>
+          <div class="form-grid two">
+            <label>
+              <span data-i18n="recipes.rating">Rating</span>
+              <input name="rating" type="number" min="0" max="5" step="0.1" value="4.5" />
+            </label>
+            <label>
+              <span data-i18n="recipes.cookedAt">Cooked date</span>
+              <input name="cookedAt" type="date" />
+            </label>
+          </div>
+          <label class="file-dropzone" data-recipe-file-dropzone>
+            <input id="recipeImageInput" type="file" accept="image/png,image/jpeg,image/webp" />
+            <span class="file-dropzone-icon">＋</span>
+            <strong data-i18n="recipes.uploadPhoto">Upload photo</strong>
+            <small id="recipeImageName" data-i18n="detail.uploadHint">Click to upload or drag image here</small>
+          </label>
+          <label>
+            <span data-i18n="recipes.ingredients">Ingredients</span>
+            <textarea name="ingredients" rows="4" placeholder="Eggs, tomato, noodles, scallion..." data-i18n-placeholder="recipes.ingredientsPlaceholder"></textarea>
+          </label>
+          <label>
+            <span data-i18n="recipes.steps">Steps</span>
+            <textarea name="steps" rows="5" placeholder="Write the simple steps so you can remake it." data-i18n-placeholder="recipes.stepsPlaceholder"></textarea>
+          </label>
+          <label>
+            <span data-i18n="recipes.notes">Notes</span>
+            <textarea name="notes" rows="3" placeholder="What to adjust next time?" data-i18n-placeholder="recipes.notesPlaceholder"></textarea>
+          </label>
+          <p class="form-help" id="recipeFormHelp" data-i18n="recipes.formHelp">Recipes are private unless you generate a share link.</p>
+          <button class="primary-button" id="saveRecipeButton" type="submit" data-i18n="recipes.save">Save Recipe</button>
+        </form>
+      </dialog>
+
+      <dialog class="modal" id="recipeShareDialog">
+        <form class="modal-card share-pack-form recipe-share-form" id="recipeShareForm" method="dialog">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow" data-i18n="recipes.shareEyebrow">RECIPE SHARE</p>
+              <h2 data-i18n="recipes.shareTitle">Share this Recipe</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeRecipeShareDialog">×</button>
+          </div>
+          <p class="form-help" id="recipeShareHelp" data-i18n="recipes.shareHelp">Create a public preview link, QR code, and image card for this recipe.</p>
+          <div class="share-result" id="recipeShareResult" hidden>
+            <label>
+              <span data-i18n="recipes.shareLink">Recipe link</span>
+              <input id="recipeShareUrlInput" readonly />
+            </label>
+            <a class="share-pack-card-preview" id="recipeShareImageLink" href="#" target="_blank" rel="noreferrer">
+              <img id="recipeShareCardImage" alt="Recipe share card" data-i18n-alt="recipes.cardAlt" />
+            </a>
+          </div>
+          <div class="share-actions">
+            <button class="primary-button" id="createRecipeShareButton" type="submit" data-i18n="recipes.generateShare">Generate Link</button>
+            <button class="outline-button" id="copyRecipeShareButton" type="button" data-i18n="button.copy">Copy</button>
+            <a class="outline-button" id="openRecipeShareImage" href="#" target="_blank" rel="noreferrer" data-i18n="button.openImage" hidden>Open Image</a>
+            <a class="outline-button" id="downloadRecipeShareImage" href="#" download data-i18n="button.downloadImage" hidden>Download Image</a>
+          </div>
+        </form>
+      </dialog>
+
       <dialog class="modal" id="listDialog">
         <form class="modal-card" id="listForm" method="dialog">
           <div class="modal-head">
@@ -712,6 +808,6 @@
         </form>
       </dialog>
     </main>
-    <script src="/app.js?v=20260701-share-pack"></script>
+    <script src="/app.js?v=20260703-recipes"></script>
   </body>
 </html>
