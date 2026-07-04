@@ -692,11 +692,14 @@
               <input name="cookedAt" type="date" />
             </label>
           </div>
-          <label class="file-dropzone" data-recipe-file-dropzone>
-            <input id="recipeImageInput" type="file" accept="image/png,image/jpeg,image/webp" />
-            <span class="file-dropzone-icon">＋</span>
-            <strong data-i18n="recipes.uploadPhoto">Upload photo</strong>
-            <small id="recipeImageName" data-i18n="detail.uploadHint">Click to upload or drag image here</small>
+          <label class="detail-file-dropzone recipe-file-dropzone" data-recipe-file-dropzone>
+            <input id="recipeImageInput" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+            <span class="detail-file-mark">＋</span>
+            <span class="recipe-file-preview" id="recipeImagePreview" aria-hidden="true"></span>
+            <span>
+              <strong data-i18n="recipes.uploadPhoto">Upload photo</strong>
+              <small id="recipeImageName" data-i18n="detail.uploadHint">Click to upload or drag image here</small>
+            </span>
           </label>
           <label>
             <span data-i18n="recipes.ingredients">Ingredients</span>

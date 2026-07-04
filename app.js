@@ -385,6 +385,7 @@ const translations = {
     "recipes.rating": "Rating",
     "recipes.cookedAt": "Cooked date",
     "recipes.uploadPhoto": "Upload photo",
+    "recipes.currentPhoto": "Current photo. Upload a new image to replace it.",
     "recipes.ingredients": "Ingredients",
     "recipes.ingredientsPlaceholder": "Eggs, tomato, noodles, scallion...",
     "recipes.steps": "Steps",
@@ -851,6 +852,7 @@ const translations = {
     "recipes.rating": "评分",
     "recipes.cookedAt": "做菜日期",
     "recipes.uploadPhoto": "上传照片",
+    "recipes.currentPhoto": "当前照片。上传新图片可替换。",
     "recipes.ingredients": "食材",
     "recipes.ingredientsPlaceholder": "鸡蛋、番茄、面条、葱...",
     "recipes.steps": "做法",
@@ -1239,6 +1241,7 @@ const elements = {
   recipeFormHelp: document.querySelector("#recipeFormHelp"),
   recipeImageInput: document.querySelector("#recipeImageInput"),
   recipeImageName: document.querySelector("#recipeImageName"),
+  recipeImagePreview: document.querySelector("#recipeImagePreview"),
   saveRecipeButton: document.querySelector("#saveRecipeButton"),
   closeRecipeDialog: document.querySelector("#closeRecipeDialog"),
   recipeShareDialog: document.querySelector("#recipeShareDialog"),
@@ -4075,7 +4078,7 @@ function openRecipeDialog(recipe = null) {
   elements.recipeFormTitle.textContent = recipe ? t("recipes.editTitle") : t("recipes.formTitle");
   elements.saveRecipeButton.textContent = recipe ? t("recipes.update") : t("recipes.save");
   elements.recipeFormHelp.textContent = t("recipes.formHelp");
-  updateRecipeImageName();
+  updateRecipeImageName(recipe);
   elements.recipeDialog.showModal();
 }
 
@@ -4179,9 +4182,17 @@ async function uploadRecipeImage(recipeId, file) {
   return normalizeRecipe(data.recipe);
 }
 
-function updateRecipeImageName() {
+function updateRecipeImageName(recipe = null) {
   if (!elements.recipeImageName) return;
-  elements.recipeImageName.textContent = elements.recipeImageInput?.files?.[0]?.name || t("detail.uploadHint");
+  const file = elements.recipeImageInput?.files?.[0];
+  const existingRecipe = recipe ?? (editingRecipeId ? recipes.find((item) => item.id === editingRecipeId) : null);
+  const previewUrl = file ? URL.createObjectURL(file) : existingRecipe?.image_url || "";
+  elements.recipeImageName.textContent = file ? file.name : existingRecipe?.image_url ? t("recipes.currentPhoto") : t("detail.uploadHint");
+  const zone = elements.recipeImageInput?.closest("[data-recipe-file-dropzone]");
+  zone?.classList.toggle("has-file", Boolean(file));
+  zone?.classList.toggle("has-preview", Boolean(previewUrl));
+  if (!elements.recipeImagePreview) return;
+  elements.recipeImagePreview.innerHTML = previewUrl ? `<img src="${escapeAttribute(previewUrl)}" alt="" />` : "";
 }
 
 async function deleteRecipe(recipe) {
