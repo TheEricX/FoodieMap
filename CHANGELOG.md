@@ -8,6 +8,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added Cloud SQL PostgreSQL and Google Cloud Storage production architecture support for Cloud Run deployments, including a SQLite/uploads migration script.
 - Added a private Recipes tab for home-cooked dishes with photos, ingredients, steps, ratings, dates, public recipe preview links, QR codes, PNG share cards, and login-gated saving into My Recipes.
 - Added private Discovery share packs with selected restaurants/dishes, public preview links, saveable PNG recommendation cards, personal history, and login-gated one-click copying into My Lists.
 - Added Apple Maps link detection alongside Google Maps and a single map-opening chooser for Google Maps or Apple Maps.
@@ -19,6 +20,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Reworked Google Cloud deployment documentation around stateless Cloud Run, Cloud SQL, GCS, Secret Manager, migration, and post-deploy verification.
 - Centered the desktop Recipes and Discovery content rail after removing the restaurant sidebar, and aligned the Recipe photo upload control with the existing drag-and-drop upload UI.
 - Compacted the mobile single-restaurant share and map-choice dialogs to remove excess whitespace and keep actions visible.
 - Moved the add-spot Maps link field to the top of the form so paste-first autofill is the primary flow.

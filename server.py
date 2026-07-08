@@ -27,6 +27,20 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+try:
+    import psycopg
+    from psycopg.rows import dict_row
+except ImportError:  # Optional until DATABASE_URL points at PostgreSQL.
+    psycopg = None
+    dict_row = None
+
+try:
+    from google.cloud import storage as gcs_storage
+    from google.api_core.exceptions import NotFound as GcsNotFound
+except ImportError:  # Optional until GCS_BUCKET is configured.
+    gcs_storage = None
+    GcsNotFound = None
+
 
 ROOT = Path(__file__).resolve().parent
 
@@ -48,9 +62,13 @@ def load_dotenv() -> None:
 
 load_dotenv()
 
+APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 DATA_DIR = Path(os.getenv("DATA_DIR", ROOT / "data"))
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", DATA_DIR / "uploads"))
-DB_PATH = Path(os.getenv("DATABASE_URL", DATA_DIR / "foodiemap.db"))
+DB_PATH = Path(DATABASE_URL or os.getenv("SQLITE_DATABASE_PATH", DATA_DIR / "foodiemap.db"))
+GCS_BUCKET = os.getenv("GCS_BUCKET", "")
+GCS_PUBLIC_BASE_URL = os.getenv("GCS_PUBLIC_BASE_URL", "").rstrip("/")
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5174").rstrip("/")
 SESSION_SECRET = os.getenv("SESSION_SECRET", "dev-change-me")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
@@ -82,6 +100,9 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="FoodieMap")
+DB_INTEGRITY_ERRORS = (sqlite3.IntegrityError,)
+if psycopg is not None:
+    DB_INTEGRITY_ERRORS = DB_INTEGRITY_ERRORS + (psycopg.IntegrityError,)
 
 
 class RestaurantIn(BaseModel):
@@ -258,7 +279,45 @@ def new_id() -> str:
     return str(uuid.uuid4())
 
 
-def connect() -> sqlite3.Connection:
+def uses_postgres() -> bool:
+    return DATABASE_URL.startswith(("postgresql://", "postgres://"))
+
+
+def sql_for_driver(sql: str) -> str:
+    if not uses_postgres():
+        return sql
+    return sql.replace("?", "%s")
+
+
+class PostgresConnection:
+    def __init__(self) -> None:
+        if psycopg is None or dict_row is None:
+            raise RuntimeError("psycopg[binary] is required when DATABASE_URL points at PostgreSQL")
+        self.connection = psycopg.connect(DATABASE_URL, row_factory=dict_row)
+
+    def __enter__(self) -> "PostgresConnection":
+        return self
+
+    def __exit__(self, exc_type: Any, exc: Any, traceback: Any) -> None:
+        if exc_type:
+            self.connection.rollback()
+        else:
+            self.connection.commit()
+        self.connection.close()
+
+    def execute(self, sql: str, params: tuple[Any, ...] | list[Any] = ()) -> Any:
+        return self.connection.execute(sql_for_driver(sql), params)
+
+    def executescript(self, script: str) -> None:
+        for statement in script.split(";"):
+            statement = statement.strip()
+            if statement:
+                self.execute(statement)
+
+
+def connect() -> Any:
+    if uses_postgres():
+        return PostgresConnection()
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(DB_PATH)
@@ -267,8 +326,19 @@ def connect() -> sqlite3.Connection:
     return connection
 
 
-def ensure_column(db: sqlite3.Connection, table: str, column: str, definition: str) -> None:
-    columns = {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
+def ensure_column(db: Any, table: str, column: str, definition: str) -> None:
+    if uses_postgres():
+        rows = db.execute(
+            """
+            SELECT column_name AS name
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = ?
+            """,
+            (table,),
+        ).fetchall()
+    else:
+        rows = db.execute(f"PRAGMA table_info({table})").fetchall()
+    columns = {row["name"] for row in rows}
     if column not in columns:
         db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
@@ -835,6 +905,55 @@ def valid_visibility(visibility: str) -> str:
     return visibility
 
 
+def storage_uses_gcs() -> bool:
+    return bool(GCS_BUCKET)
+
+
+def upload_url(image_path: str) -> str:
+    if not image_path:
+        return ""
+    if image_path.startswith(("http://", "https://")):
+        return image_path
+    if GCS_PUBLIC_BASE_URL:
+        return f"{GCS_PUBLIC_BASE_URL}/{image_path}"
+    return f"/uploads/{image_path}"
+
+
+def gcs_bucket() -> Any:
+    if not GCS_BUCKET:
+        raise RuntimeError("GCS_BUCKET is not configured")
+    if gcs_storage is None:
+        raise RuntimeError("google-cloud-storage is required when GCS_BUCKET is configured")
+    return gcs_storage.Client().bucket(GCS_BUCKET)
+
+
+def save_upload_object(prefix: str, record_id: str, suffix: str, data: bytes, content_type: str) -> str:
+    filename = f"{record_id}-{secrets.token_hex(6)}{suffix}"
+    object_name = f"{prefix}/{filename}" if storage_uses_gcs() else filename
+    if storage_uses_gcs():
+        blob = gcs_bucket().blob(object_name)
+        blob.upload_from_string(data, content_type=content_type)
+    else:
+        (UPLOAD_DIR / object_name).write_bytes(data)
+    return object_name
+
+
+def delete_upload_object(image_path: str) -> None:
+    if not image_path:
+        return
+    if storage_uses_gcs():
+        try:
+            gcs_bucket().blob(image_path).delete()
+        except Exception as error:
+            if GcsNotFound is None or not isinstance(error, GcsNotFound):
+                raise
+            pass
+        return
+    local_path = UPLOAD_DIR / image_path
+    if local_path.exists():
+        local_path.unlink()
+
+
 def dish_json(row: sqlite3.Row) -> dict[str, Any]:
     return {
         "id": row["id"],
@@ -842,7 +961,7 @@ def dish_json(row: sqlite3.Row) -> dict[str, Any]:
         "name": row["name"],
         "dish_status": row["dish_status"],
         "rating": row["rating"],
-        "image_url": f"/uploads/{row['image_path']}" if row["image_path"] else "",
+        "image_url": upload_url(row["image_path"]),
         "notes": row["notes"],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
@@ -876,7 +995,7 @@ def restaurant_json(db: sqlite3.Connection, row: sqlite3.Row, include_dishes: bo
 
 def recipe_json(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
     image_path = row["image_path"] if isinstance(row, sqlite3.Row) else row.get("image_path", "")
-    image_url = f"/uploads/{image_path}" if image_path else (row.get("image_url", "") if isinstance(row, dict) else "")
+    image_url = upload_url(image_path) if image_path else (row.get("image_url", "") if isinstance(row, dict) else "")
     return {
         "id": row["id"],
         "title": row["title"],
@@ -1052,7 +1171,7 @@ def list_cover(db: sqlite3.Connection, row: sqlite3.Row) -> str:
         """,
         (row["id"],),
     ).fetchone()
-    return f"/uploads/{dish['image_path']}" if dish else ""
+    return upload_url(dish["image_path"]) if dish else ""
 
 
 def list_item_json(db: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
@@ -1095,7 +1214,16 @@ def list_json(db: sqlite3.Connection, row: sqlite3.Row, include_items: bool = Fa
 
 @app.get("/api/health")
 def health() -> dict[str, Any]:
-    return {"ok": True, "service": "foodiemap-fastapi"}
+    with connect() as db:
+        user_count = db.execute("SELECT COUNT(*) AS count FROM users").fetchone()["count"]
+    return {
+        "ok": True,
+        "service": "foodiemap-fastapi",
+        "app_env": APP_ENV,
+        "database": "postgresql" if uses_postgres() else "sqlite",
+        "storage": "gcs" if storage_uses_gcs() else "local",
+        "user_count": int(user_count or 0),
+    }
 
 
 @app.get("/api/me")
@@ -1609,12 +1737,9 @@ async def upload_dish_image(
         raise HTTPException(status_code=413, detail="Image is too large")
     with connect() as db:
         dish = owned_dish(db, dish_id, user["id"])
-        filename = f"{dish_id}-{secrets.token_hex(6)}{suffix}"
-        (UPLOAD_DIR / filename).write_bytes(data)
         if dish["image_path"]:
-            old_path = UPLOAD_DIR / dish["image_path"]
-            if old_path.exists():
-                old_path.unlink()
+            delete_upload_object(dish["image_path"])
+        filename = save_upload_object("dishes", dish_id, suffix, data, image.content_type)
         db.execute("UPDATE dishes SET image_path = ?, updated_at = ? WHERE id = ?", (filename, now(), dish_id))
         db.execute("UPDATE restaurants SET updated_at = ? WHERE id = ?", (now(), dish["restaurant_id"]))
         updated = owned_dish(db, dish_id, user["id"])
@@ -1626,9 +1751,7 @@ def delete_dish(dish_id: str, user: dict[str, Any] = Depends(require_user)) -> d
     with connect() as db:
         dish = owned_dish(db, dish_id, user["id"])
         if dish["image_path"]:
-            image_path = UPLOAD_DIR / dish["image_path"]
-            if image_path.exists():
-                image_path.unlink()
+            delete_upload_object(dish["image_path"])
         db.execute("DELETE FROM dishes WHERE id = ?", (dish_id,))
         db.execute("UPDATE restaurants SET updated_at = ? WHERE id = ?", (now(), dish["restaurant_id"]))
     return {"ok": True}
@@ -1707,7 +1830,9 @@ def update_recipe(recipe_id: str, payload: RecipePatch, user: dict[str, Any] = D
 @app.delete("/api/recipes/{recipe_id}")
 def delete_recipe(recipe_id: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
     with connect() as db:
-        owned_recipe(db, recipe_id, user["id"])
+        recipe = owned_recipe(db, recipe_id, user["id"])
+        if recipe["image_path"]:
+            delete_upload_object(recipe["image_path"])
         db.execute("DELETE FROM recipes WHERE id = ? AND owner_user_id = ?", (recipe_id, user["id"]))
     return {"ok": True}
 
@@ -1725,9 +1850,10 @@ async def upload_recipe_image(
     if len(data) > 1_200_000:
         raise HTTPException(status_code=413, detail="Image is too large")
     with connect() as db:
-        owned_recipe(db, recipe_id, user["id"])
-        filename = f"{recipe_id}-{secrets.token_hex(6)}{suffix}"
-        (UPLOAD_DIR / filename).write_bytes(data)
+        recipe = owned_recipe(db, recipe_id, user["id"])
+        if recipe["image_path"]:
+            delete_upload_object(recipe["image_path"])
+        filename = save_upload_object("recipes", recipe_id, suffix, data, image.content_type)
         db.execute("UPDATE recipes SET image_path = ?, updated_at = ? WHERE id = ? AND owner_user_id = ?", (filename, now(), recipe_id, user["id"]))
         return {"recipe": recipe_json(owned_recipe(db, recipe_id, user["id"]))}
 
@@ -2431,7 +2557,7 @@ def add_list_item(list_id: str, payload: ListItemIn, user: dict[str, Any] = Depe
                 """,
                 (new_id(), list_id, payload.restaurant_id, payload.note.strip(), row["next_order"], timestamp),
             )
-        except sqlite3.IntegrityError as error:
+        except DB_INTEGRITY_ERRORS as error:
             raise HTTPException(status_code=409, detail="Spot is already in this list") from error
         db.execute("UPDATE lists SET updated_at = ? WHERE id = ?", (timestamp, list_id))
         updated = owned_list(db, list_id, user["id"])
@@ -2655,7 +2781,15 @@ def reverse_geocode(payload: ReverseGeocodeIn) -> dict[str, str]:
     return {"address": address}
 
 
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+if storage_uses_gcs():
+    @app.get("/uploads/{object_path:path}")
+    def get_upload(object_path: str) -> Response:
+        blob = gcs_bucket().blob(object_path)
+        if not blob.exists():
+            raise HTTPException(status_code=404, detail="Upload not found")
+        return Response(content=blob.download_as_bytes(), media_type=blob.content_type or "application/octet-stream")
+else:
+    app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
 @app.get("/{path:path}")
