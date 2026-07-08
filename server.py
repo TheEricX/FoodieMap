@@ -503,7 +503,7 @@ def init_db() -> None:
             SELECT LOWER(email) AS normalized_email, COUNT(*) AS count
             FROM users
             GROUP BY LOWER(email)
-            HAVING count > 1
+            HAVING COUNT(*) > 1
             LIMIT 1
             """
         ).fetchone()
