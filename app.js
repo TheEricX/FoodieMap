@@ -1140,6 +1140,7 @@ const elements = {
   googleUrlInput: document.querySelector('input[name="googleUrl"]'),
   formModeLabel: document.querySelector("#formModeLabel"),
   formTitle: document.querySelector("#formTitle"),
+  cancelSpotButton: document.querySelector("#cancelSpotButton"),
   saveSpotButton: document.querySelector("#saveSpotButton"),
   formHelp: document.querySelector("#formHelp"),
   dishEditor: document.querySelector("#dishEditor"),
@@ -1151,6 +1152,7 @@ const elements = {
   settingsDialog: document.querySelector("#settingsDialog"),
   settingsForm: document.querySelector("#settingsForm"),
   closeSettings: document.querySelector("#closeSettings"),
+  cancelSettings: document.querySelector("#cancelSettings"),
   googleApiKey: document.querySelector("#googleApiKey"),
   cuteMap: document.querySelector("#cuteMap"),
   mapZoomOut: document.querySelector("#mapZoomOut"),
@@ -1242,6 +1244,7 @@ const elements = {
   recipeImageInput: document.querySelector("#recipeImageInput"),
   recipeImageName: document.querySelector("#recipeImageName"),
   recipeImagePreview: document.querySelector("#recipeImagePreview"),
+  cancelRecipeButton: document.querySelector("#cancelRecipeButton"),
   saveRecipeButton: document.querySelector("#saveRecipeButton"),
   closeRecipeDialog: document.querySelector("#closeRecipeDialog"),
   recipeShareDialog: document.querySelector("#recipeShareDialog"),
@@ -1282,6 +1285,7 @@ const elements = {
   listFormMode: document.querySelector("#listFormMode"),
   listFormTitle: document.querySelector("#listFormTitle"),
   listFormHelp: document.querySelector("#listFormHelp"),
+  cancelListButton: document.querySelector("#cancelListButton"),
   saveListButton: document.querySelector("#saveListButton"),
   closeListDialog: document.querySelector("#closeListDialog"),
   addSpotsDialog: document.querySelector("#addSpotsDialog"),
@@ -1392,6 +1396,7 @@ function bindEvents() {
   elements.restaurantForm?.addEventListener("pointerup", finishAddDialogSwipeClose);
   elements.restaurantForm?.addEventListener("pointercancel", cancelAddDialogSwipeClose);
   elements.closeAddPanel.addEventListener("click", () => closeRestaurantDialog());
+  elements.cancelSpotButton?.addEventListener("click", () => closeRestaurantDialog());
   elements.closeCard.addEventListener("click", () => {
     setSpotCardOpen(false, { render: true });
   });
@@ -1456,6 +1461,7 @@ function bindEvents() {
     });
   });
   elements.closeListDialog.addEventListener("click", () => closeListDialog());
+  elements.cancelListButton?.addEventListener("click", () => closeListDialog());
   elements.listForm.addEventListener("submit", saveListFromForm);
   elements.closeAddSpotsDialog.addEventListener("click", () => elements.addSpotsDialog.close());
   elements.addSpotsSearch.addEventListener("input", renderAddSpotsDialog);
@@ -1482,6 +1488,7 @@ function bindEvents() {
   elements.openSharePackDialog?.addEventListener("click", openSharePackDialog);
   elements.openRecipeDialog?.addEventListener("click", () => openRecipeDialog());
   elements.closeRecipeDialog?.addEventListener("click", () => closeRecipeDialog());
+  elements.cancelRecipeButton?.addEventListener("click", () => closeRecipeDialog());
   elements.recipeDialog?.addEventListener("click", (event) => {
     if (event.target === elements.recipeDialog) closeRecipeDialog();
   });
@@ -1517,6 +1524,7 @@ function bindEvents() {
   elements.resetButton.addEventListener("click", resetDemoData);
   elements.settingsButton.addEventListener("click", openSettingsDialog);
   elements.closeSettings.addEventListener("click", () => elements.settingsDialog.close());
+  elements.cancelSettings?.addEventListener("click", () => elements.settingsDialog.close());
   elements.settingsForm.addEventListener("submit", saveSettings);
   elements.adminRefreshButton?.addEventListener("click", () => loadAdminUsers({ force: true }));
   elements.adminLoginForm?.addEventListener("submit", handleAdminLogin);
@@ -3885,19 +3893,20 @@ function openMapChoice(restaurant) {
 function mapChoiceUrls(restaurant) {
   const coordinates = validateCoordinates(restaurant.lat, restaurant.lng);
   const label = restaurant.name || restaurant.address || t("spot.untitled");
-  const searchText = [restaurant.name, restaurant.address].filter(Boolean).join(" ") || label;
+  const coordinateText = coordinates ? `${coordinates.lat},${coordinates.lng}` : "";
+  const searchText = [restaurant.name, restaurant.address].filter(Boolean).join(" ") || coordinateText || label;
+  const savedMapUrl = sanitizeMapUrl(restaurant.google_url || "");
   const appleParams = new URLSearchParams();
   const googleParams = new URLSearchParams();
+  googleParams.set("api", "1");
+  googleParams.set("query", searchText);
   if (coordinates) {
     appleParams.set("ll", `${coordinates.lat},${coordinates.lng}`);
-    googleParams.set("q", `${coordinates.lat},${coordinates.lng}`);
-  } else {
-    googleParams.set("q", searchText);
   }
   appleParams.set("q", coordinates ? label : searchText);
   return {
-    google: `https://www.google.com/maps?${googleParams.toString()}`,
-    apple: `https://maps.apple.com/?${appleParams.toString()}`,
+    google: isGoogleMapsUrl(savedMapUrl) ? savedMapUrl : `https://www.google.com/maps/search/?${googleParams.toString()}`,
+    apple: isAppleMapsUrl(savedMapUrl) ? savedMapUrl : `https://maps.apple.com/?${appleParams.toString()}`,
   };
 }
 

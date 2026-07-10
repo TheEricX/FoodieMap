@@ -20,6 +20,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Standardized mobile form action bars, close controls, selected spot actions, and modal button grids for more reliable touch interaction.
 - Reworked Google Cloud deployment documentation around stateless Cloud Run, Cloud SQL, GCS, Secret Manager, migration, and post-deploy verification.
 - Centered the desktop Recipes and Discovery content rail after removing the restaurant sidebar, and aligned the Recipe photo upload control with the existing drag-and-drop upload UI.
 - Compacted the mobile single-restaurant share and map-choice dialogs to remove excess whitespace and keep actions visible.
@@ -44,6 +45,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Open saved Google Maps and Apple Maps links directly when available instead of replacing them with coordinate-only map searches.
 - Made pasted map short links trigger autofill more reliably and use resolved Google Maps page metadata as a fallback for name and coordinates.
 - Kept the mobile language switch visible and horizontally aligned with the topbar actions in Map View and List View.
 - Let the mobile add-spot dialog close with a downward swipe while confirming before discarding unsaved form input.
