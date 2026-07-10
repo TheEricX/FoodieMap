@@ -45,6 +45,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Made the Restaurant Journal close control respond to a single mobile tap while preserving mouse and keyboard activation.
 - Open saved Google Maps and Apple Maps links directly when available instead of replacing them with coordinate-only map searches.
 - Made pasted map short links trigger autofill more reliably and use resolved Google Maps page metadata as a fallback for name and coordinates.
 - Kept the mobile language switch visible and horizontally aligned with the topbar actions in Map View and List View.

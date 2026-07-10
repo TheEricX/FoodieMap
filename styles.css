@@ -3552,10 +3552,15 @@ body[data-view="login"] .top-actions {
 
 .detail-drawer-head .icon-button {
   position: absolute;
+  z-index: 2;
   top: 0;
   right: 0;
+  min-width: 44px;
+  height: 44px;
   border-color: var(--line);
   background: rgba(255, 250, 244, 0.86);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .detail-drawer-head h2 {

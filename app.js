@@ -1069,6 +1069,7 @@ let mapGestureStartZoom = null;
 let isDetailAddDishOpen = false;
 let activeDetailRestaurantId = null;
 let detailCloseTimer = null;
+let detailClosePointerAt = null;
 let recipeDialogDragStart = null;
 
 const DISH_AUTOSAVE_DELAY = 700;
@@ -1417,7 +1418,9 @@ function bindEvents() {
     openMapChoice(restaurant);
   });
   elements.openSpotDetail.addEventListener("click", openSpotDetail);
-  elements.closeSpotDetail.addEventListener("click", closeSpotDetail);
+  elements.closeSpotDetail.addEventListener("pointerup", closeSpotDetailFromPointer);
+  elements.closeSpotDetail.addEventListener("click", closeSpotDetailFromClick);
+  elements.closeSpotDetail.addEventListener("keydown", closeSpotDetailFromKeyboard);
   elements.spotDetailDialog.addEventListener("click", closeSpotDetailFromBackdrop);
   elements.spotDetailForm.addEventListener("submit", saveDetailRestaurant);
   elements.spotDetailForm.querySelectorAll("[data-detail-review-field]").forEach((field) => {
@@ -2684,6 +2687,7 @@ function openSpotDetail() {
   if (!selected) return;
   renderSpotDetail(selected);
   clearTimeout(detailCloseTimer);
+  detailClosePointerAt = null;
   elements.spotDetailDialog.classList.remove("is-open", "is-closing");
   if (!elements.spotDetailDialog.open) elements.spotDetailDialog.showModal();
   requestAnimationFrame(() => {
@@ -2702,6 +2706,31 @@ function closeSpotDetail() {
     elements.spotDetailDialog.classList.remove("is-closing");
     elements.spotDetailDialog.close();
   }, 240);
+}
+
+function closeSpotDetailFromPointer(event) {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  event.stopPropagation();
+  detailClosePointerAt = performance.now();
+  closeSpotDetail();
+}
+
+function closeSpotDetailFromClick(event) {
+  if (detailClosePointerAt !== null && performance.now() - detailClosePointerAt < 600) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  closeSpotDetail();
+}
+
+function closeSpotDetailFromKeyboard(event) {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  event.stopPropagation();
+  detailClosePointerAt = null;
+  closeSpotDetail();
 }
 
 function closeSpotDetailFromBackdrop(event) {
