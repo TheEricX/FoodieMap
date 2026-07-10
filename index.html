@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260703-recipes" />
+    <link rel="stylesheet" href="/styles.css?v=20260710-location" />
   </head>
   <body>
     <main class="app-shell">
@@ -39,7 +39,7 @@
           </details>
         </div>
         <div class="top-actions">
-          <div class="location-status top-location-status" id="locationStatus" data-i18n="location.waiting">Location pending</div>
+          <div class="location-status top-location-status" id="locationStatus" aria-live="polite" data-i18n="location.waiting">Location pending</div>
           <button class="icon-button" id="locateButton" title="Get current location" data-i18n-title="location.button">⌖</button>
           <details class="language-menu" id="languageMenu">
             <summary class="icon-button language-trigger" title="Language" data-i18n-title="language.label">
@@ -158,6 +158,19 @@
                 <small id="mapCategorySummary">Sorted by distance from you</small>
               </div>
             </div>
+            <section class="location-prompt" id="locationPrompt" aria-live="polite" hidden>
+              <div class="location-prompt-copy">
+                <span class="location-prompt-mark" aria-hidden="true">⌖</span>
+                <span>
+                  <strong id="locationPromptTitle">See what's nearby</strong>
+                  <small id="locationPromptBody">Your location stays on this device and is only used to calculate distance.</small>
+                </span>
+              </div>
+              <div class="location-prompt-actions">
+                <button class="primary-button" id="locationPrimaryAction" type="button">Use my location</button>
+                <button class="secondary-button ghost-button" id="locationBrowseAction" type="button">Not now</button>
+              </div>
+            </section>
             <div id="recentList" class="recent-list map-nearest-list"></div>
           </section>
 
@@ -166,14 +179,14 @@
               <button class="map-zoom-button" id="mapZoomOut" type="button" title="Zoom out" data-i18n-title="map.zoomOut">−</button>
               <span id="mapZoomLabel">100%</span>
               <button class="map-zoom-button" id="mapZoomIn" type="button" title="Zoom in" data-i18n-title="map.zoomIn">＋</button>
-              <button class="map-zoom-button center" id="mapCenterButton" type="button" title="Center on you" data-i18n-title="map.center">⌖</button>
+              <button class="map-zoom-button center" id="mapCenterButton" type="button" title="Center on you" data-i18n-title="map.center" disabled>⌖</button>
               <button class="map-zoom-button reset" id="mapZoomReset" type="button" title="Reset zoom" data-i18n-title="map.zoomReset">1×</button>
             </div>
             <div class="grid-overlay"></div>
-            <div class="range-ring ring-1"><span>1 km</span></div>
-            <div class="range-ring ring-2"><span>5 km</span></div>
-            <div class="range-ring ring-3"><span>15 km+</span></div>
-            <button class="me-marker" id="meMarker" title="Current location" data-i18n-title="location.button">
+            <div class="range-ring ring-1" hidden><span>1 km</span></div>
+            <div class="range-ring ring-2" hidden><span>5 km</span></div>
+            <div class="range-ring ring-3" hidden><span>15 km+</span></div>
+            <button class="me-marker" id="meMarker" title="Current location" data-i18n-title="location.button" hidden>
               <span>🧑‍🍳</span>
               <small>YOU</small>
             </button>
@@ -822,7 +835,26 @@
           </div>
         </form>
       </dialog>
+
+      <dialog class="modal location-help-dialog" id="locationHelpDialog">
+        <form class="modal-card location-help-card" method="dialog">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow" data-i18n="location.helpEyebrow">LOCATION ACCESS</p>
+              <h2 data-i18n="location.helpTitle">Turn on location</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeLocationHelp" title="Close">×</button>
+          </div>
+          <p class="location-help-intro" data-i18n="location.helpIntro">Allow location for FoodieMap in your browser, then return here.</p>
+          <ol class="location-help-steps" id="locationHelpSteps"></ol>
+          <p class="form-help" data-i18n="location.helpSystem">If it still does not work, make sure Location Services are enabled for this browser in your device settings.</p>
+          <div class="form-actions">
+            <button class="secondary-button ghost-button" id="locationHelpBrowse" type="button" data-i18n="location.browseWithout">Browse without location</button>
+            <button class="primary-button" id="locationHelpRetry" type="button" data-i18n="location.retryEnabled">I've enabled it, try again</button>
+          </div>
+        </form>
+      </dialog>
     </main>
-    <script src="/app.js?v=20260703-recipes"></script>
+    <script src="/app.js?v=20260710-location"></script>
   </body>
 </html>

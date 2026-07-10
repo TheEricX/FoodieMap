@@ -30,7 +30,9 @@ Mobile Map View is intentionally different:
 - The sidebar is hidden on mobile Map View.
 - The map gets the remaining vertical space.
 - Selected spot details use a bottom tab and bottom sheet instead of a desktop floating card.
-- Bottom navigation switches primary views: Map View, List View, Discovery.
+- Bottom navigation switches primary views: Map View, List View, Recipes, Discovery.
+- Location consent appears as a compact inline strip below the active map category, never as an automatic system prompt on page load.
+- Without location, the map remains a usable saved-spots board: restaurant markers stay visible while the user marker, distance rings, distance labels, and center-on-user control are removed.
 
 The goal is to make the common mobile flow fast:
 
@@ -44,6 +46,7 @@ The goal is to make the common mobile flow fast:
 
 - Put primary mobile actions close to the workflow. `+ Add` belongs next to search because adding a spot and searching the current category are both high-frequency map actions.
 - Keep category switches compact and stable. Selected state should not change control size.
+- Keep location recovery contextual. The topbar location icon reopens the flow; detailed browser permission steps belong in a bottom sheet, not permanently in the map surface.
 - Put secondary or broader navigation in drawers or bottom navigation, not in the main map surface.
 - Do not rely on partially clipped controls to imply horizontal scrolling. If a control is important, make it visible or put it behind an explicit drawer/menu.
 - Dangerous or low-frequency actions should stay deeper in dialogs, menus, or detail screens.

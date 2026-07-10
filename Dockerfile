@@ -9,7 +9,7 @@ RUN apt-get update \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY index.html styles.css app.js server.py ./
+COPY index.html styles.css app.js location-core.mjs server.py ./
 
 ENV DATA_DIR=/data
 VOLUME ["/data"]

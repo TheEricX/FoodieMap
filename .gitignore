@@ -12,6 +12,9 @@ npm-debug.log*
 dist/
 build/
 coverage/
+playwright-report/
+test-results/
+.playwright-data/
 
 data/
 uploads/

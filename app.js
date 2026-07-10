@@ -1,6 +1,8 @@
 const LANGUAGE_KEY = "foodiemap:language";
 const LIST_FILTER_ORDER_KEY = "foodiemap:list-filter-order";
 const GOOGLE_GEOCODING_KEY = "foodiemap:google-geocoding-key";
+const LOCATION_PREFERENCE_KEY = "foodiemap.locationMode.v1";
+const LOCATION_CORE_URL = "/location-core.mjs?v=20260710-location";
 const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
@@ -36,11 +38,41 @@ const translations = {
     "language.short": "EN",
     "location.waiting": "Location pending",
     "location.fetching": "Getting current location...",
-    "location.current": "Current location {lat}, {lng}",
-    "location.denied": "Location permission is blocked. Use the browser address bar permissions menu, allow location, then click Use My Location.",
-    "location.fallback": "Current location is unavailable. Using downtown Toronto for now.",
-    "location.unsupported": "This browser does not support location. Using downtown Toronto for now.",
+    "location.current": "Location updated",
+    "location.approximate": "Approximate location",
+    "location.denied": "Location is off. Distances are hidden until you allow access.",
+    "location.unavailable": "Your device could not determine its location.",
+    "location.timeout": "Location took too long. Try again when you have a stronger signal.",
+    "location.unsupported": "This browser does not support location. You can still browse every saved spot.",
     "location.button": "Get current location",
+    "location.inviteTitle": "See what's nearby",
+    "location.inviteBody": "Your location stays on this device and is only used to calculate distance.",
+    "location.useMine": "Use my location",
+    "location.notNow": "Not now",
+    "location.locatingTitle": "Finding your location",
+    "location.locatingBody": "This can take a moment on mobile networks.",
+    "location.permissionTitle": "Location is off",
+    "location.permissionBody": "Turn it on to see nearby spots and distance sorting.",
+    "location.permissionAction": "How to enable",
+    "location.unavailableTitle": "Location unavailable",
+    "location.timeoutTitle": "Location timed out",
+    "location.unsupportedTitle": "Browse without location",
+    "location.tryAgain": "Try again",
+    "location.browseWithout": "Browse without location",
+    "location.helpEyebrow": "LOCATION ACCESS",
+    "location.helpTitle": "Turn on location",
+    "location.helpIntro": "Allow location for FoodieMap in your browser, then return here.",
+    "location.helpSystem": "If it still does not work, make sure Location Services are enabled for this browser in your device settings.",
+    "location.retryEnabled": "I've enabled it, try again",
+    "location.safariStep1": "Tap the Page Menu beside the address bar.",
+    "location.safariStep2": "Open More or Website Settings.",
+    "location.safariStep3": "Set Location to Allow, then return to FoodieMap.",
+    "location.chromeStep1": "Tap the site information icon beside the address.",
+    "location.chromeStep2": "Open Site settings and choose Location.",
+    "location.chromeStep3": "Set it to Allow, then return to FoodieMap.",
+    "location.genericStep1": "Open this site's permissions from the browser address bar or menu.",
+    "location.genericStep2": "Change Location to Allow.",
+    "location.genericStep3": "Return to FoodieMap and try again.",
     "settings.button": "Google API settings",
     "login.eyebrow": "PRIVATE FOOD MAP",
     "login.title": "Sign in to save your map.",
@@ -181,6 +213,9 @@ const translations = {
     "map.view": "MAP VIEW",
     "map.summary": "{count} spots · sorted by distance from you",
     "map.sorted": "Sorted by distance from you",
+    "map.summaryBrowse": "{count} spots · recently updated",
+    "map.summaryApproximate": "{count} spots · approximate distance",
+    "map.recentlyUpdated": "Recently updated",
     "map.emptyTitle": "Add your first restaurant",
     "map.emptyBody": "Save an address or map link, and it will appear on this playful relative map.",
     "map.selectedSpot": "SELECTED SPOT",
@@ -200,6 +235,7 @@ const translations = {
     "count.copies": "{count} copies",
     "count.visits": "{count} visits",
     "sort.nearest": "Nearest first",
+    "sort.recent": "Recently updated",
     "status.visited": "Visited",
     "status.want_to_go": "Want to Go",
     "status.favorite": "Favorite",
@@ -503,11 +539,41 @@ const translations = {
     "language.short": "中",
     "location.waiting": "等待定位",
     "location.fetching": "正在获取当前位置...",
-    "location.current": "当前位置 {lat}, {lng}",
-    "location.denied": "定位权限已被浏览器拒绝。请点地址栏左侧图标 > 定位 > 允许或询问，然后再点 Use My Location。",
-    "location.fallback": "暂时无法获取当前位置，使用多伦多市中心作为临时位置。",
-    "location.unsupported": "浏览器不支持定位，使用多伦多市中心作为临时位置。",
+    "location.current": "位置已更新",
+    "location.approximate": "大致位置",
+    "location.denied": "定位权限已关闭，允许前不会显示距离。",
+    "location.unavailable": "设备暂时无法确定当前位置。",
+    "location.timeout": "定位时间过长，请在信号较好时重试。",
+    "location.unsupported": "此浏览器不支持定位，你仍然可以浏览所有已保存餐厅。",
     "location.button": "获取当前位置",
+    "location.inviteTitle": "查看离你最近的餐厅",
+    "location.inviteBody": "位置只保留在当前设备上，仅用于计算距离。",
+    "location.useMine": "使用我的位置",
+    "location.notNow": "暂不使用",
+    "location.locatingTitle": "正在获取你的位置",
+    "location.locatingBody": "移动网络下可能需要一点时间。",
+    "location.permissionTitle": "定位权限已关闭",
+    "location.permissionBody": "开启后可查看附近餐厅并按距离排序。",
+    "location.permissionAction": "查看开启步骤",
+    "location.unavailableTitle": "暂时无法定位",
+    "location.timeoutTitle": "定位超时",
+    "location.unsupportedTitle": "不使用定位浏览",
+    "location.tryAgain": "重新定位",
+    "location.browseWithout": "不使用定位浏览",
+    "location.helpEyebrow": "定位权限",
+    "location.helpTitle": "开启定位",
+    "location.helpIntro": "在浏览器中允许 FoodieMap 使用位置，然后返回这里。",
+    "location.helpSystem": "如果仍然无效，请确认设备设置中已允许此浏览器使用定位服务。",
+    "location.retryEnabled": "已经开启，重新定位",
+    "location.safariStep1": "点击地址栏旁边的页面菜单。",
+    "location.safariStep2": "打开“更多”或“网站设置”。",
+    "location.safariStep3": "把“位置”改为“允许”，然后返回 FoodieMap。",
+    "location.chromeStep1": "点击地址栏旁边的网站信息图标。",
+    "location.chromeStep2": "打开“网站设置”，选择“位置”。",
+    "location.chromeStep3": "改为“允许”，然后返回 FoodieMap。",
+    "location.genericStep1": "从浏览器地址栏或菜单打开当前网站权限。",
+    "location.genericStep2": "把“位置”改为“允许”。",
+    "location.genericStep3": "返回 FoodieMap 后重新定位。",
     "settings.button": "Google API 设置",
     "login.eyebrow": "私人美食地图",
     "login.title": "登录后保存你的美食地图。",
@@ -648,6 +714,9 @@ const translations = {
     "map.view": "地图视图",
     "map.summary": "{count} 个餐厅 · 按距离排序",
     "map.sorted": "按与你的距离排序",
+    "map.summaryBrowse": "{count} 个餐厅 · 最近更新",
+    "map.summaryApproximate": "{count} 个餐厅 · 大致距离",
+    "map.recentlyUpdated": "按最近更新排序",
     "map.emptyTitle": "添加第一家餐厅",
     "map.emptyBody": "保存地址或地图链接后，它会出现在这张 Q 版相对地图上。",
     "map.selectedSpot": "选中餐厅",
@@ -667,6 +736,7 @@ const translations = {
     "count.copies": "{count} 次复制",
     "count.visits": "{count} 次访问",
     "sort.nearest": "距离最近",
+    "sort.recent": "最近更新",
     "status.visited": "去过",
     "status.want_to_go": "想去",
     "status.favorite": "最爱",
@@ -1028,6 +1098,10 @@ let restaurants = [];
 let currentUser = null;
 let currentAdmin = null;
 let currentLocation = null;
+let locationCore = null;
+let locationController = null;
+let locationState = null;
+let locationUiReady = false;
 let activeFilter = "all";
 let selectedRestaurantId = null;
 let isSpotCardOpen = false;
@@ -1165,6 +1239,16 @@ const elements = {
   markersLayer: document.querySelector("#markersLayer"),
   emptyMap: document.querySelector("#emptyMap"),
   locationStatus: document.querySelector("#locationStatus"),
+  locationPrompt: document.querySelector("#locationPrompt"),
+  locationPromptTitle: document.querySelector("#locationPromptTitle"),
+  locationPromptBody: document.querySelector("#locationPromptBody"),
+  locationPrimaryAction: document.querySelector("#locationPrimaryAction"),
+  locationBrowseAction: document.querySelector("#locationBrowseAction"),
+  locationHelpDialog: document.querySelector("#locationHelpDialog"),
+  locationHelpSteps: document.querySelector("#locationHelpSteps"),
+  closeLocationHelp: document.querySelector("#closeLocationHelp"),
+  locationHelpBrowse: document.querySelector("#locationHelpBrowse"),
+  locationHelpRetry: document.querySelector("#locationHelpRetry"),
   mapCategoryEyebrow: document.querySelector("#mapCategoryEyebrow"),
   mapCategoryTitle: document.querySelector("#mapCategoryTitle"),
   mapCategorySummary: document.querySelector("#mapCategorySummary"),
@@ -1302,10 +1386,37 @@ const elements = {
   adminLogoutButton: document.querySelector("#adminLogoutButton"),
 };
 
-boot();
+loadLocationCore();
+
+async function loadLocationCore() {
+  try {
+    locationCore = await import(LOCATION_CORE_URL);
+    locationState = locationCore.createInitialLocationModel();
+    await boot();
+  } catch (error) {
+    showBootError(error);
+  }
+}
+
+function showBootError(error) {
+  console.error(error);
+  const panel = document.createElement("section");
+  panel.className = "startup-error";
+  panel.setAttribute("role", "alert");
+  panel.innerHTML = `
+    <p>FOODIEMAP</p>
+    <h1>FoodieMap couldn't start.</h1>
+    <span>A required browser file did not load. Reload the page to try again.</span>
+    <button type="button">Reload</button>
+  `;
+  panel.querySelector("button").addEventListener("click", () => window.location.reload());
+  panel.title = error?.message || "Location module failed to load";
+  document.body.appendChild(panel);
+}
 
 async function boot() {
   translateStaticDom();
+  configureLocationController();
   bindEvents();
   if (isAdminPortal) {
     document.body.classList.add("admin-portal");
@@ -1335,12 +1446,23 @@ async function boot() {
   }
   setActiveView(activeView, { push: false });
   checkShortLinkService();
-  if (activeView !== "login") requestLocation();
+  await locationController.bootstrap();
+  locationUiReady = true;
+  render();
 }
 
 function bindEvents() {
-  elements.locateButton.addEventListener("click", requestLocation);
-  elements.mapLocateButton?.addEventListener("click", requestLocation);
+  elements.locateButton.addEventListener("click", handleLocationPrimaryAction);
+  elements.mapLocateButton?.addEventListener("click", handleLocationPrimaryAction);
+  elements.locationPrimaryAction?.addEventListener("click", handleLocationPrimaryAction);
+  elements.locationBrowseAction?.addEventListener("click", chooseLocationBrowseMode);
+  elements.closeLocationHelp?.addEventListener("click", closeLocationHelpDialog);
+  elements.locationHelpBrowse?.addEventListener("click", chooseLocationBrowseMode);
+  elements.locationHelpRetry?.addEventListener("click", retryLocationAfterSettings);
+  elements.locationHelpDialog?.addEventListener("close", () => locationController?.closeSettingsHelp());
+  elements.locationHelpDialog?.addEventListener("click", (event) => {
+    if (event.target === elements.locationHelpDialog) closeLocationHelpDialog();
+  });
   elements.loginButton.addEventListener("click", handleLoginButton);
   elements.loginPageGoogle?.addEventListener("click", startGoogleSignIn);
   elements.loginPagePassword?.addEventListener("click", () => openAuthDialog("password", "login"));
@@ -1450,6 +1572,10 @@ function bindEvents() {
     });
   });
   window.addEventListener("hashchange", () => setActiveView(getInitialView(), { push: false }));
+  window.addEventListener("focus", resumeLocationController);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") resumeLocationController();
+  });
   window.addEventListener("scroll", updateTopbarElevation, { passive: true });
   window.addEventListener("resize", recenterMapPanWithinBounds);
   [elements.sidebar, elements.mapView, elements.listsView, elements.discoveryView, elements.recipesView, elements.adminView].forEach((scrollArea) => {
@@ -2298,15 +2424,7 @@ async function saveRestaurantFromForm(event) {
     upsertRestaurant(data.restaurant);
     selectedRestaurantId = data.restaurant.id;
     setSpotCardOpen(true);
-    if (!editingRestaurantId) {
-      resetRestaurantForm();
-      closeRestaurantDialog({ force: true });
-    } else {
-      editingRestaurantId = data.restaurant.id;
-      fillRestaurantForm(data.restaurant);
-      renderDishEditor(data.restaurant);
-      elements.formHelp.textContent = t("detail.menuSaved");
-    }
+    closeRestaurantDialog({ force: true });
     render();
   } catch (error) {
     elements.formHelp.textContent = error.message;
@@ -2768,11 +2886,12 @@ function renderSpotDetail(restaurant = selectedRestaurant()) {
 function renderDetailHeader(restaurant = selectedRestaurant()) {
   if (!restaurant) return;
   elements.detailSpotName.textContent = restaurant.name;
+  const distance = distanceLabel(restaurant);
   elements.detailSpotMeta.innerHTML = `
     <span>${statusLabel(restaurant.status)}</span>
     <span>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}</span>
     <span>${t("count.visits", { count: restaurant.visit_count || 0 })}</span>
-    <span>${distanceLabel(restaurant)}</span>
+    ${distance ? `<span>${escapeHtml(distance)}</span>` : ""}
   `;
 }
 
@@ -3475,59 +3594,190 @@ function sanitizeMapUrl(value) {
   return url;
 }
 
-async function getLocationPermissionState() {
-  if (!navigator.permissions?.query) return "unknown";
-  try {
-    return (await navigator.permissions.query({ name: "geolocation" })).state;
-  } catch {
-    return "unknown";
-  }
+function configureLocationController() {
+  const gateway = {
+    isSupported: () => Boolean(navigator.geolocation),
+    async queryPermission() {
+      if (!navigator.permissions?.query) return "unknown";
+      try {
+        return (await navigator.permissions.query({ name: "geolocation" })).state;
+      } catch {
+        return "unknown";
+      }
+    },
+    getCurrentPosition(options) {
+      return new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, options));
+    },
+    observePermissionChange(callback) {
+      if (!navigator.permissions?.query) return null;
+      let permissionStatus = null;
+      let disposed = false;
+      const listener = () => callback(permissionStatus.state);
+      navigator.permissions.query({ name: "geolocation" }).then((status) => {
+        if (disposed) return;
+        permissionStatus = status;
+        permissionStatus.addEventListener?.("change", listener);
+      }).catch(() => {});
+      return () => {
+        disposed = true;
+        permissionStatus?.removeEventListener?.("change", listener);
+      };
+    },
+  };
+  const preferenceStore = {
+    get() {
+      const value = localStorage.getItem(LOCATION_PREFERENCE_KEY);
+      return ["browse", "nearby"].includes(value) ? value : null;
+    },
+    set(mode) {
+      localStorage.setItem(LOCATION_PREFERENCE_KEY, mode);
+    },
+  };
+  locationController = locationCore.createLocationController({
+    gateway,
+    preferenceStore,
+    clock: Date,
+    onChange: handleLocationStateChange,
+  });
 }
 
-function setLocationButtonState(label, disabled = false) {
+function handleLocationStateChange(state) {
+  locationState = state;
+  currentLocation = state.phase === "ready" ? state.position : null;
+  if (state.phase === "ready" && elements.locationHelpDialog?.open) elements.locationHelpDialog.close();
+  if (locationUiReady) render();
+}
+
+function handleLocationPrimaryAction() {
+  if (!locationController) return;
+  if (locationState?.phase === "denied") {
+    openLocationHelpDialog();
+    return;
+  }
+  locationController.requestNearby();
+}
+
+function chooseLocationBrowseMode() {
+  locationController?.chooseBrowse();
+  if (elements.locationHelpDialog?.open) elements.locationHelpDialog.close();
+}
+
+function openLocationHelpDialog() {
+  if (!elements.locationHelpDialog) return;
+  renderLocationHelpSteps();
+  locationController?.openSettingsHelp();
+  if (!elements.locationHelpDialog.open) elements.locationHelpDialog.showModal();
+}
+
+function closeLocationHelpDialog() {
+  if (elements.locationHelpDialog?.open) elements.locationHelpDialog.close();
+  else locationController?.closeSettingsHelp();
+}
+
+async function retryLocationAfterSettings() {
+  if (elements.locationHelpDialog?.open) elements.locationHelpDialog.close();
+  await locationController?.retryAfterSettings();
+}
+
+function resumeLocationController() {
+  if (!locationUiReady || activeView === "login" || activeView.startsWith("admin")) return;
+  locationController?.resume();
+}
+
+function renderLocationHelpSteps() {
+  if (!elements.locationHelpSteps) return;
+  const userAgent = navigator.userAgent || "";
+  const isIos = /iPad|iPhone|iPod/i.test(userAgent);
+  const isSafari = isIos && /Safari/i.test(userAgent) && !/CriOS|FxiOS|EdgiOS/i.test(userAgent);
+  const isChrome = /Chrome|CriOS/i.test(userAgent);
+  const prefix = isSafari ? "location.safariStep" : isChrome ? "location.chromeStep" : "location.genericStep";
+  elements.locationHelpSteps.innerHTML = [1, 2, 3].map((index) => `<li>${escapeHtml(t(`${prefix}${index}`))}</li>`).join("");
+}
+
+function isLocationReady() {
+  return locationState?.phase === "ready" && Boolean(currentLocation);
+}
+
+function locationAccuracy() {
+  return isLocationReady() ? Number(currentLocation.accuracy || 0) : 0;
+}
+
+function renderLocationUi() {
+  if (!locationState || !elements.locationPrompt) return;
+  if (!locationUiReady) {
+    elements.locationPrompt.hidden = true;
+    return;
+  }
+  const ready = isLocationReady();
+  const accuracyClass = ready ? locationCore.classifyLocationAccuracy(locationAccuracy()) : "unknown";
+  const promptConfig = locationPromptConfig(locationState);
+
+  elements.locationPrompt.hidden = !promptConfig;
+  if (promptConfig) {
+    elements.locationPromptTitle.textContent = t(promptConfig.title);
+    elements.locationPromptBody.textContent = t(promptConfig.body);
+    elements.locationPrimaryAction.textContent = t(promptConfig.action);
+    elements.locationPrimaryAction.disabled = locationState.phase === "locating" || locationState.phase === "unsupported";
+    elements.locationBrowseAction.textContent = t(locationState.preference ? "location.browseWithout" : "location.notNow");
+  }
+
+  const statusKey = ready
+    ? accuracyClass === "precise" ? "location.current" : "location.approximate"
+    : {
+        locating: "location.fetching",
+        denied: "location.denied",
+        unavailable: "location.unavailable",
+        timeout: "location.timeout",
+        unsupported: "location.unsupported",
+      }[locationState.phase] || (locationState.preference === "browse" ? "location.browseWithout" : "location.waiting");
+  const buttonLabel = locationState.phase === "denied"
+    ? t("location.permissionAction")
+    : locationState.phase === "locating"
+      ? t("location.fetching")
+      : ready ? t("location.current") : t("location.useMine");
+  elements.locationStatus.textContent = t(statusKey);
+  elements.locateButton.title = buttonLabel;
+  elements.locateButton.setAttribute("aria-label", buttonLabel);
+  elements.locateButton.disabled = locationState.phase === "locating" || locationState.phase === "unsupported";
+  elements.locateButton.classList.toggle("location-active", ready);
+  elements.locateButton.classList.toggle("location-warning", ready && accuracyClass === "low");
   if (elements.mapLocateButton) {
-    elements.mapLocateButton.textContent = label;
-    elements.mapLocateButton.disabled = disabled;
+    elements.mapLocateButton.disabled = elements.locateButton.disabled;
+    elements.mapLocateButton.title = buttonLabel;
   }
-  elements.locateButton.title = label;
-  elements.locateButton.disabled = disabled;
+
+  elements.cuteMap.classList.toggle("location-ready", ready);
+  elements.cuteMap.classList.toggle("location-browse", !ready);
+  elements.meMarker.hidden = !ready;
+  elements.cuteMap.querySelectorAll(".range-ring").forEach((ring) => {
+    ring.hidden = !ready;
+  });
+  elements.mapCenterButton.disabled = !ready;
 }
 
-async function requestLocation() {
-  if (!navigator.geolocation) {
-    setFallbackLocation(t("location.unsupported"));
-    return;
+function locationPromptConfig(state) {
+  if (state.phase === "ready" || state.preference === "browse") return null;
+  if (state.phase === "locating") {
+    return { title: "location.locatingTitle", body: "location.locatingBody", action: "location.useMine" };
   }
-  if ((await getLocationPermissionState()) === "denied") {
-    setLocationButtonState("Retry Location");
-    setFallbackLocation(LOCATION_DENIED_HELP);
-    return;
+  if (state.phase === "denied") {
+    return { title: "location.permissionTitle", body: "location.permissionBody", action: "location.permissionAction" };
   }
-  setLocationButtonState("Locating...", true);
-  elements.locationStatus.textContent = t("location.fetching");
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      currentLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
-      elements.locationStatus.textContent = t("location.current", { lat: currentLocation.lat.toFixed(3), lng: currentLocation.lng.toFixed(3) });
-      setLocationButtonState("Use My Location");
-      render();
-    },
-    (error) => {
-      setLocationButtonState("Retry Location");
-      setFallbackLocation(error.code === error.PERMISSION_DENIED ? t("location.denied") : t("location.fallback"));
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
-  );
-}
-
-function setFallbackLocation(message) {
-  currentLocation = { lat: 43.6532, lng: -79.3832 };
-  elements.locationStatus.textContent = message;
-  render();
+  if (state.phase === "unavailable") {
+    return { title: "location.unavailableTitle", body: "location.unavailable", action: "location.tryAgain" };
+  }
+  if (state.phase === "timeout") {
+    return { title: "location.timeoutTitle", body: "location.timeout", action: "location.tryAgain" };
+  }
+  if (state.phase === "unsupported") {
+    return { title: "location.unsupportedTitle", body: "location.unsupported", action: "location.useMine" };
+  }
+  return { title: "location.inviteTitle", body: "location.inviteBody", action: "location.useMine" };
 }
 
 function render() {
   renderViewShell();
+  renderLocationUi();
   renderMapContext();
   renderCounts();
   syncQuotaUi();
@@ -3578,6 +3828,7 @@ function setActiveView(view, options = {}) {
       elements.adminStatusText.textContent = error.message;
     });
   }
+  if (["my-map", "my-lists"].includes(activeView)) selectFirstVisibleRestaurant();
   render();
   requestAnimationFrame(updateTopbarElevation);
 }
@@ -3669,7 +3920,9 @@ function renderMapContext() {
   const meta = activeCategoryMeta();
   elements.mapCategoryEyebrow.textContent = `${t("map.view")} · ${meta.eyebrow}`;
   elements.mapCategoryTitle.textContent = meta.title;
-  elements.mapCategorySummary.textContent = t("map.summary", { count: meta.count });
+  const accuracyClass = isLocationReady() ? locationCore.classifyLocationAccuracy(locationAccuracy()) : "unknown";
+  const summaryKey = !isLocationReady() ? "map.summaryBrowse" : accuracyClass === "precise" ? "map.summary" : "map.summaryApproximate";
+  elements.mapCategorySummary.textContent = t(summaryKey, { count: meta.count });
 }
 
 function restaurantsForActiveCategory() {
@@ -3826,7 +4079,7 @@ function renderRecentList() {
           ${restaurantThumbTemplate(restaurant)}
           <span>
             <strong>${escapeHtml(restaurant.name)}</strong>
-            <small>${distanceLabel(restaurant)} · ${statusLabel(restaurant.status)}</small>
+            <small>${escapeHtml(restaurantMetaLabel(restaurant))}</small>
           </span>
         </button>
       `).join("")
@@ -3846,10 +4099,13 @@ function renderMarkers() {
   elements.emptyMap.style.display = visible.length ? "none" : "grid";
   elements.markersLayer.innerHTML = "";
   updateMapZoomUi();
-  if (!currentLocation) return;
-  const layout = layoutMapMarkers(visible);
+  const ready = isLocationReady();
+  const bounds = elements.cuteMap?.getBoundingClientRect();
+  const layout = ready
+    ? layoutMapMarkers(visible)
+    : new Map(locationCore.layoutBrowseMarkers(visible, { width: bounds?.width, height: bounds?.height }).map((point) => [point.id, point]));
   visible.forEach((restaurant) => {
-    const distance = haversineDistance(currentLocation, restaurant);
+    const distance = ready ? haversineDistance(currentLocation, restaurant) : null;
     const point = layout.get(restaurant.id) ?? { x: 50, y: 50 };
     const marker = document.createElement("button");
     marker.className = `restaurant-marker ${restaurant.status}${restaurant.id === selectedRestaurantId ? " selected" : ""}`;
@@ -3862,10 +4118,10 @@ function renderMarkers() {
       </span>
       <span class="marker-caption">
         <strong>${escapeHtml(shortMapName(restaurant.name))}</strong>
-        <small>${formatDistance(distance)}</small>
+        <small>${escapeHtml(ready ? formatUserDistance(distance) : statusLabel(restaurant.status))}</small>
       </span>
     `;
-    marker.title = `${restaurant.name} - ${formatDistance(distance)}`;
+    marker.title = ready ? `${restaurant.name} - ${formatUserDistance(distance)}` : `${restaurant.name} - ${statusLabel(restaurant.status)}`;
     marker.addEventListener("click", () => {
       selectedRestaurantId = restaurant.id;
       setSpotCardOpen(true);
@@ -3885,9 +4141,10 @@ function renderSpotCard() {
   elements.spotCard.hidden = !isSpotCardOpen;
   elements.spotCardTab.hidden = isSpotCardOpen;
   elements.spotCardTabName.textContent = selected.name;
-  const distance = currentLocation ? haversineDistance(currentLocation, selected) : null;
+  const distance = isLocationReady() ? haversineDistance(currentLocation, selected) : null;
   elements.spotName.textContent = selected.name;
-  elements.spotDistance.textContent = distance == null ? t("distance.pending") : formatDistance(distance);
+  elements.spotDistance.hidden = distance == null;
+  elements.spotDistance.textContent = distance == null ? "" : formatUserDistance(distance);
   elements.spotRating.textContent = `☆ ${Number(selected.personal_rating || 0).toFixed(1)}`;
   elements.spotStatus.textContent = `${statusLabel(selected.status)} · ${t("count.visits", { count: selected.visit_count || 0 })}`;
   elements.spotNotes.textContent = selected.notes || selected.address || t("map.noNotes");
@@ -4560,11 +4817,11 @@ function systemListDetailTemplate(definition, term) {
       <div>
         <p class="eyebrow">${escapeHtml(systemListEyebrow(definition))}</p>
         <h2>${escapeHtml(systemListTitle(definition))}</h2>
-        <p>${escapeHtml(systemListDescription(definition))} ${escapeHtml(t("map.sorted"))}.</p>
+        <p>${escapeHtml(systemListDescription(definition))} ${escapeHtml(listSortDescription())}.</p>
       </div>
       <div class="list-view-meta">
         <span>${t("count.spots", { count: spots.length })}</span>
-        <span>${t("sort.nearest")}</span>
+        <span>${t(isLocationReady() ? "sort.nearest" : "sort.recent")}</span>
       </div>
     </div>
     <div class="detail-actions system-actions compact-actions">
@@ -4578,7 +4835,7 @@ function systemListDetailTemplate(definition, term) {
 
 function systemSpotItemTemplate(restaurant) {
   return restaurantRowTemplate(restaurant, {
-    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${t("count.visits", { count: restaurant.visit_count || 0 })}`,
+    body: joinMetaParts(distanceLabel(restaurant), `☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}`, statusLabel(restaurant.status), t("count.visits", { count: restaurant.visit_count || 0 })),
     actions: `
       <button class="icon-link" type="button" data-open-spot="${restaurant.id}">${t("button.map")}</button>
       <button class="icon-link" type="button" data-open-map-restaurant="${restaurant.id}">${t("button.openMaps")}</button>
@@ -4642,7 +4899,7 @@ function myListDetailTemplate(list, term = "") {
       <div class="list-view-tools">
         <div class="list-view-meta">
           <span>${t("count.spots", { count: items.length })}</span>
-          <span>${t("sort.nearest")}</span>
+          <span>${t(isLocationReady() ? "sort.nearest" : "sort.recent")}</span>
           <span>${visibilityLabel(list.visibility)}</span>
           <span>${t("list.updated", { date: formatDate(list.updated_at) })}</span>
         </div>
@@ -4692,7 +4949,7 @@ function ownedListItemTemplate(item) {
   const restaurant = item.restaurant;
   if (!restaurant) return "";
   return restaurantRowTemplate(restaurant, {
-    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)} · ${t("count.visits", { count: restaurant.visit_count || 0 })}`,
+    body: joinMetaParts(distanceLabel(restaurant), `☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}`, statusLabel(restaurant.status), t("count.visits", { count: restaurant.visit_count || 0 })),
     actions: `
       <button class="icon-link" type="button" data-open-spot="${restaurant.id}">${t("button.map")}</button>
       <button class="icon-link" type="button" data-open-map-restaurant="${restaurant.id}">${t("button.openMaps")}</button>
@@ -4705,7 +4962,7 @@ function publicListItemTemplate(item) {
   const restaurant = item.restaurant;
   if (!restaurant) return "";
   return restaurantRowTemplate(restaurant, {
-    body: `${distanceLabel(restaurant)} · ☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${escapeHtml(restaurant.address || t("discovery.addressHidden"))}`,
+    body: joinMetaParts(distanceLabel(restaurant), `☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}`, escapeHtml(restaurant.address || t("discovery.addressHidden"))),
     actions: `
       <button class="icon-link" type="button" data-open-map-restaurant="${restaurant.id}">${t("button.openMaps")}</button>
     `,
@@ -5131,20 +5388,31 @@ function systemListDescription(list) {
 }
 
 function sortRestaurantsByDistance(items) {
-  if (!currentLocation) return [...items];
-  return [...items].sort((a, b) => haversineDistance(currentLocation, a) - haversineDistance(currentLocation, b));
+  return locationCore.sortRestaurantsForLocationMode(items, locationState);
 }
 
 function sortListItemsByDistance(items) {
-  if (!currentLocation) return [...items];
-  return [...items].sort((a, b) => {
-    if (!a.restaurant || !b.restaurant) return a.restaurant ? -1 : 1;
-    return haversineDistance(currentLocation, a.restaurant) - haversineDistance(currentLocation, b.restaurant);
-  });
+  const source = Array.isArray(items) ? items : [];
+  const byRestaurantId = new Map(source.filter((item) => item.restaurant).map((item) => [String(item.restaurant.id), item]));
+  const sortedRestaurants = locationCore.sortRestaurantsForLocationMode(source.filter((item) => item.restaurant).map((item) => item.restaurant), locationState);
+  const sorted = sortedRestaurants.map((restaurant) => byRestaurantId.get(String(restaurant.id))).filter(Boolean);
+  return [...sorted, ...source.filter((item) => !item.restaurant)];
 }
 
 function distanceLabel(restaurant) {
-  return currentLocation ? formatDistance(haversineDistance(currentLocation, restaurant)) : t("distance.pending");
+  return isLocationReady() ? formatUserDistance(haversineDistance(currentLocation, restaurant)) : "";
+}
+
+function restaurantMetaLabel(restaurant) {
+  return [distanceLabel(restaurant), statusLabel(restaurant.status)].filter(Boolean).join(" · ");
+}
+
+function joinMetaParts(...parts) {
+  return parts.filter(Boolean).join(" · ");
+}
+
+function listSortDescription() {
+  return isLocationReady() ? t("map.sorted") : t("map.recentlyUpdated");
 }
 
 function accentVariant(value) {
@@ -5505,8 +5773,11 @@ function shortMapName(name) {
 }
 
 function formatDistance(distanceKm) {
-  if (distanceKm < 1) return `${Math.round(distanceKm * 1000)} m`;
-  return `${Math.round(distanceKm)} km`;
+  return locationCore.formatDistance(distanceKm, 0);
+}
+
+function formatUserDistance(distanceKm) {
+  return locationCore.formatDistance(distanceKm, locationAccuracy());
 }
 
 function handleMapWheel(event) {
@@ -5682,13 +5953,7 @@ function foodPlaceholderUrl(restaurant) {
 }
 
 function haversineDistance(origin, destination) {
-  const radius = 6371;
-  const dLat = toRad(destination.lat - origin.lat);
-  const dLng = toRad(destination.lng - origin.lng);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(origin.lat)) * Math.cos(toRad(destination.lat)) * Math.sin(dLng / 2) ** 2;
-  return radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return locationCore.haversineDistance(origin, destination);
 }
 
 function getBearing(origin, destination) {

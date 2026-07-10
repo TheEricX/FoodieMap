@@ -218,6 +218,14 @@ users=1 restaurants=8 lists=3 dishes=3
 
 ## Verification
 
+### Staging Automation
+
+Configure `E2E_CLEANUP_TOKEN` only on the staging Cloud Run service through Secret Manager. Add the matching `STAGING_E2E_CLEANUP_TOKEN` and the staging URL as secrets in GitHub's `staging` environment, then manually run the `Test Staging` workflow.
+
+The cleanup endpoint is absent when the token is not configured and must never be enabled on production. Full setup and safety rules are in [automated-testing.md](automated-testing.md).
+
+Production promotion requires the local `npm run test:all` gate, a passing staging workflow, and completion of the manual P0/P1 checks in [system-regression-test-plan.md](system-regression-test-plan.md).
+
 Check service health:
 
 ```bash

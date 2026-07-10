@@ -83,11 +83,12 @@ SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USERNAME)
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").strip().lower() not in {"0", "false", "no", "off"}
+E2E_CLEANUP_TOKEN = os.getenv("E2E_CLEANUP_TOKEN", "")
 ALLOWED_SHORT_HOSTS = {"maps.app.goo.gl", "goo.gl", "maps.apple.com"}
 SESSION_COOKIE = "foodiemap_session"
 ADMIN_SESSION_COOKIE = "foodiemap_admin_session"
 OAUTH_STATE_COOKIE = "foodiemap_oauth_state"
-PUBLIC_FILES = {"index.html", "app.js", "styles.css"}
+PUBLIC_FILES = {"index.html", "app.js", "location-core.mjs", "styles.css"}
 INSECURE_SESSION_SECRETS = {"", "dev-change-me", "change-me-in-production"}
 PASSWORD_HASH_ITERATIONS = 310_000
 EMAIL_CODE_TTL_SECONDS = 10 * 60
@@ -133,6 +134,10 @@ class ReverseGeocodeIn(BaseModel):
     lat: float = Field(ge=-90, le=90)
     lng: float = Field(ge=-180, le=180)
     key: str = ""
+
+
+class E2ECleanupIn(BaseModel):
+    email: str = Field(min_length=1, max_length=320)
 
 
 class DishIn(BaseModel):
@@ -1347,6 +1352,43 @@ def logout() -> JSONResponse:
     response = JSONResponse({"ok": True})
     response.delete_cookie(SESSION_COOKIE)
     return response
+
+
+if E2E_CLEANUP_TOKEN:
+    @app.post("/api/test/cleanup")
+    def cleanup_e2e_account(payload: E2ECleanupIn, request: Request) -> dict[str, Any]:
+        supplied_token = request.headers.get("x-e2e-cleanup-token", "")
+        if not hmac.compare_digest(supplied_token, E2E_CLEANUP_TOKEN):
+            raise HTTPException(status_code=403, detail="Invalid test cleanup token")
+
+        email = normalize_email(payload.email)
+        if not email.startswith("e2e-") or not email.endswith("@example.test"):
+            raise HTTPException(status_code=400, detail="Only e2e-* @example.test accounts can be cleaned up")
+
+        with connect() as db:
+            user = user_by_email(db, email)
+            if not user:
+                return {"ok": True, "deleted": False, "upload_count": 0}
+
+            dish_images = db.execute(
+                """
+                SELECT dishes.image_path FROM dishes
+                JOIN restaurants ON restaurants.id = dishes.restaurant_id
+                WHERE restaurants.owner_user_id = ? AND dishes.image_path != ''
+                """,
+                (user["id"],),
+            ).fetchall()
+            recipe_images = db.execute(
+                "SELECT image_path FROM recipes WHERE owner_user_id = ? AND image_path != ''",
+                (user["id"],),
+            ).fetchall()
+            image_paths = [row["image_path"] for row in [*dish_images, *recipe_images]]
+            for image_path in image_paths:
+                delete_upload_object(image_path)
+
+            db.execute("DELETE FROM auth_codes WHERE LOWER(email) = ?", (email,))
+            db.execute("DELETE FROM users WHERE id = ?", (user["id"],))
+            return {"ok": True, "deleted": True, "upload_count": len(image_paths)}
 
 
 @app.get("/api/admin/me")

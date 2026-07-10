@@ -8,6 +8,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added repeatable Playwright desktop/mobile regression tests, isolated test accounts and data, protected staging cleanup, and GitHub Actions release gates.
+- Added an optional privacy browsing map that keeps restaurant markers usable without location permission, plus a tested location state controller and permission recovery flow.
 - Added Cloud SQL PostgreSQL and Google Cloud Storage production architecture support for Cloud Run deployments, including a SQLite/uploads migration script.
 - Added a private Recipes tab for home-cooked dishes with photos, ingredients, steps, ratings, dates, public recipe preview links, QR codes, PNG share cards, and login-gated saving into My Recipes.
 - Added private Discovery share packs with selected restaurants/dishes, public preview links, saveable PNG recommendation cards, personal history, and login-gated one-click copying into My Lists.
@@ -20,6 +22,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Location is now requested only after user intent, keeps coordinates in browser memory only, reports approximate accuracy, and sorts by recent updates when distance is unavailable.
 - Standardized mobile form action bars, close controls, selected spot actions, and modal button grids for more reliable touch interaction.
 - Reworked Google Cloud deployment documentation around stateless Cloud Run, Cloud SQL, GCS, Secret Manager, migration, and post-deploy verification.
 - Centered the desktop Recipes and Discovery content rail after removing the restaurant sidebar, and aligned the Recipe photo upload control with the existing drag-and-drop upload UI.
@@ -45,6 +48,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Closed the restaurant editor after a successful update and cleared stale selected spots when switching to an empty category.
+- Removed the hidden downtown Toronto fallback that produced plausible but incorrect restaurant distances when browser location failed.
 - Made the Restaurant Journal close control respond to a single mobile tap while preserving mouse and keyboard activation.
 - Open saved Google Maps and Apple Maps links directly when available instead of replacing them with coordinate-only map searches.
 - Made pasted map short links trigger autofill more reliably and use resolved Google Maps page metadata as a fallback for name and coordinates.
@@ -57,6 +62,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Documentation
 
+- Added an automated testing operations guide covering local commands, staging secrets, diagnostics, data cleanup, CI, and extension patterns.
+- Added a full-system regression test plan covering navigation, auth, CRUD, media, sharing, permissions, responsive layout, and production persistence.
 - Documented the desktop/mobile responsive UI split and mobile Map View placement rules.
 - Added Google Cloud Run deployment notes covering build, deploy, environment variables, OAuth callback setup, logs, rollback, and storage caveats.
 - Added a tracked `env.example.txt` template for local and deployment configuration.
