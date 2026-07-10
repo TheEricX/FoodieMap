@@ -48,6 +48,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Aligned sharing actions into equal-width columns and compacted sticky mobile form actions across create/edit dialogs.
 - Closed the restaurant editor after a successful update and cleared stale selected spots when switching to an empty category.
 - Removed the hidden downtown Toronto fallback that produced plausible but incorrect restaurant distances when browser location failed.
 - Made the Restaurant Journal close control respond to a single mobile tap while preserving mouse and keyboard activation.

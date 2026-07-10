@@ -54,3 +54,37 @@ test("list and recipe content persists with image readback", async ({ signedInPa
   await page.locator('[data-view="recipes"]:visible').first().click();
   await expect(page.getByText("E2E Tomato Noodles", { exact: true }).first()).toBeVisible();
 });
+
+test("@responsive share actions keep generate and copy aligned in equal columns", async ({ signedInPage: page }) => {
+  const actions = page.locator("#recipeShareForm .share-actions");
+  await page.evaluate(() => document.querySelector("#recipeShareDialog").showModal());
+  await expect(actions).toBeVisible();
+  const [generateBox, copyBox] = await Promise.all([
+    actions.locator("#createRecipeShareButton").boundingBox(),
+    actions.locator("#copyRecipeShareButton").boundingBox()
+  ]);
+  expect(generateBox).not.toBeNull();
+  expect(copyBox).not.toBeNull();
+  expect(Math.abs(generateBox.y - copyBox.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(generateBox.width - copyBox.width)).toBeLessThanOrEqual(1);
+  expect(generateBox.height).toBeGreaterThanOrEqual(48);
+});
+
+test("@responsive mobile form actions stay aligned and compact", async ({ signedInPage: page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "Mobile action bar styling");
+  await page.evaluate(() => document.querySelector("#listDialog").showModal());
+  const cancel = page.locator("#cancelListButton");
+  const save = page.locator("#saveListButton");
+  const [cancelBox, saveBox, radius] = await Promise.all([
+    cancel.boundingBox(),
+    save.boundingBox(),
+    save.evaluate((element) => getComputedStyle(element).borderRadius)
+  ]);
+  expect(cancelBox).not.toBeNull();
+  expect(saveBox).not.toBeNull();
+  expect(Math.abs(cancelBox.y - saveBox.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(cancelBox.width - saveBox.width)).toBeLessThanOrEqual(1);
+  expect(saveBox.height).toBeGreaterThanOrEqual(48);
+  expect(saveBox.height).toBeLessThanOrEqual(56);
+  expect(radius).toBe("16px");
+});

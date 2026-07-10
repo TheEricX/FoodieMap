@@ -58,7 +58,7 @@ export default defineConfig({
         browserName: "chromium",
         viewport: { width: 390, height: 844 }
       },
-      grep: /@mobile|@smoke/
+      grep: /@mobile|@smoke|@responsive/
     },
     {
       name: "staging",

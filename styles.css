@@ -3249,10 +3249,7 @@ body[data-view="login"] .top-actions {
 .share-actions .outline-button {
   width: 100%;
   min-width: 0;
-}
-
-.share-actions .primary-button:first-child {
-  grid-column: 1 / -1;
+  min-height: 48px;
 }
 
 .share-pack-history-panel {
@@ -6261,7 +6258,10 @@ body[data-view="login"] .top-actions {
     position: sticky;
     bottom: calc(-18px - env(safe-area-inset-bottom, 0px));
     z-index: 3;
+    align-self: end;
+    align-items: end;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: max-content;
     margin: 4px -16px calc(-18px - env(safe-area-inset-bottom, 0px));
     border-top: 1px solid rgba(217, 197, 183, 0.72);
     background:
@@ -6275,6 +6275,8 @@ body[data-view="login"] .top-actions {
   .form-actions .outline-button {
     min-height: 48px;
     padding: 10px 12px;
+    border-radius: 16px;
+    box-shadow: 0 3px 0 rgba(82, 61, 48, 0.24);
     font-size: 16px;
   }
 
