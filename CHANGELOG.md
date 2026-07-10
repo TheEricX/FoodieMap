@@ -20,6 +20,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Standardized mobile form action bars, close controls, selected spot actions, and modal button grids for more reliable touch interaction.
 - Reworked Google Cloud deployment documentation around stateless Cloud Run, Cloud SQL, GCS, Secret Manager, migration, and post-deploy verification.
 - Centered the desktop Recipes and Discovery content rail after removing the restaurant sidebar, and aligned the Recipe photo upload control with the existing drag-and-drop upload UI.
 - Compacted the mobile single-restaurant share and map-choice dialogs to remove excess whitespace and keep actions visible.

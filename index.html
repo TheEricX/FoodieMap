@@ -201,8 +201,8 @@
               <button class="outline-button" id="editSpot" type="button" data-i18n="button.edit">Edit</button>
               <button class="outline-button" id="shareSpot" type="button" data-i18n="button.share">Share</button>
               <button class="outline-button danger" id="deleteSpot" type="button" data-i18n="button.delete">Delete</button>
+              <button class="outline-link map-action" id="openGoogleMaps" type="button" data-i18n="map.openMaps">Open Maps ›</button>
             </div>
-            <button class="outline-link" id="openGoogleMaps" type="button" data-i18n="map.openMaps">Open Maps ›</button>
           </article>
           <button class="spot-card-tab" id="spotCardTab" type="button" hidden>
             <span data-i18n="map.selected">Selected</span>
@@ -585,7 +585,10 @@
           <p class="form-help" id="formHelp" data-i18n="maps.help">
             Paste a Google Maps or Apple Maps link. Short links will be expanded by the local service.
           </p>
-          <button class="primary-button" id="saveSpotButton" type="submit" data-i18n="spot.saveButton">Save Spot</button>
+          <div class="form-actions">
+            <button class="secondary-button ghost-button" id="cancelSpotButton" type="button" data-i18n="button.cancel">Cancel</button>
+            <button class="primary-button" id="saveSpotButton" type="submit" data-i18n="spot.saveButton">Save Spot</button>
+          </div>
         </form>
       </dialog>
 
@@ -714,7 +717,10 @@
             <textarea name="notes" rows="3" placeholder="What to adjust next time?" data-i18n-placeholder="recipes.notesPlaceholder"></textarea>
           </label>
           <p class="form-help" id="recipeFormHelp" data-i18n="recipes.formHelp">Recipes are private unless you generate a share link.</p>
-          <button class="primary-button" id="saveRecipeButton" type="submit" data-i18n="recipes.save">Save Recipe</button>
+          <div class="form-actions">
+            <button class="secondary-button ghost-button" id="cancelRecipeButton" type="button" data-i18n="button.cancel">Cancel</button>
+            <button class="primary-button" id="saveRecipeButton" type="submit" data-i18n="recipes.save">Save Recipe</button>
+          </div>
         </form>
       </dialog>
 
@@ -769,7 +775,10 @@
             <input name="coverImageUrl" placeholder="Leave blank to use a dish photo from the list" data-i18n-placeholder="listForm.coverPlaceholder" />
           </label>
           <p class="form-help" id="listFormHelp">Lists are private by default. Publish when you want them to appear in Discovery.</p>
-          <button class="primary-button" id="saveListButton" type="submit" data-i18n="button.createList">Create List</button>
+          <div class="form-actions">
+            <button class="secondary-button ghost-button" id="cancelListButton" type="button" data-i18n="button.cancel">Cancel</button>
+            <button class="primary-button" id="saveListButton" type="submit" data-i18n="button.createList">Create List</button>
+          </div>
         </form>
       </dialog>
 
@@ -807,7 +816,10 @@
           <p class="form-help" data-i18n="settings.help">
             A Google Geocoding API key lets FoodieMap fill an address when a Maps link only contains coordinates.
           </p>
-          <button class="primary-button" type="submit" data-i18n="button.saveSettings">Save Settings</button>
+          <div class="form-actions">
+            <button class="secondary-button ghost-button" id="cancelSettings" type="button" data-i18n="button.cancel">Cancel</button>
+            <button class="primary-button" type="submit" data-i18n="button.saveSettings">Save Settings</button>
+          </div>
         </form>
       </dialog>
     </main>
