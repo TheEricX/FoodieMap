@@ -45,6 +45,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Open saved Google Maps and Apple Maps links directly when available instead of replacing them with coordinate-only map searches.
 - Made pasted map short links trigger autofill more reliably and use resolved Google Maps page metadata as a fallback for name and coordinates.
 - Kept the mobile language switch visible and horizontally aligned with the topbar actions in Map View and List View.
 - Let the mobile add-spot dialog close with a downward swipe while confirming before discarding unsaved form input.

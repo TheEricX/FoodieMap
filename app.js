@@ -3893,19 +3893,20 @@ function openMapChoice(restaurant) {
 function mapChoiceUrls(restaurant) {
   const coordinates = validateCoordinates(restaurant.lat, restaurant.lng);
   const label = restaurant.name || restaurant.address || t("spot.untitled");
-  const searchText = [restaurant.name, restaurant.address].filter(Boolean).join(" ") || label;
+  const coordinateText = coordinates ? `${coordinates.lat},${coordinates.lng}` : "";
+  const searchText = [restaurant.name, restaurant.address].filter(Boolean).join(" ") || coordinateText || label;
+  const savedMapUrl = sanitizeMapUrl(restaurant.google_url || "");
   const appleParams = new URLSearchParams();
   const googleParams = new URLSearchParams();
+  googleParams.set("api", "1");
+  googleParams.set("query", searchText);
   if (coordinates) {
     appleParams.set("ll", `${coordinates.lat},${coordinates.lng}`);
-    googleParams.set("q", `${coordinates.lat},${coordinates.lng}`);
-  } else {
-    googleParams.set("q", searchText);
   }
   appleParams.set("q", coordinates ? label : searchText);
   return {
-    google: `https://www.google.com/maps?${googleParams.toString()}`,
-    apple: `https://maps.apple.com/?${appleParams.toString()}`,
+    google: isGoogleMapsUrl(savedMapUrl) ? savedMapUrl : `https://www.google.com/maps/search/?${googleParams.toString()}`,
+    apple: isAppleMapsUrl(savedMapUrl) ? savedMapUrl : `https://maps.apple.com/?${appleParams.toString()}`,
   };
 }
 
