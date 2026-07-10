@@ -104,7 +104,7 @@ Google Cloud Run 部署流程见 [docs/deployment-google-cloud.md](docs/deployme
 cp env.example.txt .env
 ```
 
-然后按部署环境编辑 `.env`：
+然后按部署环境编辑 `.env`。本地 Docker 默认仍可使用 SQLite 和 Docker volume；Cloud Run 生产部署应使用 Cloud SQL PostgreSQL 和 Google Cloud Storage，详见部署文档。
 
 ```bash
 SESSION_SECRET=换成一串随机长字符串
@@ -120,6 +120,10 @@ SMTP_USERNAME=mailer@example.com
 SMTP_PASSWORD=邮件服务密码
 SMTP_FROM=FoodieMap <mailer@example.com>
 SMTP_USE_TLS=true
+# Cloud Run production:
+# APP_ENV=production
+# DATABASE_URL=postgresql://...
+# GCS_BUCKET=your-upload-bucket
 ```
 
 启动：
@@ -134,7 +138,7 @@ docker compose up --build
 http://localhost:5173
 ```
 
-数据保存在 Docker volume `foodiemap_foodie-map-data` 里，包括：
+本地 Docker 数据保存在 Docker volume `foodiemap_foodie-map-data` 里，包括：
 
 - `/data/foodiemap.db`
 - `/data/uploads`
@@ -244,6 +248,7 @@ docker compose down
 - `styles.css`：响应式 UI 样式
 - `app.js`：前端交互、分类状态、Map/List 展示模式、Recipes、Discovery、API 数据层
 - `server.py`：FastAPI 后端、SQLite、OAuth、上传、分享、recipe/list API、管理员 API 和 Free/Paid 额度规则
+- `scripts/migrate_sqlite_to_postgres_gcs.py`：一次性迁移脚本，用于把本地 SQLite 数据和上传文件迁到 Cloud SQL PostgreSQL / Google Cloud Storage
 - `requirements.txt`：Python 依赖
 - `Dockerfile` / `compose.yaml`：Docker 运行配置
 - `docs/responsive-ui-design.md`：桌面/手机响应式 UI 分工和移动端 Map View 设计原则
@@ -254,8 +259,8 @@ docker compose down
 
 - 邮箱注册第一版不强制验证邮箱；验证码登录成功或密码重置成功后会标记邮箱已验证。
 - 邮箱验证码和密码重置依赖 SMTP 配置，当前不内置第三方邮件 API。
-- 图片保存在本机或 Docker volume，不接 S3。
-- SQLite 适合 MVP 和小规模使用；多人高频使用后建议迁移到 Postgres。
+- 本地开发仍默认使用 SQLite 和本地 uploads；Cloud Run 生产部署应使用 Cloud SQL PostgreSQL 和 Google Cloud Storage。
+- 图片生产环境保存在 Google Cloud Storage；数据库只保存图片对象路径或 URL。
 - Free/Paid 目前由管理员手动切换，暂未接入 Stripe 或其他支付系统。
 - 分享链接默认长期有效，暂不支持过期和撤销。
 - 第一版不支持 list 封面上传；封面优先使用清单内容或主题占位图。
