@@ -4164,6 +4164,78 @@ body[data-view="login"] .top-actions {
   margin: 0 auto;
 }
 
+.oauth-page {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  background: var(--neutral);
+  padding: 20px;
+}
+
+.oauth-consent-card {
+  width: min(560px, 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  padding: clamp(20px, 5vw, 36px);
+  box-shadow: var(--soft-shadow);
+}
+
+.oauth-consent-card h1 {
+  margin: 0 0 12px;
+  color: var(--ink);
+}
+
+.oauth-consent-card li {
+  margin: 8px 0;
+}
+
+.oauth-account {
+  color: var(--muted);
+}
+
+.oauth-actions {
+  margin-top: 20px;
+}
+
+.integration-settings,
+.integration-list {
+  display: grid;
+  gap: 10px;
+}
+
+.integration-settings {
+  border-top: 1px dashed var(--line);
+  padding-top: 14px;
+}
+
+.integration-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 250, 244, 0.9);
+  padding: 10px 12px;
+}
+
+.integration-item strong,
+.integration-item small {
+  display: block;
+}
+
+.integration-item small {
+  margin-top: 3px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.integration-item .secondary-button {
+  min-height: 38px;
+  padding: 7px 10px;
+}
+
 .location-help-intro {
   margin: 0;
   color: #594a42;
@@ -6278,6 +6350,14 @@ body[data-view="login"] .top-actions {
     border-radius: 16px;
     box-shadow: 0 3px 0 rgba(82, 61, 48, 0.24);
     font-size: 16px;
+  }
+
+  .oauth-actions {
+    position: static;
+    margin: 20px 0 0;
+    border: 0;
+    background: transparent;
+    padding: 0;
   }
 
   .modal-card.is-dragging {

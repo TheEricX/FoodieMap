@@ -5,6 +5,7 @@ Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱
 ## 功能
 
 - 支持 Google OAuth、邮箱+密码、邮箱验证码三种登录方式；同邮箱会自动合并为同一账号
+- 提供 OAuth 2.1 保护的远程 MCP Server，AI Agent 经用户授权后可读取餐厅、清单和菜谱，并创建私密清单
 - SQLite 保存用户、餐厅、菜品、菜谱、分享链接、私密推荐分享包、自定义 list 和公开 Discovery list
 - 保存餐厅状态、去过次数、个人评分、备注、地图链接和坐标
 - 每家店可记录菜品：`Liked` / `Tried`、5 星评分、备注、1 张压缩图片
@@ -33,7 +34,8 @@ Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱
 
 ```bash
 cd /Users/chenjy/Desktop/美食地图
-python3 -m pip install -r requirements.txt
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
 ```
 
 从模板创建 `.env`：
@@ -70,7 +72,7 @@ SMTP_USE_TLS=true
 启动：
 
 ```bash
-python3 server.py 5174
+sh scripts/python.sh server.py 5174
 ```
 
 打开：
@@ -109,6 +111,16 @@ http://localhost:5174/auth/google/callback
 ```
 
 如果部署到公网域名，把 `APP_BASE_URL` 和 Redirect URI 换成 HTTPS 域名。
+
+## Remote MCP Server
+
+MCP 端点为：
+
+```text
+https://YOUR_DOMAIN/mcp
+```
+
+Agent 会通过浏览器打开 FoodieMap 登录和授权页，不需要复制网页 Cookie 或 Google token。可用工具、scope、MCP Inspector 连接方法和安全设计见 [docs/mcp-server.md](docs/mcp-server.md)。
 
 ## Docker 运行
 

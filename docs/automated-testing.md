@@ -6,6 +6,7 @@ This document is the operating guide for FoodieMap's repeatable regression tests
 
 ```text
 tests/location-core.test.mjs     Pure location state and calculation tests
+tests/mcp/                       OAuth, scope, isolation, and MCP JSON-RPC tests
 tests/e2e/fixtures.mjs           Accounts, login, cleanup, browser diagnostics
 tests/e2e/smoke.spec.mjs         Startup, assets, navigation, staging health
 tests/e2e/core-flows.spec.mjs    Auth, persistence, map URL, location modes
@@ -35,6 +36,7 @@ Playwright's browser is separate from the user's installed Chrome. Re-run the in
 
 ```bash
 npm run test:unit         # Location unit tests and JavaScript syntax
+npm run test:mcp          # OAuth 2.1, service isolation, and MCP protocol tests
 npm run test:e2e          # Desktop Chromium E2E
 npm run test:e2e:mobile   # 390x844 touch E2E and smoke tests
 npm run test:all          # Unit, desktop, and mobile release gate
@@ -92,7 +94,7 @@ Never configure this token on production. Never point `STAGING_BASE_URL` at prod
 
 ## Automated Versus Manual Release Checks
 
-Automation covers startup, navigation, email authentication, core persistence, map URL storage, privacy/nearby location modes, and critical mobile interactions. The full checklist remains in `docs/system-regression-test-plan.md`.
+Automation covers startup, navigation, email authentication, core persistence, map URL storage, privacy/nearby location modes, remote MCP authorization/tools, and critical mobile interactions. The full checklist remains in `docs/system-regression-test-plan.md`.
 
 The following require manual verification:
 

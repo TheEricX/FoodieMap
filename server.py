@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+from contextlib import asynccontextmanager
 import hashlib
 import html as html_lib
 import hmac
@@ -23,9 +24,12 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+
+from foodiemap_service import FoodieMapService
+from oauth_service import OAuthService, SUPPORTED_SCOPES
 
 try:
     import psycopg
@@ -84,6 +88,10 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USERNAME)
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").strip().lower() not in {"0", "false", "no", "off"}
 E2E_CLEANUP_TOKEN = os.getenv("E2E_CLEANUP_TOKEN", "")
+MCP_PUBLIC_URL = os.getenv("MCP_PUBLIC_URL", f"{APP_BASE_URL}/mcp").rstrip("/")
+MCP_ISSUER_URL = os.getenv("MCP_ISSUER_URL", APP_BASE_URL).rstrip("/")
+MCP_ALLOWED_ORIGINS = [value.strip() for value in os.getenv("MCP_ALLOWED_ORIGINS", "").split(",") if value.strip()]
+OAUTH_TOKEN_SECRET = os.getenv("OAUTH_TOKEN_SECRET", SESSION_SECRET)
 ALLOWED_SHORT_HOSTS = {"maps.app.goo.gl", "goo.gl", "maps.apple.com"}
 SESSION_COOKIE = "foodiemap_session"
 ADMIN_SESSION_COOKIE = "foodiemap_admin_session"
@@ -265,6 +273,10 @@ def validate_config() -> None:
         raise RuntimeError("ADMIN_USERNAME and ADMIN_PASSWORD must be configured together")
     if ADMIN_PASSWORD and len(ADMIN_PASSWORD) < 8:
         raise RuntimeError("ADMIN_PASSWORD must be at least 8 characters")
+    if len(OAUTH_TOKEN_SECRET) < 32:
+        raise RuntimeError("OAUTH_TOKEN_SECRET must be at least 32 characters")
+    if APP_ENV == "production" and OAUTH_TOKEN_SECRET == SESSION_SECRET:
+        raise RuntimeError("Production OAUTH_TOKEN_SECRET must be distinct from SESSION_SECRET")
 
 
 def secure_cookie_enabled() -> bool:
@@ -490,6 +502,79 @@ def init_db() -> None:
               attempts INTEGER NOT NULL DEFAULT 0,
               used_at INTEGER
             );
+
+            CREATE TABLE IF NOT EXISTS oauth_clients (
+              client_id TEXT PRIMARY KEY,
+              client_name TEXT NOT NULL,
+              redirect_uris_json TEXT NOT NULL,
+              grant_types_json TEXT NOT NULL,
+              response_types_json TEXT NOT NULL,
+              token_endpoint_auth_method TEXT NOT NULL,
+              client_secret_hash TEXT NOT NULL DEFAULT '',
+              created_at INTEGER NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS oauth_grants (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              client_id TEXT NOT NULL REFERENCES oauth_clients(client_id) ON DELETE CASCADE,
+              scopes_json TEXT NOT NULL,
+              created_at INTEGER NOT NULL,
+              updated_at INTEGER NOT NULL,
+              last_used_at INTEGER,
+              revoked_at INTEGER,
+              UNIQUE(user_id, client_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS oauth_authorization_codes (
+              code_hash TEXT PRIMARY KEY,
+              grant_id TEXT NOT NULL REFERENCES oauth_grants(id) ON DELETE CASCADE,
+              client_id TEXT NOT NULL REFERENCES oauth_clients(client_id) ON DELETE CASCADE,
+              user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              redirect_uri TEXT NOT NULL,
+              scopes_json TEXT NOT NULL,
+              code_challenge TEXT NOT NULL,
+              resource TEXT NOT NULL,
+              expires_at INTEGER NOT NULL,
+              created_at INTEGER NOT NULL,
+              used_at INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS oauth_access_tokens (
+              token_hash TEXT PRIMARY KEY,
+              grant_id TEXT NOT NULL REFERENCES oauth_grants(id) ON DELETE CASCADE,
+              client_id TEXT NOT NULL REFERENCES oauth_clients(client_id) ON DELETE CASCADE,
+              user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              scopes_json TEXT NOT NULL,
+              resource TEXT NOT NULL,
+              expires_at INTEGER NOT NULL,
+              created_at INTEGER NOT NULL,
+              last_used_at INTEGER,
+              revoked_at INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS oauth_refresh_tokens (
+              token_hash TEXT PRIMARY KEY,
+              family_id TEXT NOT NULL,
+              grant_id TEXT NOT NULL REFERENCES oauth_grants(id) ON DELETE CASCADE,
+              client_id TEXT NOT NULL REFERENCES oauth_clients(client_id) ON DELETE CASCADE,
+              user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              scopes_json TEXT NOT NULL,
+              resource TEXT NOT NULL,
+              expires_at INTEGER NOT NULL,
+              created_at INTEGER NOT NULL,
+              used_at INTEGER,
+              revoked_at INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS mcp_audit_events (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              client_id TEXT NOT NULL REFERENCES oauth_clients(client_id) ON DELETE CASCADE,
+              tool_name TEXT NOT NULL,
+              status TEXT NOT NULL,
+              created_at INTEGER NOT NULL
+            );
             """
         )
         ensure_column(db, "users", "updated_at", "INTEGER NOT NULL DEFAULT 0")
@@ -516,12 +601,13 @@ def init_db() -> None:
             raise RuntimeError(f"Duplicate user email blocks auth migration: {duplicate['normalized_email']}")
         db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users(LOWER(email))")
         db.execute("CREATE INDEX IF NOT EXISTS idx_auth_codes_email_purpose ON auth_codes(email, purpose, created_at)")
-
-
-@app.on_event("startup")
-def startup() -> None:
-    validate_config()
-    init_db()
+        db.execute("CREATE INDEX IF NOT EXISTS idx_oauth_access_token_grant ON oauth_access_tokens(grant_id)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_oauth_refresh_token_grant ON oauth_refresh_tokens(grant_id)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_mcp_audit_user_created ON mcp_audit_events(user_id, created_at)")
+        timestamp = now()
+        db.execute("DELETE FROM oauth_authorization_codes WHERE expires_at < ?", (timestamp,))
+        db.execute("DELETE FROM oauth_access_tokens WHERE expires_at < ?", (timestamp - 7 * 24 * 60 * 60,))
+        db.execute("DELETE FROM oauth_refresh_tokens WHERE expires_at < ?", (timestamp,))
 
 
 def sign_value(value: str) -> str:
@@ -1217,6 +1303,214 @@ def list_json(db: sqlite3.Connection, row: sqlite3.Row, include_items: bool = Fa
     return payload
 
 
+foodiemap_service = FoodieMapService(connect, restaurant_json, list_json, recipe_json)
+oauth_service = OAuthService(connect, OAUTH_TOKEN_SECRET, MCP_ISSUER_URL, MCP_PUBLIC_URL)
+
+
+def oauth_json(payload: dict[str, Any], status_code: int = 200) -> JSONResponse:
+    return JSONResponse(
+        payload,
+        status_code=status_code,
+        headers={
+            "Cache-Control": "no-store",
+            "Pragma": "no-cache",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "authorization,content-type,mcp-protocol-version",
+            "Access-Control-Allow-Methods": "POST,OPTIONS",
+        },
+    )
+
+
+def oauth_error(error: str, description: str, status_code: int = 400) -> JSONResponse:
+    return oauth_json({"error": error, "error_description": description}, status_code)
+
+
+def sign_oauth_request(payload: dict[str, Any]) -> str:
+    raw = base64.urlsafe_b64encode(json.dumps(payload, separators=(",", ":")).encode()).decode().rstrip("=")
+    signature = hmac.new(OAUTH_TOKEN_SECRET.encode(), raw.encode(), hashlib.sha256).hexdigest()
+    return f"{raw}.{signature}"
+
+
+def unsign_oauth_request(value: str) -> dict[str, Any]:
+    try:
+        raw, signature = value.rsplit(".", 1)
+        expected = hmac.new(OAUTH_TOKEN_SECRET.encode(), raw.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            raise ValueError("Invalid authorization request")
+        padded = raw + "=" * (-len(raw) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(padded.encode()).decode())
+        if int(payload.get("expires_at", 0)) < now():
+            raise ValueError("Authorization request expired")
+        return payload
+    except (ValueError, KeyError, json.JSONDecodeError) as error:
+        raise HTTPException(status_code=400, detail="Invalid or expired authorization request") from error
+
+
+def oauth_redirect(uri: str, params: dict[str, str]) -> RedirectResponse:
+    separator = "&" if urllib.parse.urlparse(uri).query else "?"
+    return RedirectResponse(f"{uri}{separator}{urllib.parse.urlencode(params)}", status_code=303)
+
+
+@app.get("/.well-known/oauth-protected-resource")
+@app.get("/.well-known/oauth-protected-resource/mcp")
+def oauth_protected_resource_metadata() -> dict[str, Any]:
+    return {
+        "resource": MCP_PUBLIC_URL,
+        "authorization_servers": [MCP_ISSUER_URL],
+        "scopes_supported": sorted(SUPPORTED_SCOPES),
+        "bearer_methods_supported": ["header"],
+    }
+
+
+@app.get("/.well-known/oauth-authorization-server")
+def oauth_authorization_server_metadata() -> dict[str, Any]:
+    return {
+        "issuer": MCP_ISSUER_URL,
+        "authorization_endpoint": f"{MCP_ISSUER_URL}/oauth/authorize",
+        "token_endpoint": f"{MCP_ISSUER_URL}/oauth/token",
+        "registration_endpoint": f"{MCP_ISSUER_URL}/oauth/register",
+        "revocation_endpoint": f"{MCP_ISSUER_URL}/oauth/revoke",
+        "response_types_supported": ["code"],
+        "grant_types_supported": ["authorization_code", "refresh_token"],
+        "token_endpoint_auth_methods_supported": ["none", "client_secret_post", "client_secret_basic"],
+        "code_challenge_methods_supported": ["S256"],
+        "scopes_supported": sorted(SUPPORTED_SCOPES),
+    }
+
+
+@app.options("/oauth/{path:path}")
+def oauth_options(path: str) -> JSONResponse:
+    del path
+    return oauth_json({"ok": True})
+
+
+@app.post("/oauth/register")
+async def oauth_register(request: Request) -> JSONResponse:
+    try:
+        if int(request.headers.get("content-length", "0") or 0) > 16_384:
+            raise ValueError("Client metadata is too large")
+        metadata = await request.json()
+        return oauth_json(oauth_service.register_client(metadata), 201)
+    except (ValueError, json.JSONDecodeError) as error:
+        return oauth_error("invalid_client_metadata", str(error))
+
+
+@app.get("/oauth/authorize")
+def oauth_authorize(request: Request) -> Response:
+    try:
+        authorization = oauth_service.validate_authorization_request(dict(request.query_params))
+    except ValueError as error:
+        return HTMLResponse(f"<h1>Invalid authorization request</h1><p>{html_lib.escape(str(error))}</p>", status_code=400)
+    user = current_user(request)
+    if not user:
+        destination = f"{request.url.path}?{request.url.query}"
+        return RedirectResponse(f"/?next={urllib.parse.quote(destination, safe='')}")
+    signed_request = sign_oauth_request({
+        "client_id": authorization["client"]["client_id"],
+        "redirect_uri": authorization["redirect_uri"],
+        "scopes": authorization["scopes"],
+        "state": authorization["state"],
+        "code_challenge": authorization["code_challenge"],
+        "resource": authorization["resource"],
+        "expires_at": now() + 10 * 60,
+    })
+    scope_labels = {
+        "restaurants:read": "View your restaurants and menu notes",
+        "lists:read": "View your private and public lists",
+        "recipes:read": "View your saved recipes",
+        "lists:write": "Create private lists and add your restaurants",
+    }
+    scope_items = "".join(f"<li>{html_lib.escape(scope_labels[scope])}</li>" for scope in authorization["scopes"])
+    client_name = html_lib.escape(authorization["client"]["client_name"])
+    email = html_lib.escape(user["email"])
+    return HTMLResponse(f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Authorize {client_name} - FoodieMap</title><link rel="stylesheet" href="/styles.css?v=20260710-mcp"></head>
+<body class="oauth-page"><main class="oauth-consent-card">
+<p class="eyebrow">CONNECTED AI APP</p><h1>Connect {client_name}</h1>
+<p class="oauth-account">Signed in as <strong>{email}</strong></p>
+<p>This app is requesting permission to:</p><ul>{scope_items}</ul>
+<p class="form-help">FoodieMap never shares your password, login cookie, or Google token. You can revoke access in Settings.</p>
+<form method="post" action="/oauth/authorize"><input type="hidden" name="request" value="{html_lib.escape(signed_request)}">
+<div class="form-actions oauth-actions"><button class="secondary-button" name="decision" value="deny">Cancel</button>
+<button class="primary-button" name="decision" value="allow">Allow access</button></div></form>
+</main></body></html>""")
+
+
+@app.post("/oauth/authorize")
+async def oauth_authorize_submit(request: Request) -> Response:
+    user = require_user(request)
+    form = await request.form()
+    payload = unsign_oauth_request(str(form.get("request", "")))
+    client = oauth_service.get_client(payload["client_id"])
+    if not client or payload["redirect_uri"] not in client["redirect_uris"]:
+        raise HTTPException(status_code=400, detail="OAuth client is no longer valid")
+    if form.get("decision") != "allow":
+        return oauth_redirect(payload["redirect_uri"], {"error": "access_denied", "state": payload.get("state", "")})
+    payload["client"] = client
+    code = oauth_service.create_authorization_code(user["id"], payload)
+    return oauth_redirect(payload["redirect_uri"], {"code": code, "state": payload.get("state", "")})
+
+
+def oauth_client_credentials(request: Request, form: Any) -> tuple[str, str | None]:
+    client_id = str(form.get("client_id", ""))
+    client_secret = str(form.get("client_secret", "")) or None
+    authorization = request.headers.get("authorization", "")
+    if authorization.lower().startswith("basic "):
+        try:
+            decoded = base64.b64decode(authorization.split(" ", 1)[1]).decode()
+            client_id, client_secret = decoded.split(":", 1)
+        except (ValueError, UnicodeDecodeError):
+            raise ValueError("Invalid HTTP Basic client credentials")
+    return client_id, client_secret
+
+
+@app.post("/oauth/token")
+async def oauth_token(request: Request) -> JSONResponse:
+    form = await request.form()
+    try:
+        client_id, client_secret = oauth_client_credentials(request, form)
+        oauth_service.authenticate_client(client_id, client_secret)
+        grant_type = str(form.get("grant_type", ""))
+        if grant_type == "authorization_code":
+            result = oauth_service.exchange_code(
+                client_id, str(form.get("code", "")), str(form.get("redirect_uri", "")), str(form.get("code_verifier", ""))
+            )
+        elif grant_type == "refresh_token":
+            result = oauth_service.exchange_refresh_token(
+                client_id, str(form.get("refresh_token", "")), str(form.get("scope", ""))
+            )
+        else:
+            return oauth_error("unsupported_grant_type", "Only authorization_code and refresh_token are supported")
+        return oauth_json(result)
+    except ValueError as error:
+        return oauth_error("invalid_grant", str(error))
+
+
+@app.post("/oauth/revoke")
+async def oauth_revoke(request: Request) -> JSONResponse:
+    form = await request.form()
+    try:
+        client_id, client_secret = oauth_client_credentials(request, form)
+        oauth_service.authenticate_client(client_id, client_secret)
+        oauth_service.revoke_token(str(form.get("token", "")), client_id)
+    except ValueError:
+        pass
+    return oauth_json({})
+
+
+@app.get("/api/integrations")
+def list_integrations(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    return {"integrations": oauth_service.list_grants(user["id"])}
+
+
+@app.delete("/api/integrations/{grant_id}")
+def delete_integration(grant_id: str, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+    if not oauth_service.revoke_grant(user["id"], grant_id):
+        raise HTTPException(status_code=404, detail="Connected app not found")
+    return {"ok": True}
+
+
 @app.get("/api/health")
 def health() -> dict[str, Any]:
     with connect() as db:
@@ -1227,6 +1521,7 @@ def health() -> dict[str, Any]:
         "app_env": APP_ENV,
         "database": "postgresql" if uses_postgres() else "sqlite",
         "storage": "gcs" if storage_uses_gcs() else "local",
+        "mcp": "oauth",
         "user_count": int(user_count or 0),
     }
 
@@ -1625,12 +1920,7 @@ def admin_restore_user(user_id: str, admin: dict[str, Any] = Depends(require_adm
 
 @app.get("/api/restaurants")
 def list_restaurants(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
-    with connect() as db:
-        rows = db.execute(
-            "SELECT * FROM restaurants WHERE owner_user_id = ? ORDER BY updated_at DESC, created_at DESC",
-            (user["id"],),
-        ).fetchall()
-        return {"restaurants": [restaurant_json(db, row) for row in rows]}
+    return {"restaurants": foodiemap_service.list_restaurants(user["id"], unbounded=True)["items"]}
 
 
 @app.post("/api/restaurants")
@@ -1808,12 +2098,7 @@ def owned_recipe(db: sqlite3.Connection, recipe_id: str, user_id: str) -> sqlite
 
 @app.get("/api/recipes")
 def list_recipes(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
-    with connect() as db:
-        rows = db.execute(
-            "SELECT * FROM recipes WHERE owner_user_id = ? ORDER BY updated_at DESC, created_at DESC",
-            (user["id"],),
-        ).fetchall()
-        return {"recipes": [recipe_json(row) for row in rows]}
+    return {"recipes": foodiemap_service.list_recipes(user["id"], unbounded=True)["items"]}
 
 
 @app.post("/api/recipes")
@@ -2500,37 +2785,17 @@ def add_shared_restaurant(token: str, user: dict[str, Any] = Depends(require_use
 
 @app.get("/api/lists")
 def get_lists(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
-    with connect() as db:
-        rows = db.execute(
-            "SELECT * FROM lists WHERE owner_user_id = ? ORDER BY updated_at DESC, created_at DESC",
-            (user["id"],),
-        ).fetchall()
-        return {"lists": [list_json(db, row) for row in rows]}
+    return {"lists": foodiemap_service.list_lists(user["id"], unbounded=True)["items"]}
 
 
 @app.post("/api/lists")
 def create_list(payload: ListIn, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
-    list_id = new_id()
-    timestamp = now()
-    with connect() as db:
-        db.execute(
-            """
-            INSERT INTO lists
-            (id, owner_user_id, title, description, visibility, cover_image_url, created_at, updated_at)
-            VALUES (?, ?, ?, ?, 'private', ?, ?, ?)
-            """,
-            (
-                list_id,
-                user["id"],
-                payload.title.strip(),
-                payload.description.strip(),
-                payload.cover_image_url.strip(),
-                timestamp,
-                timestamp,
-            ),
-        )
-        row = owned_list(db, list_id, user["id"])
-        return {"list": list_json(db, row, include_items=True)}
+    try:
+        return {"list": foodiemap_service.create_private_list(
+            user["id"], title=payload.title, description=payload.description, cover_image_url=payload.cover_image_url
+        )}
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
 
 
 @app.get("/api/lists/{list_id}")
@@ -2832,6 +3097,25 @@ if storage_uses_gcs():
         return Response(content=blob.download_as_bytes(), media_type=blob.content_type or "application/octet-stream")
 else:
     app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+
+from mcp_server import create_mcp_server
+
+mcp_server = create_mcp_server(foodiemap_service, oauth_service, connect, MCP_ALLOWED_ORIGINS)
+mcp_http_app = mcp_server.streamable_http_app()
+app.mount("/mcp", mcp_http_app, name="mcp")
+
+
+@asynccontextmanager
+async def app_lifespan(application: FastAPI):
+    del application
+    validate_config()
+    init_db()
+    async with mcp_server.session_manager.run():
+        yield
+
+
+app.router.lifespan_context = app_lifespan
 
 
 @app.get("/{path:path}")

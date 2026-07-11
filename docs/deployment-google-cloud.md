@@ -127,6 +127,7 @@ Store sensitive values in Secret Manager:
 printf '%s' 'REPLACE_WITH_32_PLUS_RANDOM_CHARS' | gcloud secrets create SESSION_SECRET --data-file=-
 printf '%s' 'postgresql://foodiemap_user:DB_PASSWORD@/foodiemap?host=/cloudsql/PROJECT_ID:REGION:foodie-map-db' | gcloud secrets create DATABASE_URL --data-file=-
 printf '%s' 'GOOGLE_CLIENT_SECRET_VALUE' | gcloud secrets create GOOGLE_CLIENT_SECRET --data-file=-
+printf '%s' 'A_DIFFERENT_32_PLUS_RANDOM_VALUE' | gcloud secrets create OAUTH_TOKEN_SECRET --data-file=-
 ```
 
 Grant Cloud Run access:
@@ -143,9 +144,15 @@ gcloud secrets add-iam-policy-binding DATABASE_URL \
 gcloud secrets add-iam-policy-binding GOOGLE_CLIENT_SECRET \
   --member="serviceAccount:foodiemap-run@PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
+
+gcloud secrets add-iam-policy-binding OAUTH_TOKEN_SECRET \
+  --member="serviceAccount:foodiemap-run@PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
 ```
 
 Add SMTP and admin secrets the same way if those features are enabled.
+
+Grant the runtime service account access to `OAUTH_TOKEN_SECRET` exactly like the other application secrets. It must not reuse `SESSION_SECRET`.
 
 ## Build And Deploy
 
@@ -171,10 +178,16 @@ gcloud run deploy foodie-map \
   --set-env-vars GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID \
   --set-env-vars GOOGLE_GEOCODING_API_KEY=YOUR_OPTIONAL_GEOCODING_KEY \
   --set-env-vars FREE_RESTAURANT_LIMIT=50 \
+  --set-env-vars MCP_PUBLIC_URL=https://YOUR_DOMAIN_OR_RUN_URL/mcp \
+  --set-env-vars MCP_ISSUER_URL=https://YOUR_DOMAIN_OR_RUN_URL \
+  --set-env-vars MCP_ALLOWED_ORIGINS=YOUR_ALLOWED_BROWSER_MCP_ORIGINS \
   --set-secrets SESSION_SECRET=SESSION_SECRET:latest \
   --set-secrets DATABASE_URL=DATABASE_URL:latest \
-  --set-secrets GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest
+  --set-secrets GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest \
+  --set-secrets OAUTH_TOKEN_SECRET=OAUTH_TOKEN_SECRET:latest
 ```
+
+Remote MCP setup and staging acceptance are documented in [mcp-server.md](mcp-server.md).
 
 ## Google OAuth
 

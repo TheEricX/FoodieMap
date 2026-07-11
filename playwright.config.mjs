@@ -27,7 +27,7 @@ export default defineConfig({
     video: "retain-on-failure"
   },
   webServer: isStaging ? undefined : {
-    command: "python3 server.py",
+    command: "sh scripts/python.sh server.py",
     url: `${baseURL}/api/health`,
     timeout: 30_000,
     reuseExistingServer: false,

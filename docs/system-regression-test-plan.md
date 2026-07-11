@@ -57,6 +57,15 @@ Confirm these static URLs return their expected content type rather than `index.
 - Phone and desktop using the same account see the same restaurants, lists, recipes, and images.
 - A staging redeploy preserves PostgreSQL rows and GCS images.
 
+## P0 Remote MCP And OAuth
+
+- OAuth metadata, dynamic registration, PKCE S256, authorization code exchange, refresh rotation, and revocation pass.
+- Cookie-only and unknown-Origin MCP requests are rejected; missing scopes cannot invoke protected tools.
+- Two accounts cannot access each other's restaurants, lists, or recipes through MCP.
+- Agent-created lists are private, atomic, and immediately visible in My Lists.
+- Settings lists the connected AI client; revoking it causes its existing access token to return 401.
+- MCP Inspector connects to the staging `/mcp` endpoint through the browser login and consent flow.
+
 ## P0 Core CRUD And Media
 
 - Add a restaurant manually and from full/short Google Maps and Apple Maps links.

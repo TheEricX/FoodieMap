@@ -462,6 +462,12 @@ const translations = {
     "settings.keyLabel": "Google Geocoding API Key",
     "settings.help": "A Google Geocoding API key lets FoodieMap fill an address when a Maps link only contains coordinates.",
     "settings.saved": "Google API settings saved.",
+    "settings.connectedEyebrow": "AI ACCESS",
+    "settings.connectedTitle": "Connected AI Apps",
+    "settings.connectedHelp": "Review or revoke AI agents that can access your FoodieMap.",
+    "settings.connectedEmpty": "No AI apps are connected.",
+    "settings.revoke": "Revoke",
+    "settings.revokeConfirm": "Revoke access for {name}?",
     "import.cloudOnly": "Cloud data does not import local JSON yet.",
     "reset.cloudOnly": "After sign-in, data is stored in the cloud. Reset Demo is not used.",
     "limit.free": "Free accounts can store up to {limit} restaurants. You have {count}.",
@@ -963,6 +969,12 @@ const translations = {
     "settings.keyLabel": "Google Geocoding API Key",
     "settings.help": "Google Geocoding API Key 可在 Maps 链接只有坐标时自动补全地址。",
     "settings.saved": "Google API 设置已保存。",
+    "settings.connectedEyebrow": "AI 访问",
+    "settings.connectedTitle": "已连接的 AI 应用",
+    "settings.connectedHelp": "查看或撤销可以访问 FoodieMap 的 AI Agent。",
+    "settings.connectedEmpty": "还没有连接 AI 应用。",
+    "settings.revoke": "撤销",
+    "settings.revokeConfirm": "撤销 {name} 的访问权限？",
     "import.cloudOnly": "云端版本暂不导入本地 JSON。",
     "reset.cloudOnly": "登录后数据保存在云端，不使用 Reset Demo。",
     "limit.free": "免费账号最多可保存 {limit} 家餐厅。你当前有 {count} 家。",
@@ -1229,6 +1241,7 @@ const elements = {
   closeSettings: document.querySelector("#closeSettings"),
   cancelSettings: document.querySelector("#cancelSettings"),
   googleApiKey: document.querySelector("#googleApiKey"),
+  integrationList: document.querySelector("#integrationList"),
   cuteMap: document.querySelector("#cuteMap"),
   mapZoomOut: document.querySelector("#mapZoomOut"),
   mapZoomIn: document.querySelector("#mapZoomIn"),
@@ -1675,9 +1688,39 @@ function bindEvents() {
   });
 }
 
-function openSettingsDialog() {
+async function openSettingsDialog() {
   elements.googleApiKey.value = getGoogleGeocodingKey();
   elements.settingsDialog.showModal();
+  await loadIntegrations();
+}
+
+async function loadIntegrations() {
+  if (!elements.integrationList) return;
+  if (!currentUser) {
+    elements.integrationList.innerHTML = `<p class="form-help">${escapeHtml(t("settings.connectedEmpty"))}</p>`;
+    return;
+  }
+  try {
+    const data = await api("/api/integrations");
+    const integrations = data.integrations || [];
+    elements.integrationList.innerHTML = integrations.length
+      ? integrations.map((item) => `
+        <article class="integration-item">
+          <div><strong>${escapeHtml(item.client_name)}</strong><small>${escapeHtml(item.scopes.join(" · "))}</small></div>
+          <button class="secondary-button danger" type="button" data-revoke-integration="${escapeAttribute(item.id)}">${escapeHtml(t("settings.revoke"))}</button>
+        </article>`).join("")
+      : `<p class="form-help">${escapeHtml(t("settings.connectedEmpty"))}</p>`;
+    elements.integrationList.querySelectorAll("[data-revoke-integration]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const integration = integrations.find((item) => item.id === button.dataset.revokeIntegration);
+        if (!integration || !confirm(t("settings.revokeConfirm", { name: integration.client_name }))) return;
+        await api(`/api/integrations/${integration.id}`, { method: "DELETE" });
+        await loadIntegrations();
+      });
+    });
+  } catch (error) {
+    elements.integrationList.innerHTML = `<p class="form-help">${escapeHtml(error.message)}</p>`;
+  }
 }
 
 function saveSettings(event) {
@@ -2011,6 +2054,11 @@ function authEmailValue(input = elements.authEmailInput) {
 
 async function refreshAfterAuth() {
   await loadMe();
+  const oauthNext = new URLSearchParams(location.search).get("next");
+  if (oauthNext?.startsWith("/oauth/authorize?") && !oauthNext.startsWith("//")) {
+    location.assign(oauthNext);
+    return;
+  }
   if (pendingAddSharePack && sharePackToken) {
     closeAuthDialog();
     await addSharedPackToMyLists();

@@ -8,6 +8,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added an OAuth 2.1-protected remote MCP server for authorized restaurant, list, and recipe access plus private list creation, with connected-app revocation and audit metadata.
 - Added repeatable Playwright desktop/mobile regression tests, isolated test accounts and data, protected staging cleanup, and GitHub Actions release gates.
 - Added an optional privacy browsing map that keeps restaurant markers usable without location permission, plus a tested location state controller and permission recovery flow.
 - Added Cloud SQL PostgreSQL and Google Cloud Storage production architecture support for Cloud Run deployments, including a SQLite/uploads migration script.
@@ -63,6 +64,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Documentation
 
+- Added the remote MCP server setup, authorization, client connection, security, testing, and Cloud Run deployment guide.
 - Added an automated testing operations guide covering local commands, staging secrets, diagnostics, data cleanup, CI, and extension patterns.
 - Added a full-system regression test plan covering navigation, auth, CRUD, media, sharing, permissions, responsive layout, and production persistence.
 - Documented the desktop/mobile responsive UI split and mobile Map View placement rules.

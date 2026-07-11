@@ -3,6 +3,10 @@
 __pycache__/
 *.pyc
 node_modules/
+.venv/
+test-results/
+playwright-report/
+.playwright-data/
 npm-debug.log
 .env
 .env.*
