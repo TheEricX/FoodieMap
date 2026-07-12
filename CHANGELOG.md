@@ -49,6 +49,10 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Added a compact medium-desktop topbar layout so search, location controls, and the signed-in avatar remain inside the viewport near responsive breakpoints.
+- Locked create/edit dialogs to the visual viewport across the full narrow-screen breakpoint, removed horizontal form scrolling and textarea resizing, and limited backdrop-to-close behavior to desktop.
+- Rendered recipe empty-state guidance as clearly differentiated text instead of a non-functional button.
+- Prevented horizontal page drift across all narrow-screen views and constrained the selected-spot sheet to vertical touch scrolling.
 - Aligned sharing actions into equal-width columns and compacted sticky mobile form actions across create/edit dialogs.
 - Closed the restaurant editor after a successful update and cleared stale selected spots when switching to an empty category.
 - Removed the hidden downtown Toronto fallback that produced plausible but incorrect restaurant distances when browser location failed.

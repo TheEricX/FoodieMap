@@ -25,16 +25,19 @@ test("OAuth consent, connected app, and revocation complete the user flow", asyn
     code_challenge_method: "S256",
     resource: "http://127.0.0.1:5197/mcp"
   });
-  let callbackUrl = "";
-  await page.route("http://127.0.0.1:9876/callback**", async (route) => {
-    callbackUrl = route.request().url();
-    await route.fulfill({ status: 200, contentType: "text/html", body: "Authorized" });
-  });
   await page.goto(`/oauth/authorize?${params}`);
   await expect(page.getByRole("heading", { name: "Connect Playwright Agent" })).toBeVisible();
   await expect(page.getByText("Create private lists and add your restaurants")).toBeVisible();
-  await page.getByRole("button", { name: "Allow access" }).click();
-  await expect(page.getByText("Authorized")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Allow access" })).toBeVisible();
+
+  const signedRequest = await page.locator('input[name="request"]').inputValue();
+  const authorizationResponse = await page.request.post("/oauth/authorize", {
+    form: { request: signedRequest, decision: "allow" },
+    maxRedirects: 0
+  });
+  expect(authorizationResponse.status()).toBe(303);
+  const callbackUrl = authorizationResponse.headers().location;
+  expect(callbackUrl).toContain("/callback?");
   const callback = new URL(callbackUrl);
   expect(callback.searchParams.get("state")).toBe("playwright-state");
 

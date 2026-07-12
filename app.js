@@ -1632,7 +1632,7 @@ function bindEvents() {
   elements.closeRecipeDialog?.addEventListener("click", () => closeRecipeDialog());
   elements.cancelRecipeButton?.addEventListener("click", () => closeRecipeDialog());
   elements.recipeDialog?.addEventListener("click", (event) => {
-    if (event.target === elements.recipeDialog) closeRecipeDialog();
+    if (event.target === elements.recipeDialog && !isMobileMapViewport()) closeRecipeDialog();
   });
   document.querySelector("#recipeModalHead")?.addEventListener("pointerdown", startRecipeDialogSwipeClose);
   document.querySelector("#recipeDragHandle")?.addEventListener("pointerdown", startRecipeDialogSwipeClose);
@@ -4344,7 +4344,7 @@ function renderRecipesView() {
   const visible = recipes.filter((recipe) => recipeSearchText(recipe).includes(term));
   elements.recipeList.innerHTML = visible.length
     ? visible.map(recipeRowTemplate).join("")
-    : emptyStateTemplate(t("recipes.emptyTitle"), t("recipes.emptyBody"));
+    : emptyInfoTemplate(t("recipes.emptyTitle"), t("recipes.emptyBody"));
   elements.recipeList.querySelectorAll("[data-recipe-id]").forEach((card) => {
     card.addEventListener("click", () => {
       selectedRecipeId = card.dataset.recipeId;
@@ -5154,6 +5154,15 @@ function emptyStateTemplate(message, actionLabel) {
     <div class="empty-panel">
       <strong>${escapeHtml(message)}</strong>
       ${actionLabel ? `<button class="secondary-button" type="button" data-empty-action>${escapeHtml(actionLabel)}</button>` : ""}
+    </div>
+  `;
+}
+
+function emptyInfoTemplate(title, message) {
+  return `
+    <div class="empty-panel empty-info-panel">
+      <strong>${escapeHtml(title)}</strong>
+      <p>${escapeHtml(message)}</p>
     </div>
   `;
 }
