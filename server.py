@@ -108,6 +108,7 @@ PUBLIC_FILES = {
     "domain-core.mjs",
     "view-templates.mjs",
     "list-view-templates.mjs",
+    "account-share-templates.mjs",
     "styles.css",
     "ui-tokens.css",
     "ui-shell.css",

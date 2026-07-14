@@ -11,6 +11,7 @@ const DATA_CLIENT_URL = "/data-client.mjs?v=20260714-client";
 const DOMAIN_CORE_URL = "/domain-core.mjs?v=20260714-domain";
 const VIEW_TEMPLATES_URL = "/view-templates.mjs?v=20260714-views";
 const LIST_VIEW_TEMPLATES_URL = "/list-view-templates.mjs?v=20260714-lists";
+const ACCOUNT_SHARE_TEMPLATES_URL = "/account-share-templates.mjs?v=20260714-account";
 const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
@@ -1146,6 +1147,7 @@ let domainCore = null;
 let domainModel = null;
 let viewTemplates = null;
 let listViewTemplates = null;
+let accountShareTemplates = null;
 let activeFilter = "all";
 let selectedRestaurantId = null;
 let isSpotCardOpen = false;
@@ -1437,7 +1439,7 @@ loadBrowserCore();
 
 async function loadBrowserCore() {
   try {
-    const [loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient, loadedDomainCore, loadedViewTemplates, loadedListViewTemplates] = await Promise.all([
+    const [loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient, loadedDomainCore, loadedViewTemplates, loadedListViewTemplates, loadedAccountShareTemplates] = await Promise.all([
       import(LOCATION_CORE_URL),
       import(UI_CORE_URL),
       import(UI_SHELL_URL),
@@ -1446,7 +1448,8 @@ async function loadBrowserCore() {
       import(DATA_CLIENT_URL),
       import(DOMAIN_CORE_URL),
       import(VIEW_TEMPLATES_URL),
-      import(LIST_VIEW_TEMPLATES_URL)
+      import(LIST_VIEW_TEMPLATES_URL),
+      import(ACCOUNT_SHARE_TEMPLATES_URL)
     ]);
     locationCore = loadedLocationCore;
     uiCore = loadedUiCore;
@@ -1497,6 +1500,17 @@ async function loadBrowserCore() {
       statusLabel,
       visibilityLabel,
       formatDate,
+    });
+    accountShareTemplates = loadedAccountShareTemplates.createAccountShareTemplates({
+      translate: t,
+      formatDate,
+      recipeImageUrl,
+      restaurantThumb: restaurantThumbTemplate,
+      emptyState: emptyStateTemplate,
+      shortUserName,
+      adminPlanLabel,
+      adminStatusLabel,
+      authMethodLabel,
     });
     await boot();
   } catch (error) {
@@ -4696,26 +4710,7 @@ async function copyRecipeShareLink() {
 }
 
 function sharePackHistoryTemplate(pack) {
-  return `
-    <article class="share-pack-history-card">
-      <a class="share-pack-history-poster" href="${escapeAttribute(pack.card_url)}" target="_blank" rel="noreferrer" aria-label="${escapeAttribute(t("button.openImage"))}">
-        <img src="${escapeAttribute(pack.card_url)}" alt="${escapeAttribute(t("sharePack.cardAlt"))}" loading="lazy" data-share-pack-card-image />
-      </a>
-      <div class="share-pack-history-main">
-        <div>
-          <strong>${escapeHtml(pack.title)}</strong>
-          <small>${t("count.spots", { count: pack.item_count })} · ${formatDate(pack.created_at)}</small>
-        </div>
-        <p>${escapeHtml(pack.description || t("list.noDescription"))}</p>
-        <div class="share-pack-history-actions">
-          <button class="share-pack-history-action" type="button" data-copy-share-pack="${escapeAttribute(pack.share_url)}">${t("button.copy")}</button>
-          <a class="share-pack-history-action" href="${escapeAttribute(pack.card_url)}" target="_blank" rel="noreferrer">${t("sharePack.imageAction")}</a>
-          <a class="share-pack-history-action" href="${escapeAttribute(pack.share_url)}" target="_blank" rel="noreferrer">${t("sharePack.previewAction")}</a>
-          <button class="share-pack-history-action danger" type="button" data-revoke-share-pack="${escapeAttribute(pack.token)}">${t("sharePack.revokeAction")}</button>
-        </div>
-      </div>
-    </article>
-  `;
+  return accountShareTemplates.sharePackHistory(pack);
 }
 
 async function revokeSharePack(token) {
@@ -4774,55 +4769,7 @@ function renderAdminView() {
 }
 
 function adminUserRowTemplate(user) {
-  const isSelf = false;
-  const limitLabel = user.restaurant_limit == null
-    ? t("admin.unlimited")
-    : t("admin.limit", { count: user.restaurant_count, limit: user.restaurant_limit });
-  const authLabel = t("admin.authMethods", { methods: authMethodLabel(user.auth_methods || []) });
-  const statusClass = `admin-status-${user.account_status}`;
-  return `
-    <article class="admin-user-row ${statusClass}" data-admin-user-id="${escapeAttribute(user.id)}">
-      <div class="admin-user-main">
-        <div class="admin-user-avatar">${escapeHtml(shortUserName(user))}</div>
-        <div>
-          <div class="admin-user-title">
-            <strong>${escapeHtml(user.name || user.email)}</strong>
-          </div>
-          <small>${escapeHtml(user.email)}</small>
-          <div class="admin-user-meta">
-            <span>${t("admin.restaurants", { count: user.restaurant_count })}</span>
-            <span>${t("admin.lists", { count: user.list_count })}</span>
-            <span>${t("admin.publicLists", { count: user.public_list_count })}</span>
-            <span>${escapeHtml(limitLabel)}</span>
-            <span>${escapeHtml(authLabel)}</span>
-          </div>
-          <div class="admin-user-meta muted">
-            <span>${t("admin.created", { date: formatDate(user.created_at) })}</span>
-            <span>${t("admin.updated", { date: formatDate(user.updated_at) })}</span>
-          </div>
-        </div>
-      </div>
-      <div class="admin-user-state">
-        <span class="tag-pill ${user.plan === "paid" ? "favorite" : "want_to_go"}">${adminPlanLabel(user.plan)}</span>
-        <span class="tag-pill ${user.account_status === "active" ? "visited" : user.account_status === "suspended" ? "want_to_go" : "favorite"}">${adminStatusLabel(user.account_status)}</span>
-      </div>
-      <div class="admin-user-actions">
-        <button class="secondary-button compact-action" type="button" data-admin-action="plan" data-user-id="${escapeAttribute(user.id)}" data-next-plan="${user.plan === "paid" ? "free" : "paid"}">
-          ${user.plan === "paid" ? t("admin.makeFree") : t("admin.makePaid")}
-        </button>
-        ${
-          user.account_status === "active"
-            ? `<button class="secondary-button compact-action" type="button" data-admin-action="suspend" data-user-id="${escapeAttribute(user.id)}" ${isSelf ? "disabled" : ""}>${t("admin.suspend")}</button>`
-            : `<button class="secondary-button compact-action" type="button" data-admin-action="reactivate" data-user-id="${escapeAttribute(user.id)}">${t("admin.reactivate")}</button>`
-        }
-        ${
-          user.account_status === "deleted"
-            ? `<button class="secondary-button compact-action" type="button" data-admin-action="restore" data-user-id="${escapeAttribute(user.id)}">${t("admin.restore")}</button>`
-            : `<button class="secondary-button compact-action danger" type="button" data-admin-action="delete" data-user-id="${escapeAttribute(user.id)}" ${isSelf ? "disabled" : ""}>${t("admin.softDelete")}</button>`
-        }
-      </div>
-    </article>
-  `;
+  return accountShareTemplates.adminUserRow(user);
 }
 
 function authMethodLabel(methods) {
@@ -5022,28 +4969,7 @@ function renderSharePackView() {
     elements.sharePackPage.innerHTML = loadingPanel(t("discovery.loading"));
     return;
   }
-  const ownerName = escapeHtml(sharePackData.owner?.name || t("discovery.foodie"));
-  elements.sharePackPage.innerHTML = `
-    <div class="share-pack-public-head">
-      <div>
-        <p class="eyebrow">${t("sharePack.previewEyebrow")}</p>
-        <h1>${escapeHtml(sharePackData.title)}</h1>
-        <p>${escapeHtml(sharePackData.description || t("list.noDescription"))}</p>
-        <div class="meta-row compact-meta">
-          <span>${t("sharePack.byOwner", { name: ownerName })}</span>
-          <span>${t("count.spots", { count: sharePackData.items.length })}</span>
-        </div>
-      </div>
-      <button class="primary-button" type="button" data-add-share-pack>${t("button.addSharedPack")}</button>
-    </div>
-    <div class="share-pack-public-list">
-      ${
-        sharePackData.items.length
-          ? sharePackData.items.map(sharePackPublicItemTemplate).join("")
-          : emptyStateTemplate(t("sharePack.empty"), "")
-      }
-    </div>
-  `;
+  elements.sharePackPage.innerHTML = accountShareTemplates.sharePackPublicPage(sharePackData);
   elements.sharePackPage.querySelector("[data-add-share-pack]")?.addEventListener("click", addSharedPackToMyLists);
 }
 
@@ -5053,66 +4979,8 @@ function renderRecipeShareView() {
     elements.recipeSharePage.innerHTML = loadingPanel(t("discovery.loading"));
     return;
   }
-  const recipe = recipeShareData.recipe;
-  const ownerName = escapeHtml(recipeShareData.owner?.name || t("discovery.foodie"));
-  elements.recipeSharePage.innerHTML = `
-    <div class="share-pack-public-head">
-      <div>
-        <p class="eyebrow">${t("recipes.previewEyebrow")}</p>
-        <h1>${escapeHtml(recipe.title)}</h1>
-        <p>${t("recipes.byOwner", { name: ownerName })}</p>
-        <div class="meta-row compact-meta">
-          <span>☆ ${Number(recipe.rating || 0).toFixed(1)}</span>
-          <span>${recipe.cooked_at ? formatDate(recipe.cooked_at) : formatDate(recipeShareData.created_at)}</span>
-        </div>
-      </div>
-      <button class="primary-button" type="button" data-add-recipe-share>${t("recipes.saveShared")}</button>
-    </div>
-    <article class="recipe-detail-card public-recipe-card">
-      <img class="recipe-hero-image" src="${escapeAttribute(recipeImageUrl(recipe))}" alt="" />
-      <section class="recipe-note-section">
-        <p class="eyebrow">${t("recipes.ingredients")}</p>
-        <p>${escapeHtml(recipe.ingredients || t("recipes.noIngredients")).replace(/\n/g, "<br />")}</p>
-      </section>
-      <section class="recipe-note-section">
-        <p class="eyebrow">${t("recipes.steps")}</p>
-        <p>${escapeHtml(recipe.steps || t("recipes.noSteps")).replace(/\n/g, "<br />")}</p>
-      </section>
-      ${recipe.notes ? `<section class="recipe-note-section"><p class="eyebrow">${t("recipes.notes")}</p><p>${escapeHtml(recipe.notes).replace(/\n/g, "<br />")}</p></section>` : ""}
-    </article>
-  `;
+  elements.recipeSharePage.innerHTML = accountShareTemplates.recipeSharePage(recipeShareData);
   elements.recipeSharePage.querySelector("[data-add-recipe-share]")?.addEventListener("click", addSharedRecipeToMyRecipes);
-}
-
-function sharePackPublicItemTemplate(item) {
-  const restaurant = item.restaurant;
-  if (!restaurant) return "";
-  return `
-    <article class="share-pack-public-card">
-      ${restaurantThumbTemplate(restaurant)}
-      <div class="share-pack-public-main">
-        <div class="spot-row-title">
-          <strong>${escapeHtml(restaurant.name)}</strong>
-          <span class="tag-pill want_to_go">☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}</span>
-        </div>
-        <small>${escapeHtml(restaurant.address || t("discovery.addressHidden"))}</small>
-        ${item.note ? `<p>${escapeHtml(item.note)}</p>` : ""}
-        <div class="share-pack-public-dishes">
-          ${
-            item.dishes.length
-              ? item.dishes.map((dish) => `
-                  <span>
-                    ${dish.image_url ? `<img src="${escapeAttribute(dish.image_url)}" alt="">` : ""}
-                    ${escapeHtml(dish.name)} · ☆ ${Number(dish.rating || 0).toFixed(1)}
-                  </span>
-                `).join("")
-              : ""
-          }
-        </div>
-        <button class="icon-link" type="button" data-open-map-restaurant="${restaurant.id}">${t("button.openMaps")}</button>
-      </div>
-    </article>
-  `;
 }
 
 function restaurantRowTemplate(restaurant, options = {}) {

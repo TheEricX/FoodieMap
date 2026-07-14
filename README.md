@@ -283,6 +283,7 @@ docker compose down
 - `domain-core.mjs`：餐厅、菜品、清单、菜谱和分享数据标准化与集合规则
 - `view-templates.mjs`：Desktop/Mobile 共用的 Recipe、Restaurant 和 List 展示模板
 - `list-view-templates.mjs`：系统清单、私人清单和 Discovery 详情模板
+- `account-share-templates.mjs`：公开分享、分享历史和管理员用户模板
 - `data-client.mjs`：统一 API 请求、认证错误和 FormData/JSON 处理
 - `server.py`：FastAPI 后端、SQLite、OAuth、上传、分享、recipe/list API、管理员 API 和 Free/Paid 额度规则
 - `scripts/migrate_sqlite_to_postgres_gcs.py`：一次性迁移脚本，用于把本地 SQLite 数据和上传文件迁到 Cloud SQL PostgreSQL / Google Cloud Storage

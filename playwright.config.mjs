@@ -42,7 +42,9 @@ export default defineConfig({
       UPLOAD_DIR: `.playwright-data/${port}/uploads`,
       DATABASE_URL: "",
       GCS_BUCKET: "",
-      E2E_CLEANUP_TOKEN: "local-e2e-cleanup-token"
+      E2E_CLEANUP_TOKEN: "local-e2e-cleanup-token",
+      ADMIN_USERNAME: "e2e-admin",
+      ADMIN_PASSWORD: "e2e-admin-password"
     }
   },
   projects: [
