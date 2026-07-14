@@ -12,6 +12,7 @@ ui-dialogs.mjs    accessible confirmation and destructive-action controller
 data-client.mjs   shared authenticated API request and error boundary
 domain-core.mjs   restaurant, dish, list, recipe, and share normalization plus collection selectors
 view-templates.mjs shared Recipe, Restaurant, and List presentation templates
+list-view-templates.mjs shared system-list, private-list, and Discovery detail templates
 ui-tokens.css     shared breakpoints, target sizes, spacing, and layers
 ui-shell.css      desktop/mobile shell ownership and container behavior
 app.js            product state, API orchestration, rendering, and commands
@@ -48,6 +49,7 @@ JavaScript must use `classifyLayoutMode()` rather than user-agent detection. CSS
 - All API calls pass through `data-client.mjs`, so both shells receive identical authentication and error behavior.
 - API payloads are normalized by `domain-core.mjs`; view code must not duplicate defaults, rating bounds, nested item normalization, or collection ordering.
 - Repeated rows and details belong in `view-templates.mjs`. Event binding stays in `app.js`, keeping templates free of global state and direct DOM access.
+- Lists and Discovery compose those shared rows through `list-view-templates.mjs`; list management commands are expressed as `data-list-action` hooks and bound by the orchestrator.
 
 ## Desktop Layout
 

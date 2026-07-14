@@ -10,6 +10,7 @@ const UI_COMPONENTS_URL = "/ui-components.mjs?v=20260714-components";
 const DATA_CLIENT_URL = "/data-client.mjs?v=20260714-client";
 const DOMAIN_CORE_URL = "/domain-core.mjs?v=20260714-domain";
 const VIEW_TEMPLATES_URL = "/view-templates.mjs?v=20260714-views";
+const LIST_VIEW_TEMPLATES_URL = "/list-view-templates.mjs?v=20260714-lists";
 const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
@@ -1144,6 +1145,7 @@ let dataClient = null;
 let domainCore = null;
 let domainModel = null;
 let viewTemplates = null;
+let listViewTemplates = null;
 let activeFilter = "all";
 let selectedRestaurantId = null;
 let isSpotCardOpen = false;
@@ -1435,7 +1437,7 @@ loadBrowserCore();
 
 async function loadBrowserCore() {
   try {
-    const [loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient, loadedDomainCore, loadedViewTemplates] = await Promise.all([
+    const [loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient, loadedDomainCore, loadedViewTemplates, loadedListViewTemplates] = await Promise.all([
       import(LOCATION_CORE_URL),
       import(UI_CORE_URL),
       import(UI_SHELL_URL),
@@ -1443,7 +1445,8 @@ async function loadBrowserCore() {
       import(UI_COMPONENTS_URL),
       import(DATA_CLIENT_URL),
       import(DOMAIN_CORE_URL),
-      import(VIEW_TEMPLATES_URL)
+      import(VIEW_TEMPLATES_URL),
+      import(LIST_VIEW_TEMPLATES_URL)
     ]);
     locationCore = loadedLocationCore;
     uiCore = loadedUiCore;
@@ -1475,6 +1478,25 @@ async function loadBrowserCore() {
       restaurantImageUrl,
       statusLabel,
       accentVariant,
+    });
+    listViewTemplates = loadedListViewTemplates.createListViewTemplates({
+      translate: t,
+      emptyState: emptyStateTemplate,
+      listCover: coverTemplate,
+      restaurantRow: restaurantRowTemplate,
+      restaurantsForSystemList,
+      sortRestaurants: sortRestaurantsByDistance,
+      sortListItems: sortListItemsByDistance,
+      restaurantSearchText,
+      systemListEyebrow,
+      systemListTitle,
+      systemListDescription,
+      listSortDescription,
+      isLocationReady,
+      distanceLabel,
+      statusLabel,
+      visibilityLabel,
+      formatDate,
     });
     await boot();
   } catch (error) {
@@ -4957,37 +4979,7 @@ function systemListCardTemplate(list, selected) {
 }
 
 function systemListDetailTemplate(definition, term) {
-  const spots = sortRestaurantsByDistance(restaurantsForSystemList(definition).filter((restaurant) => restaurantSearchText(restaurant).includes(term)));
-  return `
-    <div class="list-view-head">
-      <div>
-        <p class="eyebrow">${escapeHtml(systemListEyebrow(definition))}</p>
-        <h2>${escapeHtml(systemListTitle(definition))}</h2>
-        <p>${escapeHtml(systemListDescription(definition))} ${escapeHtml(listSortDescription())}.</p>
-      </div>
-      <div class="list-view-meta">
-        <span>${t("count.spots", { count: spots.length })}</span>
-        <span>${t(isLocationReady() ? "sort.nearest" : "sort.recent")}</span>
-      </div>
-    </div>
-    <div class="detail-actions system-actions compact-actions">
-      <button class="outline-button" type="button" data-view-system-map>${t("button.openMap")}</button>
-    </div>
-    <div class="spot-row-list restaurant-list-mode">
-      ${spots.length ? spots.map(systemSpotItemTemplate).join("") : emptyStateTemplate(t("list.noSmartSpots"), "")}
-    </div>
-  `;
-}
-
-function systemSpotItemTemplate(restaurant) {
-  return restaurantRowTemplate(restaurant, {
-    body: joinMetaParts(distanceLabel(restaurant), `☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}`, statusLabel(restaurant.status), t("count.visits", { count: restaurant.visit_count || 0 })),
-    actions: `
-      <button class="icon-link" type="button" data-open-spot="${restaurant.id}">${t("button.map")}</button>
-      <button class="icon-link" type="button" data-open-map-restaurant="${restaurant.id}">${t("button.openMaps")}</button>
-      <button class="icon-link danger-text" type="button" data-delete-spot="${restaurant.id}">${t("button.delete")}</button>
-    `,
-  });
+  return listViewTemplates.systemListDetail(definition, term);
 }
 
 function bindSystemListDetailActions(definition) {
@@ -5013,106 +5005,15 @@ function bindSystemListDetailActions(definition) {
 }
 
 function listCardTemplate(list, selected, mode) {
-  return `
-    <button class="list-card ${selected ? "selected" : ""}" type="button" data-list-id="${list.id}">
-      ${coverTemplate(list)}
-      <span class="list-card-body">
-        <strong>${escapeHtml(list.title)}</strong>
-        <small>${escapeHtml(list.description || t("list.noDescription"))}</small>
-        <span class="list-meta-row">
-          <span>${t("count.spots", { count: list.item_count || 0 })}</span>
-          <span>${mode === "public" ? t("count.copies", { count: list.copy_count || 0 }) : visibilityLabel(list.visibility)}</span>
-        </span>
-      </span>
-    </button>
-  `;
+  return listViewTemplates.listCard(list, selected, mode);
 }
 
 function myListDetailTemplate(list, term = "") {
-  const isPublic = list.visibility === "public";
-  const items = sortListItemsByDistance((list.items ?? []).filter((item) => {
-    if (!term) return true;
-    const restaurant = item.restaurant;
-    return restaurant && (restaurantSearchText(restaurant).includes(term) || String(item.note || "").toLowerCase().includes(term));
-  }));
-  return `
-    <div class="list-view-head">
-      <div>
-        <p class="eyebrow">${isPublic ? t("list.public") : t("list.private")}</p>
-        <h2>${escapeHtml(list.title)}</h2>
-        <p>${escapeHtml(list.description || t("list.noDescription"))}</p>
-      </div>
-      <div class="list-view-tools">
-        <div class="list-view-meta">
-          <span>${t("count.spots", { count: items.length })}</span>
-          <span>${t(isLocationReady() ? "sort.nearest" : "sort.recent")}</span>
-          <span>${visibilityLabel(list.visibility)}</span>
-          <span>${t("list.updated", { date: formatDate(list.updated_at) })}</span>
-        </div>
-        <details class="manage-list-menu">
-          <summary>${t("list.manage")}</summary>
-          <div class="manage-list-actions">
-            <button type="button" data-list-action="edit">${t("button.edit")}</button>
-            <button type="button" data-list-action="publish">${isPublic ? t("button.unpublish") : t("button.publish")}</button>
-            <button type="button" data-list-action="add">${t("button.addSpots")}</button>
-            <button class="danger-text" type="button" data-list-action="delete">${t("button.deleteList")}</button>
-          </div>
-        </details>
-      </div>
-    </div>
-    <div class="detail-actions system-actions compact-actions">
-      <button class="outline-button" type="button" data-list-action="map">${t("button.openMap")}</button>
-    </div>
-    <div class="spot-row-list restaurant-list-mode">
-      ${items.length ? items.map((item) => ownedListItemTemplate(item)).join("") : emptyStateTemplate((list.items ?? []).length ? t("list.noSearchResults") : t("list.empty"), "")}
-    </div>
-  `;
+  return listViewTemplates.myListDetail(list, term);
 }
 
 function discoveryDetailTemplate(list) {
-  return `
-    <div class="detail-head public-detail">
-      ${coverTemplate(list)}
-      <div>
-        <p class="eyebrow">${t("discovery.publicPick")}</p>
-        <h2>${escapeHtml(list.title)}</h2>
-        <p>${escapeHtml(list.description || t("list.noDescription"))}</p>
-        <div class="meta-row compact-meta">
-          <span>${t("count.spots", { count: list.item_count || 0 })}</span>
-          <span>${t("count.copies", { count: list.copy_count || 0 })}</span>
-          <span>${t("discovery.byOwner", { name: escapeHtml(list.owner?.name || t("discovery.foodie")) })}</span>
-        </div>
-      </div>
-    </div>
-    <button class="primary-button compact full" type="button" data-copy-public>${t("button.copyToMyLists")}</button>
-    <div class="spot-row-list">
-      ${(list.items ?? []).length ? sortListItemsByDistance(list.items).map((item) => publicListItemTemplate(item)).join("") : emptyStateTemplate(t("discovery.noVisible"), "")}
-    </div>
-  `;
-}
-
-function ownedListItemTemplate(item) {
-  const restaurant = item.restaurant;
-  if (!restaurant) return "";
-  return restaurantRowTemplate(restaurant, {
-    body: joinMetaParts(distanceLabel(restaurant), `☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}`, statusLabel(restaurant.status), t("count.visits", { count: restaurant.visit_count || 0 })),
-    actions: `
-      <button class="icon-link" type="button" data-open-spot="${restaurant.id}">${t("button.map")}</button>
-      <button class="icon-link" type="button" data-open-map-restaurant="${restaurant.id}">${t("button.openMaps")}</button>
-      <button class="icon-link danger-text" type="button" data-remove-list-spot="${restaurant.id}">${t("button.remove")}</button>
-    `,
-  });
-}
-
-function publicListItemTemplate(item) {
-  const restaurant = item.restaurant;
-  if (!restaurant) return "";
-  return restaurantRowTemplate(restaurant, {
-    body: joinMetaParts(distanceLabel(restaurant), `☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}`, escapeHtml(restaurant.address || t("discovery.addressHidden"))),
-    actions: `
-      <button class="icon-link" type="button" data-open-map-restaurant="${restaurant.id}">${t("button.openMaps")}</button>
-    `,
-  });
+  return listViewTemplates.discoveryDetail(list);
 }
 
 function renderSharePackView() {
@@ -5543,10 +5444,6 @@ function distanceLabel(restaurant) {
 
 function restaurantMetaLabel(restaurant) {
   return [distanceLabel(restaurant), statusLabel(restaurant.status)].filter(Boolean).join(" · ");
-}
-
-function joinMetaParts(...parts) {
-  return parts.filter(Boolean).join(" · ");
 }
 
 function listSortDescription() {

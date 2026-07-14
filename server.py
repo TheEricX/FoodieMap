@@ -107,6 +107,7 @@ PUBLIC_FILES = {
     "data-client.mjs",
     "domain-core.mjs",
     "view-templates.mjs",
+    "list-view-templates.mjs",
     "styles.css",
     "ui-tokens.css",
     "ui-shell.css",

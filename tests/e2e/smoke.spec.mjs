@@ -12,6 +12,7 @@ test("@smoke app assets and health endpoint load with expected types", async ({ 
     ["/data-client.mjs", "text/javascript"],
     ["/domain-core.mjs", "text/javascript"],
     ["/view-templates.mjs", "text/javascript"],
+    ["/list-view-templates.mjs", "text/javascript"],
     ["/styles.css", "text/css"],
     ["/ui-tokens.css", "text/css"],
     ["/ui-shell.css", "text/css"]
