@@ -279,7 +279,10 @@ docker compose down
 - `CHANGELOG.md`：按 `Unreleased` 记录功能、修复、文档和开发流程变更
 - `index.html`：页面结构
 - `styles.css`：响应式 UI 样式
-- `app.js`：前端交互、分类状态、Map/List 展示模式、Recipes、Discovery、API 数据层
+- `app.js`：前端交互编排、分类状态、Map/List、Recipes 与 Discovery 事件绑定
+- `domain-core.mjs`：餐厅、菜品、清单、菜谱和分享数据标准化与集合规则
+- `view-templates.mjs`：Desktop/Mobile 共用的 Recipe、Restaurant 和 List 展示模板
+- `data-client.mjs`：统一 API 请求、认证错误和 FormData/JSON 处理
 - `server.py`：FastAPI 后端、SQLite、OAuth、上传、分享、recipe/list API、管理员 API 和 Free/Paid 额度规则
 - `scripts/migrate_sqlite_to_postgres_gcs.py`：一次性迁移脚本，用于把本地 SQLite 数据和上传文件迁到 Cloud SQL PostgreSQL / Google Cloud Storage
 - `requirements.txt`：Python 依赖

@@ -10,6 +10,8 @@ ui-shell.mjs      DOM adapter that activates one shell and labels surfaces
 ui-components.mjs shared empty, guidance, loading, and error components
 ui-dialogs.mjs    accessible confirmation and destructive-action controller
 data-client.mjs   shared authenticated API request and error boundary
+domain-core.mjs   restaurant, dish, list, recipe, and share normalization plus collection selectors
+view-templates.mjs shared Recipe, Restaurant, and List presentation templates
 ui-tokens.css     shared breakpoints, target sizes, spacing, and layers
 ui-shell.css      desktop/mobile shell ownership and container behavior
 app.js            product state, API orchestration, rendering, and commands
@@ -44,6 +46,8 @@ JavaScript must use `classifyLayoutMode()` rather than user-agent detection. CSS
 - Empty guidance is rendered as text. A button is included only when an actual command is available.
 - UI rendering code reads the layout mode from `ui-shell.mjs`; it must not query viewport width, user agent, or device brand directly.
 - All API calls pass through `data-client.mjs`, so both shells receive identical authentication and error behavior.
+- API payloads are normalized by `domain-core.mjs`; view code must not duplicate defaults, rating bounds, nested item normalization, or collection ordering.
+- Repeated rows and details belong in `view-templates.mjs`. Event binding stays in `app.js`, keeping templates free of global state and direct DOM access.
 
 ## Desktop Layout
 
@@ -105,4 +109,4 @@ Do not assume a desktop sidebar control should appear directly on mobile.
 
 ## Completion Boundary
 
-The dual-shell migration covers all current primary views and shared form surfaces. `app.js` remains the orchestration entry point because the project intentionally has no framework or build step, but viewport policy, data transport, reusable state panels, confirmation behavior, and shell ownership are now external modules. New presentation behavior belongs in those modules instead of new device branches in `app.js`.
+The dual-shell migration covers all current primary views and shared form surfaces. `app.js` remains the orchestration entry point because the project intentionally has no framework or build step, but viewport policy, data transport, domain normalization, reusable templates, state panels, confirmation behavior, and shell ownership are now external modules. New presentation behavior belongs in those modules instead of new device branches in `app.js`.

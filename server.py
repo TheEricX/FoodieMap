@@ -105,6 +105,8 @@ PUBLIC_FILES = {
     "ui-dialogs.mjs",
     "ui-components.mjs",
     "data-client.mjs",
+    "domain-core.mjs",
+    "view-templates.mjs",
     "styles.css",
     "ui-tokens.css",
     "ui-shell.css",

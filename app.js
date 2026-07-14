@@ -8,6 +8,8 @@ const UI_SHELL_URL = "/ui-shell.mjs?v=20260712-shell";
 const UI_DIALOGS_URL = "/ui-dialogs.mjs?v=20260714-dialogs";
 const UI_COMPONENTS_URL = "/ui-components.mjs?v=20260714-components";
 const DATA_CLIENT_URL = "/data-client.mjs?v=20260714-client";
+const DOMAIN_CORE_URL = "/domain-core.mjs?v=20260714-domain";
+const VIEW_TEMPLATES_URL = "/view-templates.mjs?v=20260714-views";
 const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
@@ -1139,6 +1141,9 @@ let uiShellController = null;
 let confirmController = null;
 let uiComponents = null;
 let dataClient = null;
+let domainCore = null;
+let domainModel = null;
+let viewTemplates = null;
 let activeFilter = "all";
 let selectedRestaurantId = null;
 let isSpotCardOpen = false;
@@ -1430,13 +1435,15 @@ loadBrowserCore();
 
 async function loadBrowserCore() {
   try {
-    const [loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient] = await Promise.all([
+    const [loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient, loadedDomainCore, loadedViewTemplates] = await Promise.all([
       import(LOCATION_CORE_URL),
       import(UI_CORE_URL),
       import(UI_SHELL_URL),
       import(UI_DIALOGS_URL),
       import(UI_COMPONENTS_URL),
-      import(DATA_CLIENT_URL)
+      import(DATA_CLIENT_URL),
+      import(DOMAIN_CORE_URL),
+      import(VIEW_TEMPLATES_URL)
     ]);
     locationCore = loadedLocationCore;
     uiCore = loadedUiCore;
@@ -1458,6 +1465,16 @@ async function loadBrowserCore() {
         loginRequired: () => t("api.loginRequired"),
         requestFailed: () => t("api.requestFailed"),
       },
+    });
+    domainCore = loadedDomainCore;
+    domainModel = loadedDomainCore.createDomainModel({ translate: t });
+    viewTemplates = loadedViewTemplates.createViewTemplates({
+      translate: t,
+      formatDate,
+      recipeImageUrl,
+      restaurantImageUrl,
+      statusLabel,
+      accentVariant,
     });
     await boot();
   } catch (error) {
@@ -4381,10 +4398,7 @@ function renderListsView() {
 function renderDiscoveryView() {
   if (!elements.discoveryGrid) return;
   const term = activeView === "discovery" ? elements.searchInput.value.trim().toLowerCase() : "";
-  const sorted = [...discoveryLists].sort((a, b) => {
-    if (discoverySort === "recent") return Number(b.published_at || 0) - Number(a.published_at || 0);
-    return Number(b.copy_count || 0) - Number(a.copy_count || 0) || Number(b.item_count || 0) - Number(a.item_count || 0);
-  });
+  const sorted = domainCore.sortDiscoveryLists(discoveryLists, discoverySort);
   const visible = sorted.filter((list) => listSearchText(list).includes(term));
   elements.discoveryGrid.innerHTML = visible.length
     ? visible.map((list) => listCardTemplate(list, list.id === selectedDiscoveryListId, "public")).join("")
@@ -4449,7 +4463,7 @@ function renderRecipesView() {
       renderRecipesView();
     });
   });
-  const selected = recipes.find((recipe) => recipe.id === selectedRecipeId) ?? visible[0] ?? recipes[0] ?? null;
+  const selected = domainCore.selectVisibleItem(recipes, visible, selectedRecipeId);
   selectedRecipeId = selected?.id ?? null;
   elements.recipesView?.classList.toggle("has-selection", Boolean(selected));
   elements.recipeDetail.hidden = !selected;
@@ -4460,48 +4474,11 @@ function renderRecipesView() {
 }
 
 function recipeRowTemplate(recipe) {
-  return `
-    <article class="recipe-row ${recipe.id === selectedRecipeId ? "selected" : ""}" data-recipe-id="${escapeAttribute(recipe.id)}">
-      <img class="recipe-thumb" src="${escapeAttribute(recipeImageUrl(recipe))}" alt="" loading="lazy" />
-      <div class="recipe-row-main">
-        <strong>${escapeHtml(recipe.title)}</strong>
-        <small>☆ ${Number(recipe.rating || 0).toFixed(1)} · ${recipe.cooked_at ? formatDate(recipe.cooked_at) : formatDate(recipe.updated_at)}</small>
-        <p>${escapeHtml(recipe.ingredients || t("recipes.noIngredients"))}</p>
-      </div>
-    </article>
-  `;
+  return viewTemplates.recipeRow(recipe, selectedRecipeId);
 }
 
 function recipeDetailTemplate(recipe) {
-  return `
-    <article class="recipe-detail-card">
-      <img class="recipe-hero-image" src="${escapeAttribute(recipeImageUrl(recipe))}" alt="" />
-      <div class="list-view-head">
-        <div>
-          <p class="eyebrow">${t("recipes.eyebrow")}</p>
-          <h2>${escapeHtml(recipe.title)}</h2>
-          <div class="compact-meta">
-            <span>☆ ${Number(recipe.rating || 0).toFixed(1)}</span>
-            <span>${recipe.cooked_at ? formatDate(recipe.cooked_at) : formatDate(recipe.updated_at)}</span>
-          </div>
-        </div>
-      </div>
-      <div class="detail-actions">
-        <button class="secondary-button" type="button" data-edit-recipe>${t("button.edit")}</button>
-        <button class="secondary-button" type="button" data-share-recipe>${t("button.share")}</button>
-        <button class="outline-button danger" type="button" data-delete-recipe>${t("button.delete")}</button>
-      </div>
-      <section class="recipe-note-section">
-        <p class="eyebrow">${t("recipes.ingredients")}</p>
-        <p>${escapeHtml(recipe.ingredients || t("recipes.noIngredients")).replace(/\n/g, "<br />")}</p>
-      </section>
-      <section class="recipe-note-section">
-        <p class="eyebrow">${t("recipes.steps")}</p>
-        <p>${escapeHtml(recipe.steps || t("recipes.noSteps")).replace(/\n/g, "<br />")}</p>
-      </section>
-      ${recipe.notes ? `<section class="recipe-note-section"><p class="eyebrow">${t("recipes.notes")}</p><p>${escapeHtml(recipe.notes).replace(/\n/g, "<br />")}</p></section>` : ""}
-    </article>
-  `;
+  return viewTemplates.recipeDetail(recipe);
 }
 
 function openRecipeDialog(recipe = null) {
@@ -5238,36 +5215,15 @@ function sharePackPublicItemTemplate(item) {
 }
 
 function restaurantRowTemplate(restaurant, options = {}) {
-  const accent = accentVariant(restaurant.id);
-  return `
-    <article class="spot-row accent-${accent}" data-restaurant-id="${restaurant.id}">
-      <span class="row-tape" aria-hidden="true"></span>
-      ${restaurantThumbTemplate(restaurant)}
-      <div class="spot-row-main">
-        <div class="spot-row-title">
-          <strong>${escapeHtml(restaurant.name)}</strong>
-          <span class="tag-pill ${restaurant.status}">${statusLabel(restaurant.status)}</span>
-        </div>
-        <small>${options.body || ""}</small>
-        ${options.note ? `<p>${escapeHtml(options.note)}</p>` : ""}
-      </div>
-      ${options.actions ? `<div class="spot-row-actions">${options.actions}</div>` : ""}
-    </article>
-  `;
+  return viewTemplates.restaurantRow(restaurant, options);
 }
 
 function restaurantThumbTemplate(restaurant) {
-  return `
-    <span class="recent-thumb ${restaurant.status}">
-      <img src="${escapeAttribute(restaurantImageUrl(restaurant))}" alt="">
-    </span>
-  `;
+  return viewTemplates.restaurantThumb(restaurant);
 }
 
 function coverTemplate(list) {
-  return list.cover_image_url
-    ? `<span class="list-cover image-cover"><img src="${escapeAttribute(list.cover_image_url)}" alt=""></span>`
-    : `<span class="list-cover">${list.visibility === "public" ? "🍜" : "▦"}</span>`;
+  return viewTemplates.listCover(list);
 }
 
 function emptyStateTemplate(message, actionLabel) {
@@ -5520,18 +5476,16 @@ async function copyPublicList() {
 }
 
 function selectedRestaurant() {
-  return restaurants.find((restaurant) => restaurant.id === selectedRestaurantId) ?? null;
+  return domainCore.findById(restaurants, selectedRestaurantId);
 }
 
 function selectedRecipe() {
-  return recipes.find((recipe) => recipe.id === selectedRecipeId) ?? null;
+  return domainCore.findById(recipes, selectedRecipeId);
 }
 
 function upsertRecipe(recipe) {
   const normalized = normalizeRecipe(recipe);
-  const index = recipes.findIndex((item) => item.id === normalized.id);
-  if (index >= 0) recipes[index] = normalized;
-  else recipes = [normalized, ...recipes];
+  recipes = domainCore.upsertById(recipes, normalized);
 }
 
 function recipeSearchText(recipe) {
@@ -5700,33 +5654,11 @@ function mapPlaceKey(url) {
 }
 
 function normalizeRestaurant(item) {
-  return {
-    id: String(item.id),
-    name: String(item.name || t("spot.untitled")),
-    address: String(item.address || ""),
-    lat: Number(item.lat),
-    lng: Number(item.lng),
-    google_url: String(item.google_url || item.googleUrl || `https://www.google.com/maps?q=${item.lat},${item.lng}`),
-    status: ["visited", "want_to_go", "favorite"].includes(item.status) ? item.status : "want_to_go",
-    visit_count: Math.max(0, Number(item.visit_count ?? item.visitCount ?? 0) || 0),
-    personal_rating: Math.max(0, Math.min(5, Number(item.personal_rating ?? item.rating ?? 0) || 0)),
-    notes: String(item.notes || ""),
-    dishes: Array.isArray(item.dishes) ? item.dishes.map(normalizeDish) : [],
-    created_at: item.created_at ?? item.createdAt ?? Date.now(),
-    updated_at: item.updated_at ?? item.updatedAt ?? Date.now(),
-  };
+  return domainModel.normalizeRestaurant(item);
 }
 
 function normalizeDish(item) {
-  return {
-    id: String(item.id),
-    restaurant_id: String(item.restaurant_id || ""),
-    name: String(item.name || t("detail.dishName")),
-    dish_status: ["liked", "tried"].includes(item.dish_status) ? item.dish_status : "tried",
-    rating: Math.max(0, Math.min(5, Number(item.rating || 0))),
-    image_url: String(item.image_url || ""),
-    notes: String(item.notes || ""),
-  };
+  return domainModel.normalizeDish(item);
 }
 
 function clampRating(value) {
@@ -5734,92 +5666,23 @@ function clampRating(value) {
 }
 
 function normalizeList(item) {
-  return {
-    id: String(item.id),
-    owner_user_id: String(item.owner_user_id || ""),
-    owner: item.owner || null,
-    title: String(item.title || t("list.choose")),
-    description: String(item.description || ""),
-    visibility: item.visibility === "public" ? "public" : "private",
-    cover_image_url: String(item.cover_image_url || ""),
-    copy_count: Math.max(0, Number(item.copy_count || 0)),
-    item_count: Math.max(0, Number(item.item_count || 0)),
-    created_at: Number(item.created_at || 0),
-    updated_at: Number(item.updated_at || 0),
-    published_at: item.published_at ? Number(item.published_at) : null,
-    items: Array.isArray(item.items)
-      ? item.items.map((entry) => ({
-          id: String(entry.id),
-          list_id: String(entry.list_id),
-          restaurant_id: String(entry.restaurant_id),
-          note: String(entry.note || ""),
-          sort_order: Number(entry.sort_order || 0),
-          created_at: Number(entry.created_at || 0),
-          restaurant: entry.restaurant ? normalizeRestaurant(entry.restaurant) : null,
-        }))
-      : undefined,
-  };
+  return domainModel.normalizeList(item);
 }
 
 function normalizeSharePack(item) {
-  return {
-    token: String(item.token || ""),
-    title: String(item.title || t("sharePack.title")),
-    description: String(item.description || ""),
-    owner: item.owner || null,
-    share_url: String(item.share_url || ""),
-    qr_url: String(item.qr_url || ""),
-    created_at: Number(item.created_at || 0),
-    items: Array.isArray(item.items)
-      ? item.items.map((entry) => ({
-          id: String(entry.id || ""),
-          note: String(entry.note || ""),
-          sort_order: Number(entry.sort_order || 0),
-          restaurant: entry.restaurant ? normalizeRestaurant({ ...entry.restaurant, dishes: entry.dishes || [] }) : null,
-          dishes: Array.isArray(entry.dishes) ? entry.dishes.map(normalizeDish) : [],
-        }))
-      : [],
-  };
+  return domainModel.normalizeSharePack(item);
 }
 
 function normalizeSharePackSummary(item) {
-  return {
-    token: String(item.token || ""),
-    title: String(item.title || t("sharePack.title")),
-    description: String(item.description || ""),
-    created_at: Number(item.created_at || 0),
-    item_count: Number(item.item_count || 0),
-    share_url: String(item.share_url || ""),
-    qr_url: String(item.qr_url || ""),
-    card_url: String(item.card_url || ""),
-  };
+  return domainModel.normalizeSharePackSummary(item);
 }
 
 function normalizeRecipe(item) {
-  return {
-    id: String(item.id || ""),
-    title: String(item.title || t("recipes.formTitle")),
-    ingredients: String(item.ingredients || ""),
-    steps: String(item.steps || ""),
-    notes: String(item.notes || ""),
-    rating: clampRating(Number(item.rating || 0)),
-    cooked_at: Number(item.cooked_at || 0),
-    image_url: String(item.image_url || ""),
-    created_at: Number(item.created_at || 0),
-    updated_at: Number(item.updated_at || 0),
-  };
+  return domainModel.normalizeRecipe(item);
 }
 
 function normalizeRecipeShare(item) {
-  return {
-    token: String(item.token || ""),
-    owner: item.owner || null,
-    share_url: String(item.share_url || ""),
-    qr_url: String(item.qr_url || ""),
-    card_url: String(item.card_url || ""),
-    created_at: Number(item.created_at || 0),
-    recipe: normalizeRecipe(item.recipe || {}),
-  };
+  return domainModel.normalizeRecipeShare(item);
 }
 
 function listFilterOrder() {
@@ -5836,12 +5699,7 @@ function saveListFilterOrder(ids) {
 }
 
 function orderedLists() {
-  const order = listFilterOrder();
-  const knownIds = new Set(lists.map((list) => list.id));
-  const orderedIds = order.filter((id) => knownIds.has(id));
-  const missing = lists.filter((list) => !orderedIds.includes(list.id));
-  const byId = new Map(lists.map((list) => [list.id, list]));
-  return [...orderedIds.map((id) => byId.get(id)).filter(Boolean), ...missing];
+  return domainCore.orderByIds(lists, listFilterOrder());
 }
 
 function reorderListFilter(sourceId, targetId) {
