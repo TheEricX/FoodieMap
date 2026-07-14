@@ -1,0 +1,25 @@
+:root {
+  --ui-mobile-max: 900px;
+  --ui-compact-desktop-max: 1380px;
+  --ui-touch-target: 44px;
+  --ui-desktop-target: 38px;
+  --ui-page-gutter-mobile: 8px;
+  --ui-page-gutter-desktop: clamp(10px, 1.3vw, 18px);
+  --ui-action-bar-height: 72px;
+  --ui-layer-header: 30;
+  --ui-layer-navigation: 40;
+  --ui-layer-sheet: 50;
+  --ui-layer-dialog: 60;
+  --ui-content-wide: 1720px;
+}
+
+[data-layout="mobile"] {
+  --ui-control-target: var(--ui-touch-target);
+  --ui-page-gutter: var(--ui-page-gutter-mobile);
+}
+
+[data-layout="compact-desktop"],
+[data-layout="desktop"] {
+  --ui-control-target: var(--ui-desktop-target);
+  --ui-page-gutter: var(--ui-page-gutter-desktop);
+}

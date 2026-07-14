@@ -55,8 +55,9 @@ test("OAuth consent, connected app, and revocation complete the user flow", asyn
   await page.waitForLoadState("networkidle");
   await page.locator("#settingsButton").click();
   await expect(page.getByText("Playwright Agent", { exact: true })).toBeVisible();
-  page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Revoke" }).click();
+  await expect(page.locator("#confirmDialog")).toBeVisible();
+  await page.locator("[data-confirm-accept]").click();
   await expect(page.getByText("No AI apps are connected.")).toBeVisible();
 
   const rejected = await page.request.post("/mcp/", {

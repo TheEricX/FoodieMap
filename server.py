@@ -96,7 +96,19 @@ ALLOWED_SHORT_HOSTS = {"maps.app.goo.gl", "goo.gl", "maps.apple.com"}
 SESSION_COOKIE = "foodiemap_session"
 ADMIN_SESSION_COOKIE = "foodiemap_admin_session"
 OAUTH_STATE_COOKIE = "foodiemap_oauth_state"
-PUBLIC_FILES = {"index.html", "app.js", "location-core.mjs", "styles.css"}
+PUBLIC_FILES = {
+    "index.html",
+    "app.js",
+    "location-core.mjs",
+    "ui-core.mjs",
+    "ui-shell.mjs",
+    "ui-dialogs.mjs",
+    "ui-components.mjs",
+    "data-client.mjs",
+    "styles.css",
+    "ui-tokens.css",
+    "ui-shell.css",
+}
 INSECURE_SESSION_SECRETS = {"", "dev-change-me", "change-me-in-production"}
 PASSWORD_HASH_ITERATIONS = 310_000
 EMAIL_CODE_TTL_SECONDS = 10 * 60

@@ -10,7 +10,9 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260710-mcp" />
+    <link rel="stylesheet" href="/ui-tokens.css?v=20260712-shell" />
+    <link rel="stylesheet" href="/styles.css?v=20260712-shell" />
+    <link rel="stylesheet" href="/ui-shell.css?v=20260712-shell" />
   </head>
   <body>
     <main class="app-shell">
@@ -19,7 +21,7 @@
           <span class="brand-mark">◎</span>
           <span data-i18n="app.brand">Gourmet Map</span>
         </div>
-        <nav class="top-nav" aria-label="Primary navigation">
+        <nav class="top-nav desktop-primary-nav" aria-label="Primary navigation" data-shell="desktop">
           <a class="active" href="#my-map" data-view="my-map" data-i18n="nav.map">Map</a>
           <a href="#my-lists" data-view="my-lists" data-i18n="nav.lists">Lists</a>
           <a href="#recipes" data-view="recipes" data-i18n="nav.recipes">Recipes</a>
@@ -371,6 +373,13 @@
           </section>
         </section>
       </section>
+
+      <nav class="mobile-bottom-nav" aria-label="Primary navigation" data-shell="mobile">
+        <a class="active" href="#my-map" data-view="my-map" data-i18n="nav.map">Map</a>
+        <a href="#my-lists" data-view="my-lists" data-i18n="nav.lists">Lists</a>
+        <a href="#recipes" data-view="recipes" data-i18n="nav.recipes">Recipes</a>
+        <a href="#discovery" data-view="discovery" data-i18n="nav.discovery">Discovery</a>
+      </nav>
 
       <dialog class="modal" id="authDialog">
         <form class="modal-card auth-card" id="authForm" method="dialog">
@@ -862,7 +871,21 @@
           </div>
         </form>
       </dialog>
+
+      <dialog class="modal confirm-dialog" id="confirmDialog" aria-labelledby="confirmDialogTitle" aria-describedby="confirmDialogMessage">
+        <section class="modal-card confirm-card" role="document">
+          <div class="confirm-copy">
+            <p class="eyebrow">CONFIRM</p>
+            <h2 id="confirmDialogTitle" data-confirm-title>Confirm action</h2>
+            <p id="confirmDialogMessage" data-confirm-message></p>
+          </div>
+          <div class="form-actions confirm-actions">
+            <button class="secondary-button ghost-button" type="button" data-confirm-cancel>Cancel</button>
+            <button class="primary-button" type="button" data-confirm-accept>Continue</button>
+          </div>
+        </section>
+      </dialog>
     </main>
-    <script src="/app.js?v=20260710-mcp"></script>
+    <script src="/app.js?v=20260714-ui-refactor"></script>
   </body>
 </html>

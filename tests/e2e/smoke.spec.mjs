@@ -5,7 +5,14 @@ test("@smoke app assets and health endpoint load with expected types", async ({ 
     ["/api/health", "application/json"],
     ["/app.js", "text/javascript"],
     ["/location-core.mjs", "text/javascript"],
-    ["/styles.css", "text/css"]
+    ["/ui-core.mjs", "text/javascript"],
+    ["/ui-shell.mjs", "text/javascript"],
+    ["/ui-dialogs.mjs", "text/javascript"],
+    ["/ui-components.mjs", "text/javascript"],
+    ["/data-client.mjs", "text/javascript"],
+    ["/styles.css", "text/css"],
+    ["/ui-tokens.css", "text/css"],
+    ["/ui-shell.css", "text/css"]
   ]);
   for (const [path, contentType] of expected) {
     const response = await request.get(path);
@@ -20,7 +27,8 @@ test("@smoke signed-out startup shows login without protected API errors", async
   await expect(page.locator("#loginView")).toBeVisible();
 });
 
-test("@smoke authenticated navigation works after startup and reload", async ({ signedInPage: page }) => {
+test("@smoke authenticated navigation works after startup and reload", async ({ signedInPage: page }, testInfo) => {
+  const shell = testInfo.project.name === "mobile" ? ".mobile-bottom-nav" : ".desktop-primary-nav";
   for (const [view, panel] of [
     ["my-map", "#mapView"],
     ["my-lists", "#listsView"],
@@ -29,7 +37,8 @@ test("@smoke authenticated navigation works after startup and reload", async ({ 
   ]) {
     await page.locator(`[data-view="${view}"]:visible`).first().click();
     await expect(page.locator(panel)).toBeVisible();
-    await expect(page.locator(`[data-view="${view}"].active:visible`)).toHaveCount(1);
+    await expect(page.locator(`${shell} [data-view="${view}"]`)).toHaveClass(/active/);
+    await expect(page.locator(`${shell} [data-view="${view}"]`)).toHaveAttribute("aria-current", "page");
   }
   await page.reload();
   await page.waitForLoadState("networkidle");

@@ -1,12 +1,49 @@
-# Responsive UI Design Notes
+# Dual-Shell Responsive UI Architecture
 
-FoodieMap uses responsive UI patterns, but the mobile experience is not a compressed copy of the desktop layout. Desktop and mobile share the same data model, filters, routes, and dialogs, while the screen structure changes to fit the task and available space.
+FoodieMap uses a shared business core with separate desktop and mobile presentation shells. The mobile experience is not a compressed desktop layout: both shells share data, routes, content components, validation, and commands while navigation and surface containers adapt to the task and available space.
+
+## Architecture
+
+```text
+ui-core.mjs       pure layout, search, validation, and presentation rules
+ui-shell.mjs      DOM adapter that activates one shell and labels surfaces
+ui-components.mjs shared empty, guidance, loading, and error components
+ui-dialogs.mjs    accessible confirmation and destructive-action controller
+data-client.mjs   shared authenticated API request and error boundary
+ui-tokens.css     shared breakpoints, target sizes, spacing, and layers
+ui-shell.css      desktop/mobile shell ownership and container behavior
+app.js            product state, API orchestration, rendering, and commands
+```
+
+The desktop top navigation and mobile bottom navigation are separate DOM containers. Only the active shell is exposed in layout and the accessibility tree. Dialog content remains shared, but each dialog receives a presentation label:
+
+- `desktop-modal` or `desktop-drawer`
+- `mobile-task` or `mobile-sheet`
+
+Do not move navigation or surface responsibilities back into generic `.top-nav` or `.modal-card` media-query overrides.
+
+## Layout Modes
+
+- Mobile: `<= 900px`
+- Compact desktop: `901px–1380px`
+- Desktop: `>= 1381px`
+
+JavaScript must use `classifyLayoutMode()` rather than user-agent detection. CSS and JavaScript use the same boundaries.
 
 ## Core Principle
 
 - Desktop favors overview and parallel controls.
 - Mobile favors the current task, short controls, and hidden secondary surfaces.
-- Map View is the first mobile-optimized screen. List View, Discovery, and detail/edit flows should follow the same principle in future passes.
+- Map, Lists, Recipes, Discovery, Settings, authentication, and detail/edit flows all use the same shell and surface rules.
+
+## Shared Interaction Rules
+
+- Browser-native confirmation dialogs are not used. `ui-dialogs.mjs` owns confirmation, focus, Escape, backdrop cancellation, labels, and destructive tone.
+- Restaurant, List, and Recipe forms capture a baseline when opened. Close, Cancel, and mobile swipe dismissal must confirm before losing changed values.
+- Mobile form surfaces are full-screen tasks; desktop form surfaces are modals. Their fields and validation remain shared.
+- Empty guidance is rendered as text. A button is included only when an actual command is available.
+- UI rendering code reads the layout mode from `ui-shell.mjs`; it must not query viewport width, user agent, or device brand directly.
+- All API calls pass through `data-client.mjs`, so both shells receive identical authentication and error behavior.
 
 ## Desktop Layout
 
@@ -50,14 +87,22 @@ The goal is to make the common mobile flow fast:
 - Put secondary or broader navigation in drawers or bottom navigation, not in the main map surface.
 - Do not rely on partially clipped controls to imply horizontal scrolling. If a control is important, make it visible or put it behind an explicit drawer/menu.
 - Dangerous or low-frequency actions should stay deeper in dialogs, menus, or detail screens.
+- Each mobile page has at most one visually dominant action. Secondary actions use menus, sheets, or lower-emphasis controls.
+- Page-level horizontal scrolling is prohibited. Maps, explicit carousels, and compact metadata scrollers are the only intentional horizontal interaction regions.
+- Mobile targets are at least 44px. Desktop controls may be denser but retain keyboard focus treatment.
 
-## Future Mobile Passes
+## Feature Checklist
 
-Apply the same split-layout thinking to the remaining views:
+Every new feature must define:
 
-- List View: mobile-first list rows, compact filters, row actions behind a menu.
-- Discovery: single-column public list cards, sticky search/sort, compact hero.
-- Detail/Edit: full-screen mobile form, grouped sections, fixed save action, safer destructive actions.
-- Admin: card-based users, collapsed filters, action menus.
+- Desktop entry point and desktop container.
+- Mobile entry point and mobile container.
+- Shared command, validation, loading, empty, error, and permission states.
+- Keyboard behavior and 44px mobile target behavior.
+- Tests at 390px, 430px, 750px, 1024px, 1280px, 1440px, and 1720px where relevant.
 
-When adding new features, decide both desktop and mobile placement. Do not assume a new desktop sidebar control should appear directly on mobile.
+Do not assume a desktop sidebar control should appear directly on mobile.
+
+## Completion Boundary
+
+The dual-shell migration covers all current primary views and shared form surfaces. `app.js` remains the orchestration entry point because the project intentionally has no framework or build step, but viewport policy, data transport, reusable state panels, confirmation behavior, and shell ownership are now external modules. New presentation behavior belongs in those modules instead of new device branches in `app.js`.

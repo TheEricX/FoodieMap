@@ -1,8 +1,9 @@
 import { test, expect } from "./fixtures.mjs";
 
 test("@mobile bottom navigation is single-tap responsive without horizontal overflow", async ({ signedInPage: page }) => {
-  for (const width of [390, 750]) {
+  for (const width of [390, 430, 750]) {
     await page.setViewportSize({ width, height: 844 });
+    await expect(page.locator("body")).toHaveAttribute("data-layout", "mobile");
     for (const [view, panel] of [
       ["my-lists", "#listsView"],
       ["recipes", "#recipesView"],
@@ -26,6 +27,8 @@ test("@mobile bottom navigation is single-tap responsive without horizontal over
       expect(layout.documentScrollWidth).toBeLessThanOrEqual(layout.viewportWidth + 1);
       expect(layout.shellLeft).toBeGreaterThanOrEqual(0);
       expect(layout.shellRight).toBeLessThanOrEqual(layout.viewportWidth);
+      await expect(page.locator(".desktop-primary-nav")).toBeHidden();
+      await expect(page.locator(".mobile-bottom-nav")).toBeVisible();
     }
   }
   await page.setViewportSize({ width: 390, height: 844 });
@@ -116,6 +119,7 @@ test("@mobile long form dialogs stay horizontally locked", async ({ signedInPage
   ];
   for (const [dialogSelector, formSelector] of dialogs) {
     await page.evaluate((selector) => document.querySelector(selector).showModal(), dialogSelector);
+    await expect(page.locator(dialogSelector)).toHaveAttribute("data-presentation", "mobile-task");
     const dimensions = await page.locator(formSelector).evaluate((form) => ({
       clientWidth: form.clientWidth,
       scrollWidth: form.scrollWidth,
@@ -149,5 +153,35 @@ test("@mobile long form dialogs stay horizontally locked", async ({ signedInPage
   expect(after.scrollLeft).toBe(0);
   expect(after.scrollWidth).toBeLessThanOrEqual(after.clientWidth);
   await page.locator("#closeRecipeDialog").tap();
+  await expect(page.locator("#confirmDialog")).toBeVisible();
+  await page.locator("[data-confirm-cancel]").tap();
+  await expect(page.locator("#recipeDialog")).toBeVisible();
+  await expect(recipeForm.locator('textarea[name="ingredients"]')).toHaveValue("A".repeat(240));
+  await page.locator("#closeRecipeDialog").tap();
+  const confirmLayout = await page.locator("#confirmDialog .confirm-card").evaluate((card) => ({
+    left: card.getBoundingClientRect().left,
+    right: card.getBoundingClientRect().right,
+    viewport: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth
+  }));
+  expect(confirmLayout.left).toBeGreaterThanOrEqual(0);
+  expect(confirmLayout.right).toBeLessThanOrEqual(confirmLayout.viewport);
+  expect(confirmLayout.scrollWidth).toBeLessThanOrEqual(confirmLayout.viewport);
+  await page.locator("[data-confirm-accept]").tap();
   await expect(page.locator("#recipeDialog")).toBeHidden();
+});
+
+test("@mobile list task preserves unsaved input until discard is confirmed", async ({ signedInPage: page }) => {
+  await page.locator('[data-view="my-lists"]:visible').first().tap();
+  await page.locator("#mobileMyListDrawer > summary").tap();
+  await page.locator("#mobileMyListDrawer [data-mobile-create-list]").tap();
+  await page.locator('#listForm input[name="title"]').fill("Unsaved weekend list");
+  await page.locator("#cancelListButton").tap();
+  await expect(page.locator("#confirmDialog")).toBeVisible();
+  await page.locator("[data-confirm-cancel]").tap();
+  await expect(page.locator("#listDialog")).toBeVisible();
+  await expect(page.locator('#listForm input[name="title"]')).toHaveValue("Unsaved weekend list");
+  await page.locator("#cancelListButton").tap();
+  await page.locator("[data-confirm-accept]").tap();
+  await expect(page.locator("#listDialog")).toBeHidden();
 });

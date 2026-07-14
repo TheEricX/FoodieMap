@@ -1,0 +1,142 @@
+.mobile-bottom-nav {
+  display: none;
+}
+
+[data-shell][hidden] {
+  display: none !important;
+}
+
+.desktop-primary-nav {
+  min-width: 0;
+}
+
+body[data-view="login"] .mobile-bottom-nav,
+body[data-view="share-pack"] .mobile-bottom-nav,
+body[data-view="recipe-share"] .mobile-bottom-nav,
+body.admin-portal .mobile-bottom-nav {
+  display: none !important;
+}
+
+[data-ui-component="action-bar"] {
+  isolation: isolate;
+}
+
+.confirm-card {
+  width: min(440px, calc(100vw - 32px));
+  gap: 24px;
+}
+
+.confirm-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.confirm-copy h2,
+.confirm-copy p {
+  margin: 0;
+}
+
+.confirm-copy > p:last-child {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.confirm-actions .danger {
+  border-color: #b52828;
+  background: #b52828;
+  color: #fff;
+}
+
+[data-presentation="mobile-task"],
+[data-presentation="mobile-sheet"] {
+  overscroll-behavior: none;
+}
+
+@media (max-width: 900px) {
+  .desktop-primary-nav {
+    display: none !important;
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    right: 10px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    left: 10px;
+    z-index: var(--ui-layer-navigation);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    min-width: 0;
+    border: 1px solid rgba(139, 106, 87, 0.22);
+    border-radius: 999px;
+    background: rgba(255, 250, 244, 0.96);
+    padding: 5px;
+    box-shadow: 0 14px 32px rgba(82, 61, 48, 0.18);
+    backdrop-filter: blur(12px);
+  }
+
+  .mobile-bottom-nav a {
+    display: grid;
+    min-width: 0;
+    min-height: 44px;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--muted);
+    padding: 0 5px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .mobile-bottom-nav a.active {
+    background: var(--primary);
+    color: var(--paper);
+  }
+
+  [data-presentation="mobile-task"] {
+    z-index: var(--ui-layer-dialog);
+  }
+
+  [data-presentation="mobile-sheet"] {
+    z-index: var(--ui-layer-sheet);
+  }
+
+  [data-presentation="mobile-task"] .modal-card,
+  [data-presentation="mobile-sheet"] .detail-drawer-card {
+    touch-action: pan-y;
+  }
+
+  .confirm-dialog[data-presentation="mobile-task"] {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .confirm-dialog .confirm-card {
+    width: 100%;
+    max-width: none;
+    border-radius: 22px 22px 0 0;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (min-width: 901px) {
+  .desktop-primary-nav {
+    display: flex;
+  }
+
+  [data-presentation="desktop-modal"] .form-actions {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-top: 0;
+    background: transparent;
+    padding: 0;
+  }
+}

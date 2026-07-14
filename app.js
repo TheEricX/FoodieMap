@@ -3,12 +3,16 @@ const LIST_FILTER_ORDER_KEY = "foodiemap:list-filter-order";
 const GOOGLE_GEOCODING_KEY = "foodiemap:google-geocoding-key";
 const LOCATION_PREFERENCE_KEY = "foodiemap.locationMode.v1";
 const LOCATION_CORE_URL = "/location-core.mjs?v=20260710-location";
+const UI_CORE_URL = "/ui-core.mjs?v=20260712-shell";
+const UI_SHELL_URL = "/ui-shell.mjs?v=20260712-shell";
+const UI_DIALOGS_URL = "/ui-dialogs.mjs?v=20260714-dialogs";
+const UI_COMPONENTS_URL = "/ui-components.mjs?v=20260714-components";
+const DATA_CLIENT_URL = "/data-client.mjs?v=20260714-client";
 const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
 const MAP_ZOOM_STEP = 0.18;
 const MAP_PAN_LIMIT_RATIO = 0.42;
-const MOBILE_VIEWPORT_QUERY = "(max-width: 900px)";
 const ADD_DIALOG_SWIPE_CLOSE_DISTANCE = 110;
 const ADD_DIALOG_SWIPE_LOCK_DISTANCE = 12;
 const FOOD_PLACEHOLDERS = [
@@ -152,6 +156,11 @@ const translations = {
     "maps.openGoogle": "Google Maps",
     "maps.openApple": "Apple Maps",
     "spot.discardConfirm": "Discard this unfinished spot?",
+    "confirm.actionTitle": "Confirm action",
+    "confirm.deleteTitle": "Delete permanently?",
+    "confirm.discardTitle": "Discard unsaved changes?",
+    "confirm.discardMessage": "Your changes have not been saved. This cannot be undone.",
+    "confirm.signOutTitle": "Sign out?",
     "sidebar.myPantry": "MY PANTRY",
     "sidebar.smartLists": "SMART LISTS",
     "sidebar.builtFromMap": "Built from your map",
@@ -173,6 +182,9 @@ const translations = {
     "button.remove": "Remove",
     "button.save": "Save",
     "button.cancel": "Cancel",
+    "button.continue": "Continue",
+    "button.discard": "Discard changes",
+    "button.signOut": "Sign out",
     "button.copy": "Copy",
     "button.copied": "Copied",
     "button.map": "Map",
@@ -659,6 +671,11 @@ const translations = {
     "maps.openGoogle": "Google Maps",
     "maps.openApple": "Apple Maps",
     "spot.discardConfirm": "放弃这个还没保存的餐厅吗？",
+    "confirm.actionTitle": "确认操作",
+    "confirm.deleteTitle": "确认永久删除？",
+    "confirm.discardTitle": "放弃未保存的更改？",
+    "confirm.discardMessage": "你的更改尚未保存，放弃后无法恢复。",
+    "confirm.signOutTitle": "确认退出登录？",
     "sidebar.myPantry": "我的美食库",
     "sidebar.smartLists": "智能分类",
     "sidebar.builtFromMap": "根据你的地图生成",
@@ -680,6 +697,9 @@ const translations = {
     "button.remove": "移除",
     "button.save": "保存",
     "button.cancel": "取消",
+    "button.continue": "继续",
+    "button.discard": "放弃更改",
+    "button.signOut": "退出登录",
     "button.copy": "复制",
     "button.copied": "已复制",
     "button.map": "地图",
@@ -1114,6 +1134,11 @@ let locationCore = null;
 let locationController = null;
 let locationState = null;
 let locationUiReady = false;
+let uiCore = null;
+let uiShellController = null;
+let confirmController = null;
+let uiComponents = null;
+let dataClient = null;
 let activeFilter = "all";
 let selectedRestaurantId = null;
 let isSpotCardOpen = false;
@@ -1157,6 +1182,8 @@ let activeDetailRestaurantId = null;
 let detailCloseTimer = null;
 let detailClosePointerAt = null;
 let recipeDialogDragStart = null;
+let listFormBaseline = "";
+let recipeFormBaseline = "";
 
 const DISH_AUTOSAVE_DELAY = 700;
 const REVIEW_AUTOSAVE_DELAY = 700;
@@ -1399,12 +1426,39 @@ const elements = {
   adminLogoutButton: document.querySelector("#adminLogoutButton"),
 };
 
-loadLocationCore();
+loadBrowserCore();
 
-async function loadLocationCore() {
+async function loadBrowserCore() {
   try {
-    locationCore = await import(LOCATION_CORE_URL);
+    const [loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient] = await Promise.all([
+      import(LOCATION_CORE_URL),
+      import(UI_CORE_URL),
+      import(UI_SHELL_URL),
+      import(UI_DIALOGS_URL),
+      import(UI_COMPONENTS_URL),
+      import(DATA_CLIENT_URL)
+    ]);
+    locationCore = loadedLocationCore;
+    uiCore = loadedUiCore;
     locationState = locationCore.createInitialLocationModel();
+    uiShellController = loadedUiShell.createUiShell({
+      window,
+      document,
+      onLayoutChange: () => {
+        setSpotCardOpenForCurrentViewport();
+        render();
+      }
+    });
+    uiShellController.start();
+    confirmController = loadedUiDialogs.createConfirmController({ document });
+    uiComponents = loadedUiComponents;
+    dataClient = loadedDataClient.createDataClient({
+      fetch: window.fetch.bind(window),
+      messages: {
+        loginRequired: () => t("api.loginRequired"),
+        requestFailed: () => t("api.requestFailed"),
+      },
+    });
     await boot();
   } catch (error) {
     showBootError(error);
@@ -1713,7 +1767,10 @@ async function loadIntegrations() {
     elements.integrationList.querySelectorAll("[data-revoke-integration]").forEach((button) => {
       button.addEventListener("click", async () => {
         const integration = integrations.find((item) => item.id === button.dataset.revokeIntegration);
-        if (!integration || !confirm(t("settings.revokeConfirm", { name: integration.client_name }))) return;
+        if (!integration || !(await confirmAction(t("settings.revokeConfirm", { name: integration.client_name }), {
+          confirmLabel: t("settings.revoke"),
+          tone: "danger",
+        }))) return;
         await api(`/api/integrations/${integration.id}`, { method: "DELETE" });
         await loadIntegrations();
       });
@@ -1897,21 +1954,7 @@ function syncFilterButtons() {
 }
 
 async function api(path, options = {}) {
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...(options.headers ?? {}),
-    },
-  });
-  if (response.status === 401) {
-    throw new Error(t("api.loginRequired"));
-  }
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.detail || data.error || t("api.requestFailed"));
-  }
-  return data;
+  return dataClient.request(path, options);
 }
 
 async function loadMe() {
@@ -1997,7 +2040,10 @@ async function handleLoginButton() {
     openAuthDialog();
     return;
   }
-  if (!confirm(t("auth.signOutConfirm", { email: currentUser.email }))) return;
+  if (!(await confirmAction(t("auth.signOutConfirm", { email: currentUser.email }), {
+    title: t("confirm.signOutTitle"),
+    confirmLabel: t("button.signOut"),
+  }))) return;
   await api("/auth/logout", { method: "POST" });
   currentUser = null;
   restaurants = [];
@@ -2275,11 +2321,35 @@ function renderShareChrome() {
   elements.pasteStatus.textContent = t("paste.shared");
 }
 
+function confirmAction(message, {
+  title = t("confirm.actionTitle"),
+  confirmLabel = t("button.continue"),
+  tone = "default",
+} = {}) {
+  if (!confirmController) return Promise.resolve(false);
+  return confirmController.ask({
+    title,
+    message,
+    confirmLabel,
+    cancelLabel: t("button.cancel"),
+    tone,
+  });
+}
+
+function formSnapshot(form) {
+  if (!form) return "";
+  return JSON.stringify([...form.elements]
+    .filter((field) => field.name && !["submit", "button"].includes(field.type))
+    .map((field) => {
+      if (field.type === "file") return [field.name, [...(field.files || [])].map((file) => `${file.name}:${file.size}`)];
+      if (["checkbox", "radio"].includes(field.type)) return [field.name, field.checked, field.value];
+      return [field.name, field.value];
+    }));
+}
+
 function requireLogin() {
   if (currentUser) return true;
-  if (confirm(t("auth.required"))) {
-    openAuthDialog();
-  }
+  openAuthDialog();
   return false;
 }
 
@@ -2336,8 +2406,15 @@ function fillRestaurantForm(restaurant) {
   form.notes.value = restaurant.notes || "";
 }
 
-function closeRestaurantDialog({ force = false } = {}) {
-  if (!force && hasUnsavedRestaurantForm() && !confirm(t("spot.discardConfirm"))) return false;
+async function closeRestaurantDialog({ force = false } = {}) {
+  if (!force && hasUnsavedRestaurantForm()) {
+    const discard = await confirmAction(t("confirm.discardMessage"), {
+      title: t("confirm.discardTitle"),
+      confirmLabel: t("button.discard"),
+      tone: "danger",
+    });
+    if (!discard) return false;
+  }
   cancelAddDialogSwipeClose();
   elements.addDialog.close();
   resetRestaurantForm();
@@ -2387,7 +2464,7 @@ function moveAddDialogSwipeClose(event) {
   event.preventDefault();
 }
 
-function finishAddDialogSwipeClose(event) {
+async function finishAddDialogSwipeClose(event) {
   if (!addDialogDragStart || event.pointerId !== addDialogDragStart.pointerId) return;
   const shouldClose = addDialogDragStart.lastY >= ADD_DIALOG_SWIPE_CLOSE_DISTANCE;
   const pointerId = addDialogDragStart.pointerId;
@@ -2395,7 +2472,11 @@ function finishAddDialogSwipeClose(event) {
   elements.restaurantForm.releasePointerCapture?.(pointerId);
   elements.restaurantForm.classList.remove("is-dragging");
   if (shouldClose) {
-    if (hasUnsavedRestaurantForm() && !confirm(t("spot.discardConfirm"))) {
+    if (hasUnsavedRestaurantForm() && !(await confirmAction(t("confirm.discardMessage"), {
+      title: t("confirm.discardTitle"),
+      confirmLabel: t("button.discard"),
+      tone: "danger",
+    }))) {
       resetAddDialogDragStyles();
       return;
     }
@@ -2562,7 +2643,11 @@ async function handleDishAction(button) {
   const item = button.closest(".dish-editor-item");
   const dishId = item.dataset.dishId;
   if (button.dataset.dishAction === "delete") {
-    if (!confirm(t("spot.deleteDishConfirm"))) return;
+    if (!(await confirmAction(t("spot.deleteDishConfirm"), {
+      title: t("confirm.deleteTitle"),
+      confirmLabel: t("button.delete"),
+      tone: "danger",
+    }))) return;
     await api(`/api/dishes/${dishId}`, { method: "DELETE" });
     removeDish(dishId);
     return;
@@ -2830,7 +2915,11 @@ async function deleteRestaurantById(restaurantId) {
   if (!requireLogin()) return;
   const restaurant = restaurants.find((item) => item.id === restaurantId);
   if (!restaurant) return;
-  if (!confirm(t("spot.deleteConfirm", { name: restaurant.name }))) return;
+  if (!(await confirmAction(t("spot.deleteConfirm", { name: restaurant.name }), {
+    title: t("confirm.deleteTitle"),
+    confirmLabel: t("button.delete"),
+    tone: "danger",
+  }))) return;
   await api(`/api/restaurants/${restaurant.id}`, { method: "DELETE" });
   restaurants = restaurants.filter((item) => item.id !== restaurant.id);
   syncCurrentUserRestaurantCount();
@@ -3223,7 +3312,11 @@ async function handleDetailDishAction(button) {
     return;
   }
   if (action === "delete") {
-    if (!confirm(t("detail.deleteDishConfirm"))) return;
+    if (!(await confirmAction(t("detail.deleteDishConfirm"), {
+      title: t("confirm.deleteTitle"),
+      confirmLabel: t("button.delete"),
+      tone: "danger",
+    }))) return;
     clearDishAutosaveTimer(dishId);
     await api(`/api/dishes/${dishId}`, { method: "DELETE" });
     editingDetailDishIds.delete(String(dishId));
@@ -3333,7 +3426,7 @@ async function pasteAndAddFromClipboard() {
       setSpotCardOpen(true);
       render();
       const duplicateDistance = formatDistance(haversineDistance(duplicate, { lat: parsed.lat, lng: parsed.lng }));
-      confirmedCreate = confirm(
+      confirmedCreate = await confirmAction(
         t("paste.duplicateConfirm", { name: duplicate.name, address: duplicate.address || t("paste.noAddress"), distance: duplicateDistance }),
       );
       if (!confirmedCreate) {
@@ -3341,7 +3434,7 @@ async function pasteAndAddFromClipboard() {
         return;
       }
     }
-    if (!confirmedCreate && !confirm(t("paste.addConfirm", { name }))) return;
+    if (!confirmedCreate && !(await confirmAction(t("paste.addConfirm", { name })))) return;
     const body = {
       name,
       address: parsed.address || "",
@@ -3892,6 +3985,7 @@ function updateTopbarElevation() {
 
 function renderViewShell() {
   document.body.dataset.view = activeView;
+  uiShellController?.setActiveView(activeView);
   elements.viewPanels.forEach((panel) => {
     panel.hidden = panel.dataset.viewPanel !== activeView;
   });
@@ -3996,12 +4090,14 @@ function selectFirstVisibleRestaurant() {
 }
 
 function isMobileMapViewport() {
-  return window.matchMedia?.(MOBILE_VIEWPORT_QUERY)?.matches ?? false;
+  return uiShellController?.getModel().layout === "mobile" || document.body.dataset.layout === "mobile";
 }
 
 function getVisibleRestaurants() {
-  const term = activeView === "my-map" ? elements.searchInput.value.trim().toLowerCase() : "";
-  return restaurantsForActiveCategory().filter((restaurant) => !term || restaurantSearchText(restaurant).includes(term));
+  const term = activeView === "my-map" ? elements.searchInput.value : "";
+  return uiCore
+    ? uiCore.filterBySearch(restaurantsForActiveCategory(), term, restaurantSearchText)
+    : restaurantsForActiveCategory().filter((restaurant) => !term || restaurantSearchText(restaurant).includes(term.trim().toLowerCase()));
 }
 
 function renderCounts() {
@@ -4340,8 +4436,10 @@ function renderSharePackHistory() {
 
 function renderRecipesView() {
   if (!elements.recipeList || !elements.recipeDetail) return;
-  const term = elements.searchInput.value.trim().toLowerCase();
-  const visible = recipes.filter((recipe) => recipeSearchText(recipe).includes(term));
+  const term = elements.searchInput.value;
+  const visible = uiCore
+    ? uiCore.filterBySearch(recipes, term, recipeSearchText)
+    : recipes.filter((recipe) => recipeSearchText(recipe).includes(term.trim().toLowerCase()));
   elements.recipeList.innerHTML = visible.length
     ? visible.map(recipeRowTemplate).join("")
     : emptyInfoTemplate(t("recipes.emptyTitle"), t("recipes.emptyBody"));
@@ -4422,13 +4520,25 @@ function openRecipeDialog(recipe = null) {
   elements.saveRecipeButton.textContent = recipe ? t("recipes.update") : t("recipes.save");
   elements.recipeFormHelp.textContent = t("recipes.formHelp");
   updateRecipeImageName(recipe);
+  recipeFormBaseline = formSnapshot(elements.recipeForm);
   elements.recipeDialog.showModal();
 }
 
-function closeRecipeDialog() {
+async function closeRecipeDialog({ force = false } = {}) {
+  const hasNewImage = Boolean(elements.recipeImageInput?.files?.length);
+  if (!force && (formSnapshot(elements.recipeForm) !== recipeFormBaseline || hasNewImage)) {
+    const discard = await confirmAction(t("confirm.discardMessage"), {
+      title: t("confirm.discardTitle"),
+      confirmLabel: t("button.discard"),
+      tone: "danger",
+    });
+    if (!discard) return false;
+  }
   editingRecipeId = null;
+  recipeFormBaseline = "";
   cancelRecipeDialogSwipeClose();
   elements.recipeDialog?.close();
+  return true;
 }
 
 function startRecipeDialogSwipeClose(event) {
@@ -4463,7 +4573,7 @@ function moveRecipeDialogSwipeClose(event) {
   event.preventDefault();
 }
 
-function finishRecipeDialogSwipeClose(event) {
+async function finishRecipeDialogSwipeClose(event) {
   if (!recipeDialogDragStart || event.pointerId !== recipeDialogDragStart.pointerId) return;
   const shouldClose = recipeDialogDragStart.lastY >= ADD_DIALOG_SWIPE_CLOSE_DISTANCE;
   const pointerId = recipeDialogDragStart.pointerId;
@@ -4471,8 +4581,8 @@ function finishRecipeDialogSwipeClose(event) {
   elements.recipeForm.releasePointerCapture?.(pointerId);
   elements.recipeForm.classList.remove("is-dragging");
   if (shouldClose) {
-    elements.recipeForm.classList.add("is-dismissing");
-    window.setTimeout(closeRecipeDialog, 170);
+    const closed = await closeRecipeDialog();
+    if (!closed) resetRecipeDialogDragStyles();
     return;
   }
   resetRecipeDialogDragStyles();
@@ -4510,7 +4620,7 @@ async function saveRecipeFromForm(event) {
     upsertRecipe(recipe);
     selectedRecipeId = recipe.id;
     elements.recipeFormHelp.textContent = t("recipes.saved");
-    closeRecipeDialog();
+    await closeRecipeDialog({ force: true });
     render();
   } catch (error) {
     elements.recipeFormHelp.textContent = error.message;
@@ -4539,7 +4649,11 @@ function updateRecipeImageName(recipe = null) {
 }
 
 async function deleteRecipe(recipe) {
-  if (!recipe || !confirm(t("recipes.deleteConfirm", { title: recipe.title }))) return;
+  if (!recipe || !(await confirmAction(t("recipes.deleteConfirm", { title: recipe.title }), {
+    title: t("confirm.deleteTitle"),
+    confirmLabel: t("button.delete"),
+    tone: "danger",
+  }))) return;
   await api(`/api/recipes/${recipe.id}`, { method: "DELETE" });
   recipes = recipes.filter((item) => item.id !== recipe.id);
   selectedRecipeId = recipes[0]?.id ?? null;
@@ -4607,7 +4721,10 @@ function sharePackHistoryTemplate(pack) {
 
 async function revokeSharePack(token) {
   const pack = sharePacks.find((item) => item.token === token);
-  if (!pack || !confirm(t("sharePack.revokeConfirm", { title: pack.title }))) return;
+  if (!pack || !(await confirmAction(t("sharePack.revokeConfirm", { title: pack.title }), {
+    confirmLabel: t("sharePack.revokeAction"),
+    tone: "danger",
+  }))) return;
   await api(`/api/share-packs/${token}`, { method: "DELETE" });
   sharePacks = sharePacks.filter((item) => item.token !== token);
   renderSharePackHistory();
@@ -4724,28 +4841,32 @@ async function handleAdminUserAction(button) {
   const action = button.dataset.adminAction;
   if (action === "plan") {
     const nextPlan = button.dataset.nextPlan === "paid" ? "paid" : "free";
-    if (!confirm(t("admin.confirmPlan", { email: user.email, plan: adminPlanLabel(nextPlan) }))) return;
+    if (!(await confirmAction(t("admin.confirmPlan", { email: user.email, plan: adminPlanLabel(nextPlan) })))) return;
     await updateAdminUser(user.id, { plan: nextPlan });
     return;
   }
   if (action === "suspend") {
-    if (!confirm(t("admin.confirmSuspend", { email: user.email }))) return;
+    if (!(await confirmAction(t("admin.confirmSuspend", { email: user.email }), { tone: "danger" }))) return;
     await updateAdminUser(user.id, { account_status: "suspended" });
     return;
   }
   if (action === "reactivate") {
-    if (!confirm(t("admin.confirmReactivate", { email: user.email }))) return;
+    if (!(await confirmAction(t("admin.confirmReactivate", { email: user.email })))) return;
     await updateAdminUser(user.id, { account_status: "active" });
     return;
   }
   if (action === "delete") {
-    if (!confirm(t("admin.confirmDelete", { email: user.email }))) return;
+    if (!(await confirmAction(t("admin.confirmDelete", { email: user.email }), {
+      title: t("confirm.deleteTitle"),
+      confirmLabel: t("button.delete"),
+      tone: "danger",
+    }))) return;
     const data = await api(`/api/admin/users/${user.id}`, { method: "DELETE" });
     replaceAdminUser(data.user);
     return;
   }
   if (action === "restore") {
-    if (!confirm(t("admin.confirmRestore", { email: user.email }))) return;
+    if (!(await confirmAction(t("admin.confirmRestore", { email: user.email })))) return;
     const data = await api(`/api/admin/users/${user.id}/restore`, { method: "POST" });
     replaceAdminUser(data.user);
   }
@@ -5150,29 +5271,19 @@ function coverTemplate(list) {
 }
 
 function emptyStateTemplate(message, actionLabel) {
-  return `
-    <div class="empty-panel">
-      <strong>${escapeHtml(message)}</strong>
-      ${actionLabel ? `<button class="secondary-button" type="button" data-empty-action>${escapeHtml(actionLabel)}</button>` : ""}
-    </div>
-  `;
+  return uiComponents.emptyStateTemplate({ title: message, actionLabel });
 }
 
 function emptyInfoTemplate(title, message) {
-  return `
-    <div class="empty-panel empty-info-panel">
-      <strong>${escapeHtml(title)}</strong>
-      <p>${escapeHtml(message)}</p>
-    </div>
-  `;
+  return uiComponents.emptyStateTemplate({ title, message });
 }
 
 function loadingPanel(message) {
-  return `<div class="empty-panel"><strong>${escapeHtml(message)}</strong></div>`;
+  return uiComponents.statusPanelTemplate(message);
 }
 
 function errorPanel(message) {
-  return `<div class="empty-panel error"><strong>${escapeHtml(message)}</strong></div>`;
+  return uiComponents.statusPanelTemplate(message, "error");
 }
 
 async function ensureListDetail(listId) {
@@ -5233,6 +5344,7 @@ function openCreateListDialog() {
   elements.listFormTitle.textContent = t("list.createTitle");
   elements.saveListButton.textContent = t("button.createList");
   elements.listFormHelp.textContent = t("list.defaultPrivate");
+  listFormBaseline = formSnapshot(elements.listForm);
   elements.listDialog.showModal();
 }
 
@@ -5247,13 +5359,24 @@ function openEditListDialog(list) {
   elements.listFormTitle.textContent = t("list.editTitle");
   elements.saveListButton.textContent = t("button.updateList");
   elements.listFormHelp.textContent = t("list.editHelp");
+  listFormBaseline = formSnapshot(elements.listForm);
   elements.listDialog.showModal();
 }
 
-function closeListDialog() {
+async function closeListDialog({ force = false } = {}) {
+  if (!force && formSnapshot(elements.listForm) !== listFormBaseline) {
+    const discard = await confirmAction(t("confirm.discardMessage"), {
+      title: t("confirm.discardTitle"),
+      confirmLabel: t("button.discard"),
+      tone: "danger",
+    });
+    if (!discard) return false;
+  }
   elements.listDialog.close();
   editingListId = null;
+  listFormBaseline = "";
   elements.listForm.reset();
+  return true;
 }
 
 async function saveListFromForm(event) {
@@ -5279,7 +5402,7 @@ async function saveListFromForm(event) {
     selectedListId = list.id;
     activeMyListKey = `custom:${list.id}`;
     if (!editingListId) saveListFilterOrder([list.id, ...orderedLists().filter((item) => item.id !== list.id).map((item) => item.id)]);
-    closeListDialog();
+    await closeListDialog({ force: true });
     setActiveView("my-lists");
   } catch (error) {
     elements.listFormHelp.textContent = error.message;
@@ -5304,7 +5427,11 @@ async function toggleListVisibility(list) {
 }
 
 async function deleteList(list) {
-  if (!requireLogin() || !confirm(t("list.deleteConfirm", { title: list.title }))) return;
+  if (!requireLogin() || !(await confirmAction(t("list.deleteConfirm", { title: list.title }), {
+    title: t("confirm.deleteTitle"),
+    confirmLabel: t("button.delete"),
+    tone: "danger",
+  }))) return;
   await api(`/api/lists/${list.id}`, { method: "DELETE" });
   lists = lists.filter((item) => item.id !== list.id);
   selectedListId = lists[0]?.id ?? null;

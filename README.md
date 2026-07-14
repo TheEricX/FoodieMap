@@ -100,6 +100,8 @@ npm run test:all
 
 测试会启动独立 SQLite 服务并自动删除临时账号和数据，不会使用 `data/foodiemap.db`。命令、staging 安全配置和失败调试见 [docs/automated-testing.md](docs/automated-testing.md)。
 
+前端采用共享业务核心与独立 desktop/mobile shell，并集中管理 API 请求、确认操作、未保存退出和空/错误状态。断点、模块职责和新功能双端检查清单见 [docs/responsive-ui-design.md](docs/responsive-ui-design.md)。
+
 ## Google 登录配置
 
 `server.py` 会自动读取项目根目录的 `.env`。如果你已经在终端里 `export` 了同名变量，终端里的值优先。
