@@ -4,6 +4,7 @@ test("@smoke app assets and health endpoint load with expected types", async ({ 
   const expected = new Map([
     ["/api/health", "application/json"],
     ["/app.js", "text/javascript"],
+    ["/i18n.mjs", "text/javascript"],
     ["/location-core.mjs", "text/javascript"],
     ["/ui-core.mjs", "text/javascript"],
     ["/ui-shell.mjs", "text/javascript"],
@@ -50,6 +51,17 @@ test("@smoke authenticated navigation works after startup and reload", async ({ 
   await page.waitForLoadState("networkidle");
   await page.locator('[data-view="my-map"]:visible').first().click();
   await expect(page.locator("#mapView")).toBeVisible();
+});
+
+test("@smoke language selection persists through reload", async ({ signedInPage: page }) => {
+  await page.locator("#languageMenu > summary").click();
+  await page.locator('[data-language-option="zh"]').click();
+  await expect(page.locator('a[data-view="my-map"]:visible').first()).toHaveText("地图");
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await expect(page.locator('a[data-view="my-map"]:visible').first()).toHaveText("地图");
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
 });
 
 test("@staging staging reports PostgreSQL and GCS", async ({ request }) => {

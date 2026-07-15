@@ -111,6 +111,7 @@ PUBLIC_FILES = {
     "account-share-templates.mjs",
     "form-templates.mjs",
     "map-view-templates.mjs",
+    "i18n.mjs",
     "styles.css",
     "ui-tokens.css",
     "ui-shell.css",

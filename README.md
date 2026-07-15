@@ -286,6 +286,7 @@ docker compose down
 - `account-share-templates.mjs`：公开分享、分享历史和管理员用户模板
 - `form-templates.mjs`：双端共用的表单行、菜品编辑器、分享选择器和 Connected Apps 模板
 - `map-view-templates.mjs`：地图 marker、清单筛选、最近餐厅和选中餐厅摘要模板
+- `i18n.mjs`：完整中英文案、语言规范化、fallback 和参数插值
 - `data-client.mjs`：统一 API 请求、认证错误和 FormData/JSON 处理
 - `server.py`：FastAPI 后端、SQLite、OAuth、上传、分享、recipe/list API、管理员 API 和 Free/Paid 额度规则
 - `scripts/migrate_sqlite_to_postgres_gcs.py`：一次性迁移脚本，用于把本地 SQLite 数据和上传文件迁到 Cloud SQL PostgreSQL / Google Cloud Storage

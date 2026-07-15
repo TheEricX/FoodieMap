@@ -13,6 +13,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Added a dedicated Lists/Discovery template module with desktop/mobile management-flow regression coverage.
 - Added shared public-share and Admin templates with signed-out preview and user-management regression coverage.
 - Added shared form and Map View template modules for connected apps, dish editors, share/list pickers, markers, filters, recent rows, and selected-spot metadata.
+- Added a tested bilingual i18n module with matching English/Chinese keys, fallback behavior, and parameter interpolation.
 - Added an OAuth 2.1-protected remote MCP server for authorized restaurant, list, and recipe access plus private list creation, with connected-app revocation and audit metadata.
 - Added repeatable Playwright desktop/mobile regression tests, isolated test accounts and data, protected staging cleanup, and GitHub Actions release gates.
 - Added an optional privacy browsing map that keeps restaurant markers usable without location permission, plus a tested location state controller and permission recovery flow.
@@ -36,6 +37,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Moved system-list, private-list, and public Discovery details out of `app.js` while preserving shared edit, delete, map, publish, and copy action hooks.
 - Moved Share Pack history, public share previews, Recipe Share previews, and Admin user rows out of the main frontend orchestrator.
 - Moved repeated form controls and Map View presentation markup out of `app.js` while preserving existing API, upload, autosave, drag, selection, and action handlers.
+- Moved the complete English/Chinese dictionary and translation rules out of `app.js` without changing visible copy or stored language preferences.
 
 - Location is now requested only after user intent, keeps coordinates in browser memory only, reports approximate accuracy, and sorts by recent updates when distance is unavailable.
 - Standardized mobile form action bars, close controls, selected spot actions, and modal button grids for more reliable touch interaction.
