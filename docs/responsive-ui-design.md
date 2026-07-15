@@ -14,6 +14,8 @@ domain-core.mjs   restaurant, dish, list, recipe, and share normalization plus c
 view-templates.mjs shared Recipe, Restaurant, and List presentation templates
 list-view-templates.mjs shared system-list, private-list, and Discovery detail templates
 account-share-templates.mjs public share, share history, and Admin user templates
+form-templates.mjs shared form rows, dish editors, share pickers, and connected-app templates
+map-view-templates.mjs shared map markers, list filters, recent rows, and selected-spot metadata
 ui-tokens.css     shared breakpoints, target sizes, spacing, and layers
 ui-shell.css      desktop/mobile shell ownership and container behavior
 app.js            product state, API orchestration, rendering, and commands
@@ -52,6 +54,8 @@ JavaScript must use `classifyLayoutMode()` rather than user-agent detection. CSS
 - Repeated rows and details belong in `view-templates.mjs`. Event binding stays in `app.js`, keeping templates free of global state and direct DOM access.
 - Lists and Discovery compose those shared rows through `list-view-templates.mjs`; list management commands are expressed as `data-list-action` hooks and bound by the orchestrator.
 - Public Share Pack, Recipe Share, connected history, and Admin rows use `account-share-templates.mjs`; authentication, API calls, and confirmations remain outside the template layer.
+- Repeated form rows and selection controls use `form-templates.mjs`; upload, save, revoke, and destructive commands remain in the orchestrator.
+- Map markers, list filters, recent rows, and selected-spot metadata use `map-view-templates.mjs`; map positioning and selection remain in the orchestrator.
 
 ## Desktop Layout
 

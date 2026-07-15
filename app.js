@@ -12,6 +12,8 @@ const DOMAIN_CORE_URL = "/domain-core.mjs?v=20260714-domain";
 const VIEW_TEMPLATES_URL = "/view-templates.mjs?v=20260714-views";
 const LIST_VIEW_TEMPLATES_URL = "/list-view-templates.mjs?v=20260714-lists";
 const ACCOUNT_SHARE_TEMPLATES_URL = "/account-share-templates.mjs?v=20260714-account";
+const FORM_TEMPLATES_URL = "/form-templates.mjs?v=20260714-forms";
+const MAP_VIEW_TEMPLATES_URL = "/map-view-templates.mjs?v=20260714-map";
 const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
@@ -1148,6 +1150,8 @@ let domainModel = null;
 let viewTemplates = null;
 let listViewTemplates = null;
 let accountShareTemplates = null;
+let formTemplates = null;
+let mapViewTemplates = null;
 let activeFilter = "all";
 let selectedRestaurantId = null;
 let isSpotCardOpen = false;
@@ -1439,7 +1443,7 @@ loadBrowserCore();
 
 async function loadBrowserCore() {
   try {
-    const [loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient, loadedDomainCore, loadedViewTemplates, loadedListViewTemplates, loadedAccountShareTemplates] = await Promise.all([
+    const [loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient, loadedDomainCore, loadedViewTemplates, loadedListViewTemplates, loadedAccountShareTemplates, loadedFormTemplates, loadedMapViewTemplates] = await Promise.all([
       import(LOCATION_CORE_URL),
       import(UI_CORE_URL),
       import(UI_SHELL_URL),
@@ -1449,7 +1453,9 @@ async function loadBrowserCore() {
       import(DOMAIN_CORE_URL),
       import(VIEW_TEMPLATES_URL),
       import(LIST_VIEW_TEMPLATES_URL),
-      import(ACCOUNT_SHARE_TEMPLATES_URL)
+      import(ACCOUNT_SHARE_TEMPLATES_URL),
+      import(FORM_TEMPLATES_URL),
+      import(MAP_VIEW_TEMPLATES_URL)
     ]);
     locationCore = loadedLocationCore;
     uiCore = loadedUiCore;
@@ -1511,6 +1517,21 @@ async function loadBrowserCore() {
       adminPlanLabel,
       adminStatusLabel,
       authMethodLabel,
+    });
+    formTemplates = loadedFormTemplates.createFormTemplates({
+      translate: t,
+      statusLabel,
+      dishStatusLabel,
+      restaurantThumb: restaurantThumbTemplate,
+      emptyState: emptyStateTemplate,
+    });
+    mapViewTemplates = loadedMapViewTemplates.createMapViewTemplates({
+      translate: t,
+      restaurantThumb: restaurantThumbTemplate,
+      restaurantImageUrl,
+      statusLabel,
+      visibilityLabel,
+      shortMapName,
     });
     await boot();
   } catch (error) {
@@ -1810,13 +1831,7 @@ async function loadIntegrations() {
   try {
     const data = await api("/api/integrations");
     const integrations = data.integrations || [];
-    elements.integrationList.innerHTML = integrations.length
-      ? integrations.map((item) => `
-        <article class="integration-item">
-          <div><strong>${escapeHtml(item.client_name)}</strong><small>${escapeHtml(item.scopes.join(" · "))}</small></div>
-          <button class="secondary-button danger" type="button" data-revoke-integration="${escapeAttribute(item.id)}">${escapeHtml(t("settings.revoke"))}</button>
-        </article>`).join("")
-      : `<p class="form-help">${escapeHtml(t("settings.connectedEmpty"))}</p>`;
+    elements.integrationList.innerHTML = formTemplates.integrationList(integrations);
     elements.integrationList.querySelectorAll("[data-revoke-integration]").forEach((button) => {
       button.addEventListener("click", async () => {
         const integration = integrations.find((item) => item.id === button.dataset.revokeIntegration);
@@ -2669,27 +2684,7 @@ function renderDishEditor(restaurant) {
 }
 
 function dishEditorTemplate(dish) {
-  return `
-    <article class="dish-editor-item" data-dish-id="${dish.id}">
-      ${dish.image_url ? `<img src="${escapeHtml(dish.image_url)}" alt="">` : '<div class="dish-image-placeholder">IMG</div>'}
-      <div class="dish-editor-fields">
-        <input data-field="name" value="${escapeAttribute(dish.name)}" />
-        <div class="dish-form-grid compact">
-          <select data-field="dish_status">
-            <option value="liked" ${dish.dish_status === "liked" ? "selected" : ""}>${t("status.liked")}</option>
-            <option value="tried" ${dish.dish_status === "tried" ? "selected" : ""}>${t("status.tried")}</option>
-          </select>
-          <input data-field="rating" type="number" min="0" max="5" step="0.1" value="${Number(dish.rating || 0)}" />
-          <input class="dish-image-input" type="file" accept="image/jpeg,image/png,image/webp" />
-        </div>
-        <textarea data-field="notes" rows="2" placeholder="${escapeAttribute(t("detail.dishNotesPlaceholder"))}">${escapeHtml(dish.notes || "")}</textarea>
-      </div>
-      <div class="dish-editor-actions">
-        <button class="secondary-button" type="button" data-dish-action="save">${t("button.save")}</button>
-        <button class="secondary-button danger" type="button" data-dish-action="delete">${t("button.delete")}</button>
-      </div>
-    </article>
-  `;
+  return formTemplates.dishEditor(dish);
 }
 
 async function handleDishAction(button) {
@@ -2768,13 +2763,7 @@ function openShareDialog() {
   elements.shareUrlInput.value = "";
   const dishes = restaurant.dishes ?? [];
   elements.shareDishList.innerHTML = dishes.length
-    ? dishes.map((dish) => `
-        <label class="share-dish-item">
-          <input type="checkbox" value="${dish.id}" ${dish.dish_status === "liked" ? "checked" : ""} />
-          <span>${escapeHtml(dish.name)}</span>
-          <small>☆ ${Number(dish.rating || 0).toFixed(1)} · ${dishStatusLabel(dish.dish_status)}</small>
-        </label>
-      `).join("")
+    ? dishes.map(formTemplates.shareDishOption).join("")
     : `<p class="form-help">${escapeHtml(t("share.noDishes"))}</p>`;
   elements.createShareButton.disabled = !dishes.length;
   elements.shareDialog.showModal();
@@ -2819,30 +2808,7 @@ function openSharePackDialog() {
 }
 
 function sharePackRestaurantOptionTemplate(restaurant) {
-  const dishes = restaurant.dishes ?? [];
-  return `
-    <article class="share-pack-option" data-share-pack-restaurant="${restaurant.id}">
-      <label class="share-pack-restaurant-check">
-        <input type="checkbox" data-share-pack-restaurant-check value="${restaurant.id}" />
-        <span>
-          <strong>${escapeHtml(restaurant.name)}</strong>
-          <small>${escapeHtml(restaurant.address || statusLabel(restaurant.status))}</small>
-        </span>
-      </label>
-      <div class="share-pack-dishes">
-        ${
-          dishes.length
-            ? dishes.map((dish) => `
-                <label>
-                  <input type="checkbox" data-share-pack-dish value="${dish.id}" />
-                  <span>${escapeHtml(dish.name)} · ☆ ${Number(dish.rating || 0).toFixed(1)}</span>
-                </label>
-              `).join("")
-            : `<p>${escapeHtml(t("detail.noMenu"))}</p>`
-        }
-      </div>
-    </article>
-  `;
+  return formTemplates.sharePackRestaurantOption(restaurant);
 }
 
 function sharePackPayloadFromForm() {
@@ -3077,12 +3043,7 @@ function renderDetailHeader(restaurant = selectedRestaurant()) {
   if (!restaurant) return;
   elements.detailSpotName.textContent = restaurant.name;
   const distance = distanceLabel(restaurant);
-  elements.detailSpotMeta.innerHTML = `
-    <span>${statusLabel(restaurant.status)}</span>
-    <span>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)}</span>
-    <span>${t("count.visits", { count: restaurant.visit_count || 0 })}</span>
-    ${distance ? `<span>${escapeHtml(distance)}</span>` : ""}
-  `;
+  elements.detailSpotMeta.innerHTML = mapViewTemplates.detailMeta(restaurant, distance);
 }
 
 async function saveDetailRestaurant(event) {
@@ -3286,68 +3247,15 @@ function renderDetailDishList(restaurant) {
 }
 
 function detailDishTemplate(dish) {
-  if (!editingDetailDishIds.has(String(dish.id))) return detailDishPreviewTemplate(dish);
-  return detailDishEditTemplate(dish);
+  return formTemplates.detailDish(dish, editingDetailDishIds.has(String(dish.id)));
 }
 
 function detailDishPreviewTemplate(dish) {
-  const notes = dish.notes?.trim();
-  return `
-    <article class="detail-dish-card preview" data-dish-id="${dish.id}">
-      <div class="detail-dish-photo">
-        ${dish.image_url ? `<img src="${escapeAttribute(dish.image_url)}" alt="">` : "<span>IMG</span>"}
-      </div>
-      <div class="detail-dish-body">
-        <div class="detail-dish-summary">
-          <div>
-            <strong>${escapeHtml(dish.name)}</strong>
-            <div class="detail-dish-meta">
-              <span class="dish-status-pill">${dishStatusLabel(dish.dish_status)}</span>
-              <span>☆ ${Number(dish.rating || 0).toFixed(1)}</span>
-            </div>
-          </div>
-          <div class="detail-dish-actions">
-            <button class="secondary-button compact-action" type="button" data-detail-dish-action="edit">${t("button.edit")}</button>
-            <button class="secondary-button compact-action danger" type="button" data-detail-dish-action="delete">${t("button.delete")}</button>
-          </div>
-        </div>
-        <p class="detail-dish-notes-preview">${notes ? escapeHtml(notes) : t("detail.noDishNotes")}</p>
-      </div>
-    </article>
-  `;
+  return formTemplates.detailDishPreview(dish);
 }
 
 function detailDishEditTemplate(dish) {
-  return `
-    <article class="detail-dish-card editing" data-dish-id="${dish.id}">
-      <div class="detail-dish-photo">
-        ${dish.image_url ? `<img src="${escapeAttribute(dish.image_url)}" alt="">` : "<span>IMG</span>"}
-      </div>
-      <div class="detail-dish-body">
-        <input data-field="name" data-detail-dish-autosave value="${escapeAttribute(dish.name)}" />
-        <div class="detail-dish-controls">
-          <select data-field="dish_status" data-detail-dish-autosave>
-            <option value="liked" ${dish.dish_status === "liked" ? "selected" : ""}>${t("status.liked")}</option>
-            <option value="tried" ${dish.dish_status === "tried" ? "selected" : ""}>${t("status.tried")}</option>
-          </select>
-          <input data-field="rating" data-detail-dish-autosave type="number" min="0" max="5" step="0.1" value="${Number(dish.rating || 0)}" />
-          <label class="detail-file-dropzone compact" data-detail-file-dropzone>
-            <input class="detail-dish-image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden />
-            <span class="detail-file-mark" aria-hidden="true">＋</span>
-            <span>
-              <strong>${t("button.replacePhoto")}</strong>
-              <small>${t("detail.uploadHint")}</small>
-            </span>
-          </label>
-        </div>
-        <textarea data-field="notes" data-detail-dish-autosave rows="3" placeholder="${escapeAttribute(t("detail.dishNotesPlaceholder"))}">${escapeHtml(dish.notes || "")}</textarea>
-        <div class="detail-dish-actions">
-          <button class="secondary-button" type="button" data-detail-dish-action="done">${t("button.done")}</button>
-          <button class="secondary-button danger" type="button" data-detail-dish-action="delete">${t("button.delete")}</button>
-        </div>
-      </div>
-    </article>
-  `;
+  return formTemplates.detailDishEdit(dish);
 }
 
 async function handleDetailDishAction(button) {
@@ -4169,15 +4077,10 @@ function renderSidebarListFilters() {
   }
   const ordered = orderedLists();
   elements.sidebarListFilters.innerHTML = ordered.length
-    ? ordered.map((list) => `
-        <button class="list-filter-item ${activeMyListKey === `custom:${list.id}` ? "active" : ""}" type="button" draggable="true" data-sidebar-list-id="${list.id}">
-          <span class="drag-handle" aria-hidden="true">⋮⋮</span>
-          <span class="list-filter-text">
-            <strong>${escapeHtml(list.title)}</strong>
-            <small>${t("count.spots", { count: list.item_count || 0 })} · ${visibilityLabel(list.visibility)}</small>
-          </span>
-        </button>
-      `).join("")
+    ? ordered.map((list) => mapViewTemplates.listFilter(list, {
+        active: activeMyListKey === `custom:${list.id}`,
+        variant: "sidebar",
+      })).join("")
     : `<p class="sidebar-empty">${escapeHtml(t("sidebar.noLists"))}</p>`;
   elements.sidebarListFilters.querySelectorAll("[data-sidebar-list-id]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -4214,14 +4117,10 @@ function renderMobileListFilters() {
   }
   const ordered = orderedLists();
   elements.mobileListFilters.innerHTML = ordered.length
-    ? ordered.map((list) => `
-        <button class="list-filter-item ${activeMyListKey === `custom:${list.id}` ? "active" : ""}" type="button" data-mobile-list-id="${list.id}">
-          <span class="list-filter-text">
-            <strong>${escapeHtml(list.title)}</strong>
-            <small>${t("count.spots", { count: list.item_count || 0 })} · ${visibilityLabel(list.visibility)}</small>
-          </span>
-        </button>
-      `).join("")
+    ? ordered.map((list) => mapViewTemplates.listFilter(list, {
+        active: activeMyListKey === `custom:${list.id}`,
+        variant: "mobileMap",
+      })).join("")
     : `<p class="sidebar-empty">${escapeHtml(t("sidebar.noLists"))}</p>`;
   elements.mobileListFilters.querySelectorAll("[data-mobile-list-id]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -4247,14 +4146,10 @@ function renderMobileMyListFilters() {
   }
   const ordered = orderedLists();
   elements.mobileMyListFilters.innerHTML = ordered.length
-    ? ordered.map((list) => `
-        <button class="list-filter-item ${activeMyListKey === `custom:${list.id}` ? "active" : ""}" type="button" data-mobile-my-list-id="${list.id}">
-          <span class="list-filter-text">
-            <strong>${escapeHtml(list.title)}</strong>
-            <small>${t("count.spots", { count: list.item_count || 0 })} · ${visibilityLabel(list.visibility)}</small>
-          </span>
-        </button>
-      `).join("")
+    ? ordered.map((list) => mapViewTemplates.listFilter(list, {
+        active: activeMyListKey === `custom:${list.id}`,
+        variant: "mobileLists",
+      })).join("")
     : `<p class="sidebar-empty">${escapeHtml(t("sidebar.noLists"))}</p>`;
   elements.mobileMyListFilters.querySelectorAll("[data-mobile-my-list-id]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -4271,15 +4166,7 @@ function renderMobileMyListFilters() {
 function renderRecentList() {
   const recent = sortRestaurantsByDistance(getVisibleRestaurants()).slice(0, 5);
   elements.recentList.innerHTML = recent.length
-    ? recent.map((restaurant) => `
-        <button class="recent-item" data-id="${restaurant.id}">
-          ${restaurantThumbTemplate(restaurant)}
-          <span>
-            <strong>${escapeHtml(restaurant.name)}</strong>
-            <small>${escapeHtml(restaurantMetaLabel(restaurant))}</small>
-          </span>
-        </button>
-      `).join("")
+    ? recent.map((restaurant) => mapViewTemplates.recentRestaurant(restaurant, restaurantMetaLabel(restaurant))).join("")
     : `<p class="empty-recent">${escapeHtml(t("map.noMatches"))}</p>`;
   elements.recentList.querySelectorAll(".recent-item").forEach((item) => {
     item.addEventListener("click", () => {
@@ -4309,15 +4196,10 @@ function renderMarkers() {
     marker.style.left = `${point.x}%`;
     marker.style.top = `${point.y}%`;
     if (restaurant.id === selectedRestaurantId) marker.style.zIndex = "9";
-    marker.innerHTML = `
-      <span class="marker-photo">
-        <img src="${escapeAttribute(restaurantImageUrl(restaurant))}" alt="">
-      </span>
-      <span class="marker-caption">
-        <strong>${escapeHtml(shortMapName(restaurant.name))}</strong>
-        <small>${escapeHtml(ready ? formatUserDistance(distance) : statusLabel(restaurant.status))}</small>
-      </span>
-    `;
+    marker.innerHTML = mapViewTemplates.marker(
+      restaurant,
+      ready ? formatUserDistance(distance) : statusLabel(restaurant.status),
+    );
     marker.title = ready ? `${restaurant.name} - ${formatUserDistance(distance)}` : `${restaurant.name} - ${statusLabel(restaurant.status)}`;
     marker.addEventListener("click", () => {
       selectedRestaurantId = restaurant.id;
@@ -4394,14 +4276,7 @@ function mapChoiceUrls(restaurant) {
 }
 
 function renderSpotDishes(restaurant) {
-  const dishes = restaurant.dishes ?? [];
-  if (!dishes.length) return "";
-  return dishes.map((dish) => `
-    <span class="dish-pill ${dish.dish_status}">
-      ${dish.image_url ? `<img src="${escapeHtml(dish.image_url)}" alt="">` : ""}
-      ${escapeHtml(dish.name)} · ☆ ${Number(dish.rating || 0).toFixed(1)}
-    </span>
-  `).join("");
+  return mapViewTemplates.spotDishes(restaurant);
 }
 
 function renderListsView() {
@@ -5185,18 +5060,7 @@ function renderAddSpotsDialog() {
     return !term || haystack.includes(term);
   });
   elements.addSpotsList.innerHTML = visible.length
-    ? visible.map((restaurant) => `
-        <article class="add-spot-row">
-          ${restaurantThumbTemplate(restaurant)}
-          <div>
-            <strong>${escapeHtml(restaurant.name)}</strong>
-            <small>☆ ${Number(restaurant.personal_rating || 0).toFixed(1)} · ${statusLabel(restaurant.status)}${added.has(restaurant.id) ? ` · ${t("list.inThisList")}` : ""}</small>
-          </div>
-          <button class="secondary-button ${added.has(restaurant.id) ? "danger" : ""}" type="button" ${added.has(restaurant.id) ? `data-remove-list-spot="${restaurant.id}"` : `data-add-list-spot="${restaurant.id}"`}>
-            ${added.has(restaurant.id) ? t("button.remove") : t("button.add")}
-          </button>
-        </article>
-      `).join("")
+    ? visible.map((restaurant) => formTemplates.addSpotRow(restaurant, added.has(restaurant.id))).join("")
     : emptyStateTemplate(t("list.noRestaurantMatches"), "");
   elements.addSpotsList.querySelectorAll("[data-add-list-spot]").forEach((button) => {
     button.addEventListener("click", () => addSpotToList(list.id, button.dataset.addListSpot));

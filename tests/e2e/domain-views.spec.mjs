@@ -75,3 +75,51 @@ test("@responsive custom list manage actions edit and delete through the shared 
   await page.locator("[data-confirm-accept]").click();
   await expect(page.locator("#myListDetail h2")).not.toHaveText(updatedTitle);
 });
+
+test("@mobile Discovery publish guidance opens the list and publishes without overflow", async ({ signedInPage: page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "Mobile Discovery regression");
+  const suffix = Date.now().toString(36);
+  const title = `E2E Publish ${suffix}`;
+  const restaurantResponse = await page.request.post("/api/restaurants", { data: {
+    name: `E2E Publish Spot ${suffix}`,
+    address: "Toronto",
+    lat: 43.6532,
+    lng: -79.3832,
+    google_url: "https://www.google.com/maps?q=43.6532,-79.3832",
+    status: "want_to_go",
+    visit_count: 0,
+    personal_rating: 4.4,
+    notes: "Discovery publish guidance regression"
+  }});
+  expect(restaurantResponse.ok()).toBeTruthy();
+  const restaurant = (await restaurantResponse.json()).restaurant;
+  const listResponse = await page.request.post("/api/lists", { data: {
+    title,
+    description: "Private list ready to publish",
+    cover_image_url: ""
+  }});
+  expect(listResponse.ok()).toBeTruthy();
+  const list = (await listResponse.json()).list;
+  expect((await page.request.post(`/api/lists/${list.id}/items`, { data: { restaurant_id: restaurant.id } })).ok()).toBeTruthy();
+
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await page.locator('[data-view="discovery"]:visible').first().click();
+  const discoveryLayout = await page.locator("#discoveryView").evaluate((view) => ({
+    pageScrollWidth: document.documentElement.scrollWidth,
+    viewportWidth: document.documentElement.clientWidth,
+    viewScrollWidth: view.scrollWidth,
+    viewClientWidth: view.clientWidth
+  }));
+  expect(discoveryLayout.pageScrollWidth).toBeLessThanOrEqual(discoveryLayout.viewportWidth + 1);
+  expect(discoveryLayout.viewScrollWidth).toBeLessThanOrEqual(discoveryLayout.viewClientWidth + 1);
+  await expect(page.locator("#discoveryGrid [data-empty-action]")).toHaveText("Publish");
+  await page.locator("#discoveryGrid [data-empty-action]").click();
+  await expect(page.locator("#listsView")).toBeVisible();
+  await expect(page.locator("#myListDetail h2")).toHaveText(title);
+
+  await page.locator("#myListDetail .manage-list-menu > summary").click();
+  await page.locator('#myListDetail [data-list-action="publish"]').click();
+  await page.locator('[data-view="discovery"]:visible').first().click();
+  await expect(page.locator("#discoveryGrid [data-list-id]", { hasText: title })).toBeVisible();
+});

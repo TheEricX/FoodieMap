@@ -109,6 +109,8 @@ PUBLIC_FILES = {
     "view-templates.mjs",
     "list-view-templates.mjs",
     "account-share-templates.mjs",
+    "form-templates.mjs",
+    "map-view-templates.mjs",
     "styles.css",
     "ui-tokens.css",
     "ui-shell.css",
