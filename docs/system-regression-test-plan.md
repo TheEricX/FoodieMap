@@ -25,8 +25,12 @@ Run before browser testing:
 
 ```bash
 node --test tests/location-core.test.mjs
+node --test tests/map-interactions.test.mjs
+node --test tests/ui-swipe-dismiss.test.mjs
 node --check app.js
 node --check location-core.mjs
+node --check map-interactions.mjs
+node --check ui-swipe-dismiss.mjs
 python3 -m py_compile server.py scripts/migrate_sqlite_to_postgres_gcs.py
 docker build .
 ```
@@ -36,6 +40,8 @@ Confirm these static URLs return their expected content type rather than `index.
 ```text
 /app.js              text/javascript
 /location-core.mjs   text/javascript
+/map-interactions.mjs text/javascript
+/ui-swipe-dismiss.mjs text/javascript
 /styles.css           text/css
 /api/health           application/json
 ```

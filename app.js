@@ -7,6 +7,7 @@ const UI_CORE_URL = "/ui-core.mjs?v=20260712-shell";
 const UI_SHELL_URL = "/ui-shell.mjs?v=20260712-shell";
 const UI_DIALOGS_URL = "/ui-dialogs.mjs?v=20260714-dialogs";
 const UI_COMPONENTS_URL = "/ui-components.mjs?v=20260714-components";
+const UI_SWIPE_DISMISS_URL = "/ui-swipe-dismiss.mjs?v=20260714-swipe-dismiss";
 const DATA_CLIENT_URL = "/data-client.mjs?v=20260714-client";
 const DOMAIN_CORE_URL = "/domain-core.mjs?v=20260714-domain";
 const VIEW_TEMPLATES_URL = "/view-templates.mjs?v=20260714-views";
@@ -17,13 +18,12 @@ const MAP_VIEW_TEMPLATES_URL = "/map-view-templates.mjs?v=20260714-map";
 const I18N_URL = "/i18n.mjs?v=20260714-i18n";
 const MAP_LINK_CORE_URL = "/map-link-core.mjs?v=20260714-map-links";
 const MAP_GEOMETRY_URL = "/map-geometry.mjs?v=20260714-map-geometry";
+const MAP_INTERACTIONS_URL = "/map-interactions.mjs?v=20260714-map-interactions";
 const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
 const MAP_ZOOM_STEP = 0.18;
 const MAP_PAN_LIMIT_RATIO = 0.42;
-const ADD_DIALOG_SWIPE_CLOSE_DISTANCE = 110;
-const ADD_DIALOG_SWIPE_LOCK_DISTANCE = 12;
 let currentLanguage = getInitialLanguage();
 let i18nCore = null;
 
@@ -119,7 +119,6 @@ let selectedRestaurantId = null;
 let isSpotCardOpen = false;
 let spotCardDragStart = null;
 let suppressNextSpotCardOutsideClick = false;
-let addDialogDragStart = null;
 let editingRestaurantId = null;
 let shortLinkResolveTimer = null;
 let shareToken = getShareToken();
@@ -149,14 +148,13 @@ let authPasswordMode = "login";
 let authCodeCooldownTimer = null;
 let authCodeCooldownUntil = 0;
 let mapZoom = 1;
-let mapPan = { x: 0, y: 0 };
-let mapPanDrag = null;
-let mapGestureStartZoom = null;
+let mapInteractionController = null;
 let isDetailAddDishOpen = false;
 let activeDetailRestaurantId = null;
 let detailCloseTimer = null;
 let detailClosePointerAt = null;
-let recipeDialogDragStart = null;
+let restaurantSwipeDismiss = null;
+let recipeSwipeDismiss = null;
 let listFormBaseline = "";
 let recipeFormBaseline = "";
 
@@ -405,13 +403,14 @@ loadBrowserCore();
 
 async function loadBrowserCore() {
   try {
-    const [loadedI18n, loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient, loadedDomainCore, loadedViewTemplates, loadedListViewTemplates, loadedAccountShareTemplates, loadedFormTemplates, loadedMapViewTemplates, loadedMapLinkCore, loadedMapGeometry] = await Promise.all([
+    const [loadedI18n, loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedUiSwipeDismiss, loadedDataClient, loadedDomainCore, loadedViewTemplates, loadedListViewTemplates, loadedAccountShareTemplates, loadedFormTemplates, loadedMapViewTemplates, loadedMapLinkCore, loadedMapGeometry, loadedMapInteractions] = await Promise.all([
       import(I18N_URL),
       import(LOCATION_CORE_URL),
       import(UI_CORE_URL),
       import(UI_SHELL_URL),
       import(UI_DIALOGS_URL),
       import(UI_COMPONENTS_URL),
+      import(UI_SWIPE_DISMISS_URL),
       import(DATA_CLIENT_URL),
       import(DOMAIN_CORE_URL),
       import(VIEW_TEMPLATES_URL),
@@ -420,7 +419,8 @@ async function loadBrowserCore() {
       import(FORM_TEMPLATES_URL),
       import(MAP_VIEW_TEMPLATES_URL),
       import(MAP_LINK_CORE_URL),
-      import(MAP_GEOMETRY_URL)
+      import(MAP_GEOMETRY_URL),
+      import(MAP_INTERACTIONS_URL)
     ]);
     i18nCore = loadedI18n;
     mapLinkCore = loadedMapLinkCore;
@@ -501,6 +501,32 @@ async function loadBrowserCore() {
       visibilityLabel,
       shortMapName,
     });
+    mapInteractionController = loadedMapInteractions.createMapInteractionController({
+      target: elements.cuteMap,
+      minZoom: MAP_ZOOM_MIN,
+      maxZoom: MAP_ZOOM_MAX,
+      zoomStep: MAP_ZOOM_STEP,
+      panLimitRatio: MAP_PAN_LIMIT_RATIO,
+      onZoomChange: (zoom) => {
+        mapZoom = zoom;
+        updateMapZoomUi();
+        if (locationUiReady) renderMarkers();
+      },
+    });
+    restaurantSwipeDismiss = loadedUiSwipeDismiss.createSwipeDismissController({
+      surface: elements.addDialog,
+      dragTarget: elements.restaurantForm,
+      handles: [elements.restaurantModalHead, elements.restaurantDragHandle],
+      isEnabled: isMobileMapViewport,
+      onDismiss: () => closeRestaurantDialog(),
+    });
+    recipeSwipeDismiss = loadedUiSwipeDismiss.createSwipeDismissController({
+      surface: elements.recipeDialog,
+      dragTarget: elements.recipeForm,
+      handles: [document.querySelector("#recipeModalHead"), document.querySelector("#recipeDragHandle")],
+      isEnabled: isMobileMapViewport,
+      onDismiss: () => closeRecipeDialog(),
+    });
     await boot();
   } catch (error) {
     showBootError(error);
@@ -527,6 +553,9 @@ async function boot() {
   translateStaticDom();
   configureLocationController();
   bindEvents();
+  mapInteractionController?.bind();
+  restaurantSwipeDismiss?.bind();
+  recipeSwipeDismiss?.bind();
   if (isAdminPortal) {
     document.body.classList.add("admin-portal");
     activeView = "admin-login";
@@ -622,11 +651,6 @@ function bindEvents() {
   elements.spotCard.addEventListener("pointerdown", startMobileSpotCardDrag);
   elements.spotCard.addEventListener("pointerup", finishMobileSpotCardDrag);
   elements.spotCard.addEventListener("pointercancel", cancelMobileSpotCardDrag);
-  elements.restaurantModalHead?.addEventListener("pointerdown", startAddDialogSwipeClose);
-  elements.restaurantDragHandle?.addEventListener("pointerdown", startAddDialogSwipeClose);
-  elements.restaurantForm?.addEventListener("pointermove", moveAddDialogSwipeClose);
-  elements.restaurantForm?.addEventListener("pointerup", finishAddDialogSwipeClose);
-  elements.restaurantForm?.addEventListener("pointercancel", cancelAddDialogSwipeClose);
   elements.closeAddPanel.addEventListener("click", () => closeRestaurantDialog());
   elements.cancelSpotButton?.addEventListener("click", () => closeRestaurantDialog());
   elements.closeCard.addEventListener("click", () => {
@@ -703,18 +727,10 @@ function bindEvents() {
   elements.listForm.addEventListener("submit", saveListFromForm);
   elements.closeAddSpotsDialog.addEventListener("click", () => elements.addSpotsDialog.close());
   elements.addSpotsSearch.addEventListener("input", renderAddSpotsDialog);
-  elements.cuteMap.addEventListener("wheel", handleMapWheel, { passive: false });
-  elements.cuteMap.addEventListener("pointerdown", startMapPan);
-  elements.cuteMap.addEventListener("pointermove", moveMapPan);
-  elements.cuteMap.addEventListener("pointerup", finishMapPan);
-  elements.cuteMap.addEventListener("pointercancel", cancelMapPan);
-  elements.cuteMap.addEventListener("gesturestart", startMapGestureZoom);
-  elements.cuteMap.addEventListener("gesturechange", changeMapGestureZoom);
-  elements.cuteMap.addEventListener("gestureend", endMapGestureZoom);
-  elements.mapZoomOut.addEventListener("click", () => setMapZoom(mapZoom - MAP_ZOOM_STEP));
-  elements.mapZoomIn.addEventListener("click", () => setMapZoom(mapZoom + MAP_ZOOM_STEP));
+  elements.mapZoomOut.addEventListener("click", () => mapInteractionController?.zoomOut());
+  elements.mapZoomIn.addEventListener("click", () => mapInteractionController?.zoomIn());
   elements.mapCenterButton?.addEventListener("click", centerMapOnUser);
-  elements.mapZoomReset.addEventListener("click", () => setMapZoom(1));
+  elements.mapZoomReset.addEventListener("click", () => mapInteractionController?.resetZoom());
   elements.meMarker?.addEventListener("click", centerMapOnUser);
   document.querySelectorAll("[data-discovery-sort]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -730,11 +746,6 @@ function bindEvents() {
   elements.recipeDialog?.addEventListener("click", (event) => {
     if (event.target === elements.recipeDialog && !isMobileMapViewport()) closeRecipeDialog();
   });
-  document.querySelector("#recipeModalHead")?.addEventListener("pointerdown", startRecipeDialogSwipeClose);
-  document.querySelector("#recipeDragHandle")?.addEventListener("pointerdown", startRecipeDialogSwipeClose);
-  elements.recipeForm?.addEventListener("pointermove", moveRecipeDialogSwipeClose);
-  elements.recipeForm?.addEventListener("pointerup", finishRecipeDialogSwipeClose);
-  elements.recipeForm?.addEventListener("pointercancel", cancelRecipeDialogSwipeClose);
   elements.recipeForm?.addEventListener("submit", saveRecipeFromForm);
   elements.recipeImageInput?.addEventListener("change", updateRecipeImageName);
   bindDetailFileDropzone(elements.recipeImageInput?.closest("[data-recipe-file-dropzone]"), elements.recipeImageInput, {
@@ -1451,7 +1462,7 @@ async function closeRestaurantDialog({ force = false } = {}) {
     });
     if (!discard) return false;
   }
-  cancelAddDialogSwipeClose();
+  restaurantSwipeDismiss?.reset();
   elements.addDialog.close();
   resetRestaurantForm();
   return true;
@@ -1466,71 +1477,6 @@ function resetRestaurantForm() {
   elements.formHelp.textContent = t("maps.help");
   elements.dishEditor.hidden = true;
   elements.dishEditorList.innerHTML = "";
-}
-
-function startAddDialogSwipeClose(event) {
-  if (!elements.addDialog.open || !isMobileMapViewport()) return;
-  if (event.button != null && event.button !== 0) return;
-  if (event.target.closest("button, input, textarea, select, a")) return;
-  addDialogDragStart = {
-    pointerId: event.pointerId,
-    startX: event.clientX,
-    startY: event.clientY,
-    lastY: 0,
-    locked: false,
-  };
-  elements.restaurantForm.setPointerCapture?.(event.pointerId);
-}
-
-function moveAddDialogSwipeClose(event) {
-  if (!addDialogDragStart || event.pointerId !== addDialogDragStart.pointerId) return;
-  const deltaX = event.clientX - addDialogDragStart.startX;
-  const deltaY = Math.max(0, event.clientY - addDialogDragStart.startY);
-  if (!addDialogDragStart.locked) {
-    if (deltaY < ADD_DIALOG_SWIPE_LOCK_DISTANCE && Math.abs(deltaX) < ADD_DIALOG_SWIPE_LOCK_DISTANCE) return;
-    if (Math.abs(deltaX) > deltaY) {
-      cancelAddDialogSwipeClose();
-      return;
-    }
-    addDialogDragStart.locked = true;
-    elements.restaurantForm.classList.add("is-dragging");
-  }
-  addDialogDragStart.lastY = deltaY;
-  elements.restaurantForm.style.setProperty("--sheet-drag-y", `${deltaY}px`);
-  event.preventDefault();
-}
-
-async function finishAddDialogSwipeClose(event) {
-  if (!addDialogDragStart || event.pointerId !== addDialogDragStart.pointerId) return;
-  const shouldClose = addDialogDragStart.lastY >= ADD_DIALOG_SWIPE_CLOSE_DISTANCE;
-  const pointerId = addDialogDragStart.pointerId;
-  addDialogDragStart = null;
-  elements.restaurantForm.releasePointerCapture?.(pointerId);
-  elements.restaurantForm.classList.remove("is-dragging");
-  if (shouldClose) {
-    if (hasUnsavedRestaurantForm() && !(await confirmAction(t("confirm.discardMessage"), {
-      title: t("confirm.discardTitle"),
-      confirmLabel: t("button.discard"),
-      tone: "danger",
-    }))) {
-      resetAddDialogDragStyles();
-      return;
-    }
-    elements.restaurantForm.classList.add("is-dismissing");
-    window.setTimeout(() => closeRestaurantDialog({ force: true }), 170);
-    return;
-  }
-  resetAddDialogDragStyles();
-}
-
-function cancelAddDialogSwipeClose() {
-  addDialogDragStart = null;
-  resetAddDialogDragStyles();
-}
-
-function resetAddDialogDragStyles() {
-  elements.restaurantForm?.classList.remove("is-dragging", "is-dismissing");
-  elements.restaurantForm?.style.removeProperty("--sheet-drag-y");
 }
 
 function hasUnsavedRestaurantForm() {
@@ -3270,66 +3216,9 @@ async function closeRecipeDialog({ force = false } = {}) {
   }
   editingRecipeId = null;
   recipeFormBaseline = "";
-  cancelRecipeDialogSwipeClose();
+  recipeSwipeDismiss?.reset();
   elements.recipeDialog?.close();
   return true;
-}
-
-function startRecipeDialogSwipeClose(event) {
-  if (!elements.recipeDialog.open || !isMobileMapViewport()) return;
-  if (event.button != null && event.button !== 0) return;
-  if (event.target.closest("button, input, textarea, select, a")) return;
-  recipeDialogDragStart = {
-    pointerId: event.pointerId,
-    startX: event.clientX,
-    startY: event.clientY,
-    lastY: 0,
-    locked: false,
-  };
-  elements.recipeForm.setPointerCapture?.(event.pointerId);
-}
-
-function moveRecipeDialogSwipeClose(event) {
-  if (!recipeDialogDragStart || event.pointerId !== recipeDialogDragStart.pointerId) return;
-  const deltaX = event.clientX - recipeDialogDragStart.startX;
-  const deltaY = Math.max(0, event.clientY - recipeDialogDragStart.startY);
-  if (!recipeDialogDragStart.locked) {
-    if (deltaY < ADD_DIALOG_SWIPE_LOCK_DISTANCE && Math.abs(deltaX) < ADD_DIALOG_SWIPE_LOCK_DISTANCE) return;
-    if (Math.abs(deltaX) > deltaY) {
-      cancelRecipeDialogSwipeClose();
-      return;
-    }
-    recipeDialogDragStart.locked = true;
-    elements.recipeForm.classList.add("is-dragging");
-  }
-  recipeDialogDragStart.lastY = deltaY;
-  elements.recipeForm.style.setProperty("--sheet-drag-y", `${deltaY}px`);
-  event.preventDefault();
-}
-
-async function finishRecipeDialogSwipeClose(event) {
-  if (!recipeDialogDragStart || event.pointerId !== recipeDialogDragStart.pointerId) return;
-  const shouldClose = recipeDialogDragStart.lastY >= ADD_DIALOG_SWIPE_CLOSE_DISTANCE;
-  const pointerId = recipeDialogDragStart.pointerId;
-  recipeDialogDragStart = null;
-  elements.recipeForm.releasePointerCapture?.(pointerId);
-  elements.recipeForm.classList.remove("is-dragging");
-  if (shouldClose) {
-    const closed = await closeRecipeDialog();
-    if (!closed) resetRecipeDialogDragStyles();
-    return;
-  }
-  resetRecipeDialogDragStyles();
-}
-
-function cancelRecipeDialogSwipeClose() {
-  recipeDialogDragStart = null;
-  resetRecipeDialogDragStyles();
-}
-
-function resetRecipeDialogDragStyles() {
-  elements.recipeForm?.classList.remove("is-dragging", "is-dismissing");
-  elements.recipeForm?.style.removeProperty("--sheet-drag-y");
 }
 
 async function saveRecipeFromForm(event) {
@@ -4297,101 +4186,15 @@ function formatUserDistance(distanceKm) {
   return locationCore.formatDistance(distanceKm, locationAccuracy());
 }
 
-function handleMapWheel(event) {
-  if (event.target.closest(".spot-card, .spot-card-tab, .map-zoom-controls")) return;
-  event.preventDefault();
-  const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
-  const factor = Math.exp(-delta * (event.ctrlKey ? 0.01 : 0.0018));
-  setMapZoom(mapZoom * factor);
-}
-
-function startMapGestureZoom(event) {
-  if (event.target.closest(".spot-card, .spot-card-tab, .map-zoom-controls")) return;
-  mapGestureStartZoom = mapZoom;
-  event.preventDefault();
-}
-
-function changeMapGestureZoom(event) {
-  if (mapGestureStartZoom == null) return;
-  event.preventDefault();
-  setMapZoom(mapGestureStartZoom * Number(event.scale || 1));
-}
-
-function endMapGestureZoom(event) {
-  mapGestureStartZoom = null;
-  event?.preventDefault?.();
-}
-
-function startMapPan(event) {
-  if (event.button != null && event.button !== 0) return;
-  if (event.target.closest(".spot-card, .spot-card-tab, .map-zoom-controls, .restaurant-marker, .me-marker, a, button, input, textarea, select")) return;
-  mapPanDrag = {
-    pointerId: event.pointerId,
-    startX: event.clientX,
-    startY: event.clientY,
-    originX: mapPan.x,
-    originY: mapPan.y,
-  };
-  elements.cuteMap.classList.add("is-panning");
-  elements.cuteMap.setPointerCapture?.(event.pointerId);
-  event.preventDefault();
-}
-
-function moveMapPan(event) {
-  if (!mapPanDrag || event.pointerId !== mapPanDrag.pointerId) return;
-  setMapPan(mapPanDrag.originX + event.clientX - mapPanDrag.startX, mapPanDrag.originY + event.clientY - mapPanDrag.startY);
-  event.preventDefault();
-}
-
-function finishMapPan(event) {
-  if (!mapPanDrag || event.pointerId !== mapPanDrag.pointerId) return;
-  elements.cuteMap.releasePointerCapture?.(event.pointerId);
-  cancelMapPan();
-}
-
-function cancelMapPan() {
-  mapPanDrag = null;
-  elements.cuteMap?.classList.remove("is-panning");
-}
-
 function centerMapOnUser() {
-  setMapPan(0, 0);
+  mapInteractionController?.center();
 }
 
 function recenterMapPanWithinBounds() {
-  setMapPan(mapPan.x, mapPan.y);
-}
-
-function setMapPan(x, y) {
-  const next = clampMapPan(x, y);
-  if (Math.abs(next.x - mapPan.x) < 0.5 && Math.abs(next.y - mapPan.y) < 0.5) return;
-  mapPan = next;
-  updateMapPanUi();
-}
-
-function clampMapPan(x, y) {
-  const bounds = elements.cuteMap?.getBoundingClientRect();
-  return mapGeometry.clampMapPan(x, y, {
-    width: bounds?.width,
-    height: bounds?.height,
-    limitRatio: MAP_PAN_LIMIT_RATIO,
-  });
-}
-
-function updateMapPanUi() {
-  elements.cuteMap?.style.setProperty("--map-pan-x", `${Math.round(mapPan.x)}px`);
-  elements.cuteMap?.style.setProperty("--map-pan-y", `${Math.round(mapPan.y)}px`);
-}
-
-function setMapZoom(value) {
-  const next = Math.max(MAP_ZOOM_MIN, Math.min(MAP_ZOOM_MAX, value));
-  if (Math.abs(next - mapZoom) < 0.005) return;
-  mapZoom = next;
-  renderMarkers();
+  mapInteractionController?.recenterWithinBounds();
 }
 
 function updateMapZoomUi() {
-  elements.cuteMap?.style.setProperty("--map-zoom", mapZoom.toFixed(2));
   if (elements.mapZoomLabel) elements.mapZoomLabel.textContent = `${Math.round(mapZoom * 100)}%`;
 }
 

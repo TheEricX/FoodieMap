@@ -185,3 +185,30 @@ test("@mobile list task preserves unsaved input until discard is confirmed", asy
   await page.locator("[data-confirm-accept]").tap();
   await expect(page.locator("#listDialog")).toBeHidden();
 });
+
+test("@mobile recipe task swipe shares the same discard protection as the close button", async ({ signedInPage: page }) => {
+  await page.locator('[data-view="recipes"]:visible').first().tap();
+  await page.locator("#openRecipeDialog").tap();
+  await page.locator('#recipeForm input[name="title"]').fill("Swipe discard check");
+  await page.evaluate(() => {
+    const head = document.querySelector("#recipeModalHead");
+    const form = document.querySelector("#recipeForm");
+    const pointer = (type, target, clientY) => target.dispatchEvent(new PointerEvent(type, {
+      bubbles: true,
+      pointerId: 31,
+      button: 0,
+      clientX: 120,
+      clientY,
+    }));
+    pointer("pointerdown", head, 100);
+    pointer("pointermove", form, 250);
+    pointer("pointerup", form, 250);
+  });
+  await expect(page.locator("#confirmDialog")).toBeVisible();
+  await page.locator("[data-confirm-cancel]").tap();
+  await expect(page.locator("#recipeDialog")).toBeVisible();
+  await expect(page.locator('#recipeForm input[name="title"]')).toHaveValue("Swipe discard check");
+  await page.locator("#closeRecipeDialog").tap();
+  await page.locator("[data-confirm-accept]").tap();
+  await expect(page.locator("#recipeDialog")).toBeHidden();
+});
