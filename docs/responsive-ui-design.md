@@ -6,6 +6,8 @@ FoodieMap uses a shared business core with separate desktop and mobile presentat
 
 ```text
 i18n.mjs         bilingual dictionaries, language normalization, and interpolation
+map-link-core.mjs Google/Apple Maps URL parsing, coordinate validation, and paste sanitization
+map-geometry.mjs relative marker placement, pan limits, and food placeholder images
 ui-core.mjs       pure layout, search, validation, and presentation rules
 ui-shell.mjs      DOM adapter that activates one shell and labels surfaces
 ui-components.mjs shared empty, guidance, loading, and error components
@@ -52,6 +54,8 @@ JavaScript must use `classifyLayoutMode()` rather than user-agent detection. CSS
 - UI rendering code reads the layout mode from `ui-shell.mjs`; it must not query viewport width, user agent, or device brand directly.
 - All API calls pass through `data-client.mjs`, so both shells receive identical authentication and error behavior.
 - Both shells use `i18n.mjs` for the same complete English/Chinese dictionary, fallback rules, and parameter interpolation.
+- Map-link parsing and coordinate validation live in `map-link-core.mjs`; DOM autofill, backend short-link resolution, and API calls stay in `app.js`.
+- Relative map geometry and placeholder image generation live in `map-geometry.mjs`; pointer/touch event handling and DOM updates stay in `app.js`.
 - API payloads are normalized by `domain-core.mjs`; view code must not duplicate defaults, rating bounds, nested item normalization, or collection ordering.
 - Repeated rows and details belong in `view-templates.mjs`. Event binding stays in `app.js`, keeping templates free of global state and direct DOM access.
 - Lists and Discovery compose those shared rows through `list-view-templates.mjs`; list management commands are expressed as `data-list-action` hooks and bound by the orchestrator.

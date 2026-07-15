@@ -5,6 +5,8 @@ test("@smoke app assets and health endpoint load with expected types", async ({ 
     ["/api/health", "application/json"],
     ["/app.js", "text/javascript"],
     ["/i18n.mjs", "text/javascript"],
+    ["/map-link-core.mjs", "text/javascript"],
+    ["/map-geometry.mjs", "text/javascript"],
     ["/location-core.mjs", "text/javascript"],
     ["/ui-core.mjs", "text/javascript"],
     ["/ui-shell.mjs", "text/javascript"],

@@ -112,6 +112,8 @@ PUBLIC_FILES = {
     "form-templates.mjs",
     "map-view-templates.mjs",
     "i18n.mjs",
+    "map-link-core.mjs",
+    "map-geometry.mjs",
     "styles.css",
     "ui-tokens.css",
     "ui-shell.css",

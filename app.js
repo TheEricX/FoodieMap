@@ -15,6 +15,8 @@ const ACCOUNT_SHARE_TEMPLATES_URL = "/account-share-templates.mjs?v=20260714-acc
 const FORM_TEMPLATES_URL = "/form-templates.mjs?v=20260714-forms";
 const MAP_VIEW_TEMPLATES_URL = "/map-view-templates.mjs?v=20260714-map";
 const I18N_URL = "/i18n.mjs?v=20260714-i18n";
+const MAP_LINK_CORE_URL = "/map-link-core.mjs?v=20260714-map-links";
+const MAP_GEOMETRY_URL = "/map-geometry.mjs?v=20260714-map-geometry";
 const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
@@ -22,15 +24,6 @@ const MAP_ZOOM_STEP = 0.18;
 const MAP_PAN_LIMIT_RATIO = 0.42;
 const ADD_DIALOG_SWIPE_CLOSE_DISTANCE = 110;
 const ADD_DIALOG_SWIPE_LOCK_DISTANCE = 12;
-const FOOD_PLACEHOLDERS = [
-  { icon: "🍜", top: "#f4c49d", bottom: "#fff7ed", accent: "#96694c" },
-  { icon: "🥘", top: "#dce6af", bottom: "#fffaf4", accent: "#7a8450" },
-  { icon: "🍰", top: "#f7d8cd", bottom: "#fff8f0", accent: "#b58a6b" },
-  { icon: "🥗", top: "#cfe5cf", bottom: "#fffdf8", accent: "#556030" },
-  { icon: "🍣", top: "#f4dfb8", bottom: "#fffaf4", accent: "#d4a373" },
-  { icon: "☕", top: "#ead8c9", bottom: "#fff8f0", accent: "#68442d" },
-];
-
 let currentLanguage = getInitialLanguage();
 let i18nCore = null;
 
@@ -119,6 +112,8 @@ let listViewTemplates = null;
 let accountShareTemplates = null;
 let formTemplates = null;
 let mapViewTemplates = null;
+let mapLinkCore = null;
+let mapGeometry = null;
 let activeFilter = "all";
 let selectedRestaurantId = null;
 let isSpotCardOpen = false;
@@ -410,7 +405,7 @@ loadBrowserCore();
 
 async function loadBrowserCore() {
   try {
-    const [loadedI18n, loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient, loadedDomainCore, loadedViewTemplates, loadedListViewTemplates, loadedAccountShareTemplates, loadedFormTemplates, loadedMapViewTemplates] = await Promise.all([
+    const [loadedI18n, loadedLocationCore, loadedUiCore, loadedUiShell, loadedUiDialogs, loadedUiComponents, loadedDataClient, loadedDomainCore, loadedViewTemplates, loadedListViewTemplates, loadedAccountShareTemplates, loadedFormTemplates, loadedMapViewTemplates, loadedMapLinkCore, loadedMapGeometry] = await Promise.all([
       import(I18N_URL),
       import(LOCATION_CORE_URL),
       import(UI_CORE_URL),
@@ -423,9 +418,13 @@ async function loadBrowserCore() {
       import(LIST_VIEW_TEMPLATES_URL),
       import(ACCOUNT_SHARE_TEMPLATES_URL),
       import(FORM_TEMPLATES_URL),
-      import(MAP_VIEW_TEMPLATES_URL)
+      import(MAP_VIEW_TEMPLATES_URL),
+      import(MAP_LINK_CORE_URL),
+      import(MAP_GEOMETRY_URL)
     ]);
     i18nCore = loadedI18n;
+    mapLinkCore = loadedMapLinkCore;
+    mapGeometry = loadedMapGeometry;
     locationCore = loadedLocationCore;
     uiCore = loadedUiCore;
     locationState = locationCore.createInitialLocationModel();
@@ -2512,157 +2511,35 @@ async function resolveCoordinates(payload) {
 }
 
 function validateCoordinates(lat, lng) {
-  const parsedLat = Number(lat);
-  const parsedLng = Number(lng);
-  if (Number.isFinite(parsedLat) && Number.isFinite(parsedLng) && Math.abs(parsedLat) <= 90 && Math.abs(parsedLng) <= 180) {
-    return { lat: parsedLat, lng: parsedLng };
-  }
-  return null;
-}
-
-function parseGoogleMapsUrl(url) {
-  if (!url) return null;
-  if (!isGoogleMapsUrl(url)) return null;
-  let decoded = safeDecode(url);
-  const atMatch = decoded.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
-  const bangMatch = decoded.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
-  const queryMatch = decoded.match(/[?&](?:q|query|destination|ll)=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
-  const coordinates = bangMatch || queryMatch || atMatch;
-  const place = parseGoogleMapsPlace(decoded);
-  if (!coordinates) return place.name || place.address ? place : null;
-  return { lat: Number(coordinates[1]), lng: Number(coordinates[2]), ...place };
-}
-
-function parseAppleMapsUrl(url) {
-  if (!url || !/^https?:\/\/maps\.apple\.com(?:\/|$|\?)/i.test(url)) return null;
-  let parsedUrl;
-  try {
-    parsedUrl = new URL(url);
-  } catch {
-    return null;
-  }
-  const params = parsedUrl.searchParams;
-  const queryCoordinates = parseCoordinatePair(params.get("q"));
-  const coordinates = parseCoordinatePair(params.get("ll")) || parseCoordinatePair(params.get("sll")) || parseCoordinatePair(params.get("center")) || queryCoordinates;
-  const queryText = cleanAppleMapsText(params.get("q") || "");
-  const addressText = cleanAppleMapsText(params.get("address") || "");
-  const result = {
-    provider: "apple",
-    name: queryText && !queryCoordinates && !looksLikeAddress(queryText) ? queryText : "",
-    address: addressText || (queryText && looksLikeAddress(queryText) ? queryText : ""),
-  };
-  if (coordinates) {
-    result.lat = coordinates.lat;
-    result.lng = coordinates.lng;
-  }
-  return result.lat != null || result.lng != null || result.name || result.address ? result : null;
-}
-
-function cleanAppleMapsText(value) {
-  return safeDecode(String(value || "").replace(/\+/g, " ")).replace(/\s+/g, " ").trim();
-}
-
-function parseCoordinatePair(value) {
-  const match = String(value || "").match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
-  if (!match) return null;
-  const lat = Number(match[1]);
-  const lng = Number(match[2]);
-  return validateCoordinates(lat, lng);
+  return mapLinkCore.validateCoordinates(lat, lng);
 }
 
 function parseMapUrl(url) {
-  return parseGoogleMapsUrl(url) || parseAppleMapsUrl(url);
+  return mapLinkCore.parseMapUrl(url);
 }
 
-function parseGoogleMapsName(url) {
-  return parseGoogleMapsPlace(url).name;
-}
-
-function parseGoogleMapsPlace(url) {
-  const pathMatch = url.match(/\/maps\/place\/([^/@?]+)/);
-  const queryText = parseGoogleMapsQueryText(url);
-  const dataAddress = parseGoogleMapsDataAddress(url);
-  const pathPlace = pathMatch ? splitPlaceAddressText(pathMatch[1].replace(/\+/g, " ")) : {};
-  const queryPlace = queryText ? splitPlaceAddressText(queryText) : {};
-  return {
-    name: pathPlace.name || queryPlace.name || "",
-    address: pathPlace.address || dataAddress || queryPlace.address || "",
-  };
-}
-
-function parseGoogleMapsQueryText(url) {
-  const query = url.split("?")[1] || "";
-  if (!query) return "";
-  const params = new URLSearchParams(query.split("#")[0]);
-  const value = params.get("query") || params.get("q") || params.get("destination") || "";
-  if (!value || /^-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?$/.test(value)) return "";
-  return value.replace(/\+/g, " ").trim();
-}
-
-function parseGoogleMapsDataAddress(url) {
-  const match = url.match(/!2s([^!]+)/);
-  if (!match) return "";
-  const value = match[1].replace(/\+/g, " ").trim();
-  return looksLikeAddress(value) ? value : "";
-}
-
-function splitPlaceAddressText(value) {
-  const text = safeDecode(value).replace(/\s+/g, " ").trim();
-  if (!text) return {};
-  const parts = text.split(",").map((part) => part.trim()).filter(Boolean);
-  if (parts.length >= 2 && parts.slice(1).some(looksLikeAddress)) {
-    return { name: parts[0], address: parts.slice(1).join(", ") };
-  }
-  return { name: text };
-}
-
-function looksLikeAddress(value) {
-  return /\b\d{1,6}\b/.test(value) || /\b(?:street|st|road|rd|avenue|ave|boulevard|blvd|drive|dr|lane|ln|court|ct|way|place|pl|highway|hwy|king|queen|yonge|dundas)\b/i.test(value);
-}
-
-function safeDecode(value) {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
-}
-
-function isGoogleMapsShortLink(url) {
-  return /^https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps)\//i.test(url);
+function normalizeResolvedMapPlace(place) {
+  return mapLinkCore.normalizeResolvedMapPlace(place);
 }
 
 function isGoogleMapsUrl(url) {
-  return /^https?:\/\/(?:www\.google\.[^\s/]+\/maps|maps\.google\.[^\s/]+|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(url);
+  return mapLinkCore.isGoogleMapsUrl(url);
 }
 
 function isAppleMapsUrl(url) {
-  return /^https?:\/\/maps\.apple\.com(?:\/|$|\?)/i.test(url);
+  return mapLinkCore.isAppleMapsUrl(url);
 }
 
 function isResolvableMapLink(url) {
-  return isGoogleMapsShortLink(url);
-}
-
-function extractGoogleMapsUrl(text) {
-  return text.match(/https?:\/\/(?:www\.google\.[^\s/]+\/maps|maps\.google\.[^\s/]+|maps\.app\.goo\.gl|goo\.gl\/maps)[^\s)]*/i)?.[0] ?? "";
-}
-
-function extractAppleMapsUrl(text) {
-  return text.match(/https?:\/\/maps\.apple\.com[^\s)]*/i)?.[0] ?? "";
+  return mapLinkCore.isResolvableMapLink(url);
 }
 
 function extractMapUrl(text) {
-  return extractGoogleMapsUrl(text) || extractAppleMapsUrl(text);
+  return mapLinkCore.extractMapUrl(text);
 }
 
 function sanitizeMapUrl(value) {
-  let url = String(value || "").trim();
-  url = url.replace(/^[<"'“”‘’\s]+/, "");
-  while (/[>"'“”‘’\s),.;:!?，。；：！？]+$/.test(url)) {
-    url = url.slice(0, -1);
-  }
-  return url;
+  return mapLinkCore.sanitizeMapUrl(value);
 }
 
 function configureLocationController() {
@@ -4494,12 +4371,11 @@ function setMapPan(x, y) {
 
 function clampMapPan(x, y) {
   const bounds = elements.cuteMap?.getBoundingClientRect();
-  const maxX = Math.max(0, (bounds?.width || 0) * MAP_PAN_LIMIT_RATIO);
-  const maxY = Math.max(0, (bounds?.height || 0) * MAP_PAN_LIMIT_RATIO);
-  return {
-    x: Math.max(-maxX, Math.min(maxX, x)),
-    y: Math.max(-maxY, Math.min(maxY, y)),
-  };
+  return mapGeometry.clampMapPan(x, y, {
+    width: bounds?.width,
+    height: bounds?.height,
+    limitRatio: MAP_PAN_LIMIT_RATIO,
+  });
 }
 
 function updateMapPanUi() {
@@ -4521,47 +4397,13 @@ function updateMapZoomUi() {
 
 function layoutMapMarkers(items) {
   const bounds = elements.cuteMap?.getBoundingClientRect();
-  const mapWidth = Math.max(320, bounds?.width || 900);
-  const mapHeight = Math.max(320, bounds?.height || 560);
-  const markerWidth = mapWidth < 720 ? 86 : 104;
-  const markerHeight = mapWidth < 720 ? 104 : 126;
-  const minDx = (markerWidth / mapWidth) * 100;
-  const minDy = (markerHeight / mapHeight) * 100;
-  const points = items.map((restaurant, index) => {
-    const distance = currentLocation ? haversineDistance(currentLocation, restaurant) : 0;
-    const bearing = currentLocation ? getBearing(currentLocation, restaurant) : index * 137;
-    return {
-      id: restaurant.id,
-      ...mapPoint(distance, bearing, index),
-    };
+  return mapGeometry.layoutRelativeMarkers(items, {
+    currentLocation,
+    zoom: mapZoom,
+    width: bounds?.width,
+    height: bounds?.height,
+    distanceBetween: haversineDistance,
   });
-
-  for (let pass = 0; pass < 10; pass += 1) {
-    for (let a = 0; a < points.length; a += 1) {
-      for (let b = a + 1; b < points.length; b += 1) {
-        const first = points[a];
-        const second = points[b];
-        const dx = second.x - first.x;
-        const dy = second.y - first.y;
-        if (Math.abs(dx) >= minDx || Math.abs(dy) >= minDy) continue;
-        const length = Math.hypot(dx, dy) || 1;
-        const fallbackX = a % 2 ? 1 : -1;
-        const fallbackY = b % 2 ? 1 : -1;
-        const pushX = ((minDx - Math.abs(dx)) / 2 + 0.8) * (dx ? dx / length : fallbackX);
-        const pushY = ((minDy - Math.abs(dy)) / 2 + 0.8) * (dy ? dy / length : fallbackY);
-        first.x -= pushX;
-        first.y -= pushY;
-        second.x += pushX;
-        second.y += pushY;
-      }
-    }
-    points.forEach((point) => {
-      point.x = Math.max(7, Math.min(93, point.x));
-      point.y = Math.max(10, Math.min(90, point.y));
-    });
-  }
-
-  return new Map(points.map((point) => [point.id, { x: point.x, y: point.y }]));
 }
 
 function restaurantImageUrl(restaurant) {
@@ -4570,58 +4412,11 @@ function restaurantImageUrl(restaurant) {
 }
 
 function foodPlaceholderUrl(restaurant) {
-  const preset = FOOD_PLACEHOLDERS[accentVariant(restaurant.id) % FOOD_PLACEHOLDERS.length];
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180">
-      <defs>
-        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0" stop-color="${preset.top}"/>
-          <stop offset="1" stop-color="${preset.bottom}"/>
-        </linearGradient>
-        <pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse">
-          <circle cx="3" cy="3" r="1.2" fill="${preset.accent}" opacity=".16"/>
-        </pattern>
-      </defs>
-      <rect width="240" height="180" rx="28" fill="url(#g)"/>
-      <rect width="240" height="180" fill="url(#dots)"/>
-      <circle cx="120" cy="92" r="54" fill="#fffaf4" opacity=".72"/>
-      <text x="120" y="111" text-anchor="middle" font-size="62">${preset.icon}</text>
-      <path d="M38 148 C80 132 148 168 202 143" fill="none" stroke="${preset.accent}" stroke-width="8" stroke-linecap="round" opacity=".28"/>
-    </svg>
-  `;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+  return mapGeometry.foodPlaceholderUrl(restaurant.id, accentVariant(restaurant.id));
 }
 
 function haversineDistance(origin, destination) {
   return locationCore.haversineDistance(origin, destination);
-}
-
-function getBearing(origin, destination) {
-  const lat1 = toRad(origin.lat);
-  const lat2 = toRad(destination.lat);
-  const dLng = toRad(destination.lng - origin.lng);
-  const y = Math.sin(dLng) * Math.cos(lat2);
-  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
-  return (toDeg(Math.atan2(y, x)) + 360) % 360;
-}
-
-function mapPoint(distanceKm, bearing, index) {
-  const maxDistance = 15;
-  const radius = Math.min((distanceKm / maxDistance) * 38 * mapZoom, 44);
-  const jitter = ((index % 5) - 2) * 1.1;
-  const angle = toRad(bearing);
-  return {
-    x: 50 + Math.sin(angle) * radius + jitter,
-    y: 50 - Math.cos(angle) * radius - jitter,
-  };
-}
-
-function toRad(degrees) {
-  return (degrees * Math.PI) / 180;
-}
-
-function toDeg(radians) {
-  return (radians * 180) / Math.PI;
 }
 
 function escapeHtml(value) {
