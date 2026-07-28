@@ -33,6 +33,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Streamlined core mobile tasks with Maps-link-first restaurant capture, compact List and Recipe creation, per-view search memory, preferred map-app selection, and direct Add to List, Add Spots, and Publish actions.
+- Reworked mobile Recipe browsing into a list-to-detail flow with an explicit return path, while retaining the desktop parallel list/detail workspace.
 - Introduced shared UI core rules and separate desktop/mobile navigation shells while keeping one API and content model.
 - Standardized layout modes at mobile, compact desktop, and desktop breakpoints, with explicit modal, task, drawer, and sheet presentations.
 - Unified Restaurant, List, and Recipe unsaved-change handling across close, cancel, desktop backdrop, and mobile swipe interactions.
@@ -73,6 +75,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Kept hidden mobile toasts out of the layout, reset Discovery's inner scroll when re-entering the view, and prevented its empty Public Lists panel from drifting horizontally.
+- Standardized success and recoverable-error feedback through an in-app toast, and reinforced narrow-screen content alignment and horizontal overflow coverage.
 - Removed an unmatched closing element from selected-spot dish pills so mobile and desktop browsers build the same DOM structure.
 - Added a compact medium-desktop topbar layout so search, location controls, and the signed-in avatar remain inside the viewport near responsive breakpoints.
 - Locked create/edit dialogs to the visual viewport across the full narrow-screen breakpoint, removed horizontal form scrolling and textarea resizing, and limited backdrop-to-close behavior to desktop.

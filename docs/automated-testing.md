@@ -12,6 +12,7 @@ tests/e2e/smoke.spec.mjs         Startup, assets, navigation, staging health
 tests/e2e/core-flows.spec.mjs    Auth, persistence, map URL, location modes
 tests/e2e/content.spec.mjs       Lists, recipes, uploads, and persisted UI
 tests/e2e/mobile.spec.mjs        Touch navigation, close controls, overflow
+tests/e2e/ux-flows.spec.mjs      Quick capture, list recovery, publishing, and scoped search
 tests/e2e/staging.spec.mjs       PostgreSQL/GCS create-upload-read-clean lifecycle
 playwright.config.mjs            Local server and desktop/mobile/staging projects
 ```
@@ -95,6 +96,8 @@ Never configure this token on production. Never point `STAGING_BASE_URL` at prod
 ## Automated Versus Manual Release Checks
 
 Automation covers startup, navigation, email authentication, core persistence, map URL storage, privacy/nearby location modes, remote MCP authorization/tools, and critical mobile interactions. The full checklist remains in `docs/system-regression-test-plan.md`.
+
+The UX flow suite runs against both desktop and mobile projects. It verifies that a restaurant can be added to an existing list or atomically included in a newly created list, empty lists lead directly to adding restaurants, publish-ready lists reach Discovery, and search terms do not leak between product areas.
 
 The following require manual verification:
 

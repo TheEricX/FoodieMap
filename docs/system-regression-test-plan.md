@@ -78,6 +78,7 @@ Confirm these static URLs return their expected content type rather than `index.
 - Edit every restaurant field; Cancel discards changes and Save persists them.
 - Delete requires confirmation and removes the restaurant from associated views/lists.
 - Add, edit, autosave, and remove menu notes; upload JPEG/PNG/WebP and verify readback after refresh.
+- From a restaurant detail, add it to an existing list and create a new list that includes it; verify the restaurant appears exactly once.
 - Create, edit, cancel, save, publish/unpublish, add/remove spots, and delete a custom list.
 - Create, edit, cancel, save, share, copy, and delete a recipe, including image upload.
 - Restaurant, dish, recipe, and list ownership rules prevent cross-account modification.
@@ -96,7 +97,10 @@ Confirm these static URLs return their expected content type rather than `index.
 ## P1 Lists, Discovery And Sharing
 
 - System and custom filters produce the same restaurant set in Map and List views.
-- Search, empty states, Map/Open Maps actions, and Delete versus Remove semantics remain correct.
+- Map, Lists, Recipes, and Discovery retain independent search terms and describe their current search scope.
+- An empty custom list offers Add Spots directly; a non-empty private list offers Publish directly and appears in Discovery after publishing.
+- Success and recoverable failure feedback appears in the shared toast without losing form input.
+- Map/Open Maps actions and Delete versus Remove semantics remain correct.
 - Publish a list, find it in Discovery, sort Popular/Recent, and copy it into another account.
 - Create and revoke a Share Pack; public preview, QR/link, PNG card, and login-gated copy work.
 - Restaurant share and recipe share links work signed out, then save correctly after login.
@@ -110,6 +114,7 @@ Confirm these static URLs return their expected content type rather than `index.
 - Selected spot sheet opens/closes with one tap, outside tap, and downward swipe without activating content behind it.
 - Keyboard Tab, Enter, Space, Escape, focus return, and visible focus work for dialogs and primary actions.
 - English and Chinese labels fit controls and update location/recovery text immediately.
+- On real iPhone Safari, create a restaurant from a Maps link, add it to an existing and a new list, publish the list, and verify the toast action, fixed bottom navigation, software keyboard, image upload, and no horizontal page movement.
 
 ## P2 Admin, Data Tools And Failure Handling
 

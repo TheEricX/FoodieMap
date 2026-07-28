@@ -119,7 +119,7 @@ test("@mobile Discovery publish guidance opens the list and publishes without ov
   await expect(page.locator("#myListDetail h2")).toHaveText(title);
 
   await page.locator("#myListDetail .manage-list-menu > summary").click();
-  await page.locator('#myListDetail [data-list-action="publish"]').click();
+  await page.locator('#myListDetail .manage-list-actions [data-list-action="publish"]').click();
   await page.locator('[data-view="discovery"]:visible').first().click();
   await expect(page.locator("#discoveryGrid [data-list-id]", { hasText: title })).toBeVisible();
 });

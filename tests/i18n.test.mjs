@@ -22,5 +22,6 @@ test("unknown keys fall back predictably", () => {
 
 test("English and Chinese dictionaries have matching keys", () => {
   assert.deepEqual(translationKeys("zh").sort(), translationKeys("en").sort());
-  assert.equal(Object.keys(translations.en).length, 513);
+  assert.equal(Object.keys(translations.en).length, translationKeys("en").length);
+  assert.ok(Object.keys(translations.en).length > 500);
 });

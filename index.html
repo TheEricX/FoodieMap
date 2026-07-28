@@ -11,7 +11,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/ui-tokens.css?v=20260712-shell" />
-    <link rel="stylesheet" href="/styles.css?v=20260712-shell" />
+    <link rel="stylesheet" href="/styles.css?v=20260728-public-list" />
     <link rel="stylesheet" href="/ui-shell.css?v=20260712-shell" />
   </head>
   <body>
@@ -32,13 +32,7 @@
             <span>⌕</span>
             <input id="searchInput" type="search" placeholder="Search for tasty treats..." data-i18n-placeholder="search.default" />
           </label>
-          <details class="mobile-map-menu">
-            <summary aria-label="Add restaurant" data-i18n="button.addSpotShort">+ Add</summary>
-            <div class="mobile-map-actions">
-              <button type="button" data-mobile-action="new-spot" data-i18n="button.newSpot">+ New Spot</button>
-              <button type="button" data-mobile-action="paste-add" data-i18n="button.pasteMapLink">Paste map link</button>
-            </div>
-          </details>
+          <button class="mobile-quick-capture" id="mobileQuickCaptureButton" type="button" data-i18n="button.addSpotShort">+ Add</button>
         </div>
         <div class="top-actions">
           <div class="location-status top-location-status" id="locationStatus" aria-live="polite" data-i18n="location.waiting">Location pending</div>
@@ -213,6 +207,7 @@
             <div class="dish-list" id="spotDishes"></div>
             <div class="card-actions">
               <button class="outline-button" id="openSpotDetail" type="button" data-i18n="button.details">Details</button>
+              <button class="outline-button" id="spotAddToList" type="button" data-i18n="button.addToList">Add to list</button>
               <button class="outline-button" id="editSpot" type="button" data-i18n="button.edit">Edit</button>
               <button class="outline-button" id="shareSpot" type="button" data-i18n="button.share">Share</button>
               <button class="outline-button danger" id="deleteSpot" type="button" data-i18n="button.delete">Delete</button>
@@ -457,6 +452,10 @@
               <p class="eyebrow" data-i18n="detail.journal">RESTAURANT JOURNAL</p>
               <h2 id="detailSpotName">Restaurant</h2>
               <div class="detail-meta-row" id="detailSpotMeta"></div>
+              <div class="detail-quick-actions">
+                <button class="secondary-button compact-action" id="detailAddToList" type="button" data-i18n="button.addToList">Add to list</button>
+                <button class="secondary-button compact-action" id="detailQuickAddMenu" type="button" data-i18n="button.addMenu">+ Add Menu</button>
+              </div>
             </div>
           </div>
 
@@ -541,9 +540,10 @@
           </div>
 
           <input name="id" type="hidden" />
+          <p class="form-help quick-capture-intro" id="quickCaptureIntro" data-i18n="spot.quickCaptureHelp">Paste a map link, confirm the name, and save it for later.</p>
           <label>
             <span data-i18n="spot.googleUrl">Maps link</span>
-            <input name="googleUrl" placeholder="Paste a Google Maps or Apple Maps link to detect name, address, and coordinates" data-i18n-placeholder="spot.googleUrlPlaceholder" />
+            <input name="googleUrl" autocomplete="url" autocapitalize="off" placeholder="Paste a Google Maps or Apple Maps link to detect name, address, and coordinates" data-i18n-placeholder="spot.googleUrlPlaceholder" />
             <small class="form-help map-link-hint" data-i18n="maps.pasteHint">Paste a Google Maps or Apple Maps link here to auto-detect the restaurant name and location.</small>
           </label>
           <label>
@@ -551,41 +551,44 @@
             <input name="name" required placeholder="Auto-detected, or enter a restaurant name" data-i18n-placeholder="spot.namePlaceholder" />
           </label>
           <label>
-            <span data-i18n="spot.address">Address</span>
-            <input name="address" placeholder="Optional: record the address manually" data-i18n-placeholder="spot.addressPlaceholder" />
+            <span data-i18n="detail.status">Status</span>
+            <select name="status">
+              <option value="visited" data-i18n="status.visited">Visited</option>
+              <option value="want_to_go" selected data-i18n="status.want_to_go">Want to Go</option>
+              <option value="favorite" data-i18n="status.favorite">Favorite</option>
+            </select>
           </label>
-          <div class="two-col">
+          <button class="secondary-button compact-action restaurant-advanced-toggle" id="toggleRestaurantDetails" type="button" aria-expanded="false" aria-controls="restaurantAdvancedFields" data-i18n="spot.addDetails">Add details</button>
+          <section class="restaurant-advanced-fields" id="restaurantAdvancedFields" hidden>
             <label>
-              <span data-i18n="spot.lat">Latitude</span>
-              <input name="lat" type="number" min="-90" max="90" step="any" placeholder="Auto-filled" data-i18n-placeholder="spot.coordPlaceholder" />
+              <span data-i18n="spot.address">Address</span>
+              <input name="address" placeholder="Optional: record the address manually" data-i18n-placeholder="spot.addressPlaceholder" />
             </label>
-            <label>
-              <span data-i18n="spot.lng">Longitude</span>
-              <input name="lng" type="number" min="-180" max="180" step="any" placeholder="Auto-filled" data-i18n-placeholder="spot.coordPlaceholder" />
-            </label>
-          </div>
-          <div class="two-col">
-            <label>
-              <span data-i18n="detail.status">Status</span>
-              <select name="status">
-                <option value="visited" data-i18n="status.visited">Visited</option>
-                <option value="want_to_go" data-i18n="status.want_to_go">Want to Go</option>
-                <option value="favorite" data-i18n="status.favorite">Favorite</option>
-              </select>
-            </label>
+            <div class="two-col">
+              <label>
+                <span data-i18n="spot.lat">Latitude</span>
+                <input name="lat" type="number" min="-90" max="90" step="any" placeholder="Auto-filled" data-i18n-placeholder="spot.coordPlaceholder" />
+              </label>
+              <label>
+                <span data-i18n="spot.lng">Longitude</span>
+                <input name="lng" type="number" min="-180" max="180" step="any" placeholder="Auto-filled" data-i18n-placeholder="spot.coordPlaceholder" />
+              </label>
+            </div>
+            <div class="two-col">
             <label>
               <span data-i18n="detail.rating">Rating</span>
-              <input name="personalRating" type="number" min="0" max="5" step="0.1" value="4.5" />
+              <input name="personalRating" type="number" min="0" max="5" step="0.1" value="0" />
             </label>
-          </div>
-          <label>
-            <span data-i18n="detail.visitCount">Visit count</span>
-            <input name="visitCount" type="number" min="0" step="1" value="0" />
-          </label>
-          <label>
-            <span data-i18n="spot.notes">Notes</span>
-            <textarea name="notes" rows="4" placeholder="Rich broth, good for a slow dinner after work." data-i18n-placeholder="spot.notesPlaceholder"></textarea>
-          </label>
+              <label>
+                <span data-i18n="detail.visitCount">Visit count</span>
+                <input name="visitCount" type="number" min="0" step="1" value="0" />
+              </label>
+            </div>
+            <label>
+              <span data-i18n="spot.notes">Notes</span>
+              <textarea name="notes" rows="4" placeholder="Rich broth, good for a slow dinner after work." data-i18n-placeholder="spot.notesPlaceholder"></textarea>
+            </label>
+          </section>
           <section class="dish-editor" id="dishEditor" hidden>
             <div class="section-head">
               <div>
@@ -625,8 +628,8 @@
           </div>
           <p class="form-help" id="mapChoiceName">Open this restaurant in your preferred map app.</p>
           <div class="map-choice-actions">
-            <a class="primary-button" id="openGoogleMapChoice" href="#" target="_blank" rel="noreferrer" data-i18n="maps.openGoogle">Google Maps</a>
-            <a class="secondary-button" id="openAppleMapChoice" href="#" target="_blank" rel="noreferrer" data-i18n="maps.openApple">Apple Maps</a>
+            <a class="primary-button" id="openGoogleMapChoice" href="#" target="_blank" rel="noreferrer" data-map-provider="google" data-i18n="maps.openGoogle">Google Maps</a>
+            <a class="secondary-button" id="openAppleMapChoice" href="#" target="_blank" rel="noreferrer" data-map-provider="apple" data-i18n="maps.openApple">Apple Maps</a>
           </div>
         </section>
       </dialog>
@@ -703,41 +706,45 @@
             <button class="icon-button" type="button" id="closeRecipeDialog">×</button>
           </div>
           <input name="id" type="hidden" />
+          <p class="form-help quick-capture-intro" id="recipeQuickCaptureIntro" data-i18n="recipes.quickCaptureHelp">Save the dish name now and fill recipe details whenever you have time.</p>
           <label>
             <span data-i18n="recipes.name">Dish name</span>
             <input name="title" required maxlength="180" placeholder="Tomato egg noodles" data-i18n-placeholder="recipes.namePlaceholder" />
           </label>
-          <div class="form-grid two">
-            <label>
-              <span data-i18n="recipes.rating">Rating</span>
-              <input name="rating" type="number" min="0" max="5" step="0.1" value="4.5" />
+          <button class="secondary-button compact-action form-details-toggle" id="toggleRecipeDetails" type="button" aria-expanded="false" aria-controls="recipeAdvancedFields" data-i18n="spot.addDetails">Add details</button>
+          <section class="form-advanced-fields" id="recipeAdvancedFields" hidden>
+            <div class="form-grid two">
+              <label>
+                <span data-i18n="recipes.rating">Rating</span>
+                <input name="rating" type="number" min="0" max="5" step="0.1" value="0" />
+              </label>
+              <label>
+                <span data-i18n="recipes.cookedAt">Cooked date</span>
+                <input name="cookedAt" type="date" />
+              </label>
+            </div>
+            <label class="detail-file-dropzone recipe-file-dropzone" data-recipe-file-dropzone>
+              <input id="recipeImageInput" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+              <span class="detail-file-mark">＋</span>
+              <span class="recipe-file-preview" id="recipeImagePreview" aria-hidden="true"></span>
+              <span>
+                <strong data-i18n="recipes.uploadPhoto">Upload photo</strong>
+                <small id="recipeImageName" data-i18n="detail.uploadHint">Click to upload or drag image here</small>
+              </span>
             </label>
             <label>
-              <span data-i18n="recipes.cookedAt">Cooked date</span>
-              <input name="cookedAt" type="date" />
+              <span data-i18n="recipes.ingredients">Ingredients</span>
+              <textarea name="ingredients" rows="4" placeholder="Eggs, tomato, noodles, scallion..." data-i18n-placeholder="recipes.ingredientsPlaceholder"></textarea>
             </label>
-          </div>
-          <label class="detail-file-dropzone recipe-file-dropzone" data-recipe-file-dropzone>
-            <input id="recipeImageInput" type="file" accept="image/png,image/jpeg,image/webp" hidden />
-            <span class="detail-file-mark">＋</span>
-            <span class="recipe-file-preview" id="recipeImagePreview" aria-hidden="true"></span>
-            <span>
-              <strong data-i18n="recipes.uploadPhoto">Upload photo</strong>
-              <small id="recipeImageName" data-i18n="detail.uploadHint">Click to upload or drag image here</small>
-            </span>
-          </label>
-          <label>
-            <span data-i18n="recipes.ingredients">Ingredients</span>
-            <textarea name="ingredients" rows="4" placeholder="Eggs, tomato, noodles, scallion..." data-i18n-placeholder="recipes.ingredientsPlaceholder"></textarea>
-          </label>
-          <label>
-            <span data-i18n="recipes.steps">Steps</span>
-            <textarea name="steps" rows="5" placeholder="Write the simple steps so you can remake it." data-i18n-placeholder="recipes.stepsPlaceholder"></textarea>
-          </label>
-          <label>
-            <span data-i18n="recipes.notes">Notes</span>
-            <textarea name="notes" rows="3" placeholder="What to adjust next time?" data-i18n-placeholder="recipes.notesPlaceholder"></textarea>
-          </label>
+            <label>
+              <span data-i18n="recipes.steps">Steps</span>
+              <textarea name="steps" rows="5" placeholder="Write the simple steps so you can remake it." data-i18n-placeholder="recipes.stepsPlaceholder"></textarea>
+            </label>
+            <label>
+              <span data-i18n="recipes.notes">Notes</span>
+              <textarea name="notes" rows="3" placeholder="What to adjust next time?" data-i18n-placeholder="recipes.notesPlaceholder"></textarea>
+            </label>
+          </section>
           <p class="form-help" id="recipeFormHelp" data-i18n="recipes.formHelp">Recipes are private unless you generate a share link.</p>
           <div class="form-actions">
             <button class="secondary-button ghost-button" id="cancelRecipeButton" type="button" data-i18n="button.cancel">Cancel</button>
@@ -784,18 +791,22 @@
             <button class="icon-button" type="button" id="closeListDialog">×</button>
           </div>
           <input name="id" type="hidden" />
+          <p class="form-help quick-capture-intro" id="listQuickCaptureIntro" data-i18n="list.quickCaptureHelp">Name the list now. Add a description or cover later.</p>
           <label>
             <span data-i18n="listForm.titleLabel">Title</span>
             <input name="title" required maxlength="160" placeholder="Tokyo Ramen Hunt" />
           </label>
-          <label>
-            <span data-i18n="listForm.descriptionLabel">Description</span>
-            <textarea name="description" rows="4" placeholder="Describe the occasion or theme for this restaurant group." data-i18n-placeholder="listForm.descriptionPlaceholder"></textarea>
-          </label>
-          <label>
-            <span data-i18n="listForm.coverLabel">Cover URL (optional)</span>
-            <input name="coverImageUrl" placeholder="Leave blank to use a dish photo from the list" data-i18n-placeholder="listForm.coverPlaceholder" />
-          </label>
+          <button class="secondary-button compact-action form-details-toggle" id="toggleListDetails" type="button" aria-expanded="false" aria-controls="listAdvancedFields" data-i18n="spot.addDetails">Add details</button>
+          <section class="form-advanced-fields" id="listAdvancedFields" hidden>
+            <label>
+              <span data-i18n="listForm.descriptionLabel">Description</span>
+              <textarea name="description" rows="4" placeholder="Describe the occasion or theme for this restaurant group." data-i18n-placeholder="listForm.descriptionPlaceholder"></textarea>
+            </label>
+            <label>
+              <span data-i18n="listForm.coverLabel">Cover URL (optional)</span>
+              <input name="coverImageUrl" autocomplete="url" autocapitalize="off" placeholder="Leave blank to use a dish photo from the list" data-i18n-placeholder="listForm.coverPlaceholder" />
+            </label>
+          </section>
           <p class="form-help" id="listFormHelp">Lists are private by default. Publish when you want them to appear in Discovery.</p>
           <div class="form-actions">
             <button class="secondary-button ghost-button" id="cancelListButton" type="button" data-i18n="button.cancel">Cancel</button>
@@ -822,12 +833,27 @@
         </form>
       </dialog>
 
+      <dialog class="modal" id="listPickerDialog">
+        <section class="modal-card list-picker-dialog-card" aria-labelledby="listPickerTitle">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow" data-i18n="list.addSpotMode">ADD TO LIST</p>
+              <h2 id="listPickerTitle" data-i18n="list.addSpotTitle">Add restaurant to a list</h2>
+            </div>
+            <button class="icon-button" type="button" id="closeListPickerDialog" title="Close details" data-i18n-title="modal.closeDetails">×</button>
+          </div>
+          <p class="form-help" id="listPickerHelp" data-i18n="list.addSpotHelp">Choose a private list for this restaurant.</p>
+          <div class="list-picker-options" id="listPickerOptions"></div>
+          <button class="secondary-button" id="createListForSpot" type="button" data-i18n="list.createForSpot">Create a new list</button>
+        </section>
+      </dialog>
+
       <dialog class="modal" id="settingsDialog">
         <form class="modal-card" id="settingsForm" method="dialog">
           <div class="modal-head">
             <div>
               <p class="eyebrow" data-i18n="settings.mode">SETTINGS</p>
-              <h2>Google API</h2>
+              <h2 data-i18n="settings.title">Settings</h2>
             </div>
             <button class="icon-button" type="button" id="closeSettings">×</button>
           </div>
@@ -838,6 +864,14 @@
           <p class="form-help" data-i18n="settings.help">
             A Google Geocoding API key lets FoodieMap fill an address when a Maps link only contains coordinates.
           </p>
+          <label>
+            <span data-i18n="settings.mapAppLabel">Preferred map app</span>
+            <select name="mapAppPreference" id="mapAppPreference">
+              <option value="" data-i18n="settings.mapAppSystem">Ask every time</option>
+              <option value="google" data-i18n="maps.openGoogle">Google Maps</option>
+              <option value="apple" data-i18n="maps.openApple">Apple Maps</option>
+            </select>
+          </label>
           <section class="integration-settings">
             <div>
               <p class="eyebrow" data-i18n="settings.connectedEyebrow">AI ACCESS</p>
@@ -886,6 +920,11 @@
         </section>
       </dialog>
     </main>
-    <script src="/app.js?v=20260714-ui-refactor"></script>
+    <div class="app-toast" id="appToast" role="status" aria-live="polite" aria-atomic="true" hidden>
+      <span id="appToastMessage"></span>
+      <button class="app-toast-action" id="appToastAction" type="button" hidden></button>
+      <button class="app-toast-close" id="appToastClose" type="button" aria-label="Dismiss">×</button>
+    </div>
+    <script src="/app.js?v=20260728-public-list"></script>
   </body>
 </html>
