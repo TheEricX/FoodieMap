@@ -223,6 +223,7 @@ class ListIn(BaseModel):
     title: str = Field(min_length=1, max_length=160)
     description: str = ""
     cover_image_url: str = ""
+    restaurant_ids: list[str] = Field(default_factory=list)
 
 
 class ListPatch(BaseModel):
@@ -2815,7 +2816,11 @@ def get_lists(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
 def create_list(payload: ListIn, user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
     try:
         return {"list": foodiemap_service.create_private_list(
-            user["id"], title=payload.title, description=payload.description, cover_image_url=payload.cover_image_url
+            user["id"],
+            title=payload.title,
+            description=payload.description,
+            cover_image_url=payload.cover_image_url,
+            restaurant_ids=payload.restaurant_ids,
         )}
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error

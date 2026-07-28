@@ -28,6 +28,10 @@ export function createViewTemplates({
   function recipeDetail(recipe) {
     return `
       <article class="recipe-detail-card">
+        <button class="recipe-back-button" type="button" data-back-recipe-list>
+          <span aria-hidden="true">←</span>
+          ${escapeMarkup(translate("button.backToRecipes"))}
+        </button>
         <img class="recipe-hero-image" src="${escapeAttribute(recipeImageUrl(recipe))}" alt="" />
         <div class="list-view-head">
           <div>

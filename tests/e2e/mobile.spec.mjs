@@ -20,13 +20,19 @@ test("@mobile bottom navigation is single-tap responsive without horizontal over
           documentScrollWidth: document.documentElement.scrollWidth,
           viewportWidth: document.documentElement.clientWidth,
           shellLeft: shell.left,
-          shellRight: shell.right
+          shellRight: shell.right,
+          bottomNavLeft: document.querySelector(".mobile-bottom-nav").getBoundingClientRect().left,
+          bottomNavRight: document.querySelector(".mobile-bottom-nav").getBoundingClientRect().right,
         };
       });
       expect(layout.scrollX).toBe(0);
       expect(layout.documentScrollWidth).toBeLessThanOrEqual(layout.viewportWidth + 1);
       expect(layout.shellLeft).toBeGreaterThanOrEqual(0);
       expect(layout.shellRight).toBeLessThanOrEqual(layout.viewportWidth);
+      expect(Math.abs(layout.shellLeft - (layout.viewportWidth - layout.shellRight))).toBeLessThanOrEqual(1);
+      expect(layout.bottomNavLeft).toBeGreaterThanOrEqual(0);
+      expect(layout.bottomNavRight).toBeLessThanOrEqual(layout.viewportWidth);
+      expect(Math.abs(layout.bottomNavLeft - (layout.viewportWidth - layout.bottomNavRight))).toBeLessThanOrEqual(1);
       await expect(page.locator(".desktop-primary-nav")).toBeHidden();
       await expect(page.locator(".mobile-bottom-nav")).toBeVisible();
     }
@@ -43,7 +49,32 @@ test("@mobile recipe empty-state guidance is text, not a fake button", async ({ 
   await expect(emptyState.locator("button")).toHaveCount(0);
 });
 
-test("@mobile restaurant detail closes with one tap", async ({ signedInPage: page }) => {
+test("@mobile recipes use a single-detail flow instead of stacked list and detail panes", async ({ signedInPage: page }) => {
+  const create = await page.request.post("/api/recipes", { data: {
+    title: "Mobile detail flow recipe",
+    rating: 4.5,
+    cooked_at: Math.floor(Date.now() / 1000),
+    ingredients: "Eggs, noodles",
+    steps: "Cook and serve",
+    notes: ""
+  }});
+  expect(create.ok()).toBeTruthy();
+
+  await page.locator('[data-view="recipes"]:visible').first().tap();
+  await expect(page.locator("#recipeList [data-recipe-id]")).toHaveCount(1);
+  await page.locator("#recipeList [data-recipe-id]").tap();
+
+  await expect(page.locator("#recipesView")).toHaveClass(/mobile-detail-open/);
+  await expect(page.locator("#recipesView .recipes-panel")).toBeHidden();
+  await expect(page.locator("#recipeDetail")).toBeVisible();
+  await expect(page.locator("[data-back-recipe-list]")).toBeVisible();
+
+  await page.locator("[data-back-recipe-list]").tap();
+  await expect(page.locator("#recipesView")).not.toHaveClass(/mobile-detail-open/);
+  await expect(page.locator("#recipesView .recipes-panel")).toBeVisible();
+});
+
+test("@mobile restaurant marker opens the detail sheet and closes with one tap", async ({ signedInPage: page }) => {
   const create = await page.request.post("/api/restaurants", { data: {
     name: "E2E Mobile Close",
     address: "Toronto",
@@ -60,19 +91,37 @@ test("@mobile restaurant detail closes with one tap", async ({ signedInPage: pag
   await page.reload();
   await page.waitForLoadState("networkidle");
   await page.locator("#markersLayer .restaurant-marker").first().tap();
-  const cardLayout = await page.locator("#spotCard").evaluate((card) => ({
-    clientWidth: card.clientWidth,
-    scrollWidth: card.scrollWidth,
-    overflowX: getComputedStyle(card).overflowX,
-    touchAction: getComputedStyle(card).touchAction
-  }));
-  expect(cardLayout.scrollWidth).toBeLessThanOrEqual(cardLayout.clientWidth);
-  expect(["clip", "hidden"]).toContain(cardLayout.overflowX);
-  expect(cardLayout.touchAction).toBe("pan-y");
-  await page.locator("#openSpotDetail").tap();
   await expect(page.locator("#spotDetailDialog")).toBeVisible();
   await page.locator("#closeSpotDetail").tap();
   await expect(page.locator("#spotDetailDialog")).toBeHidden();
+});
+
+test("@mobile quick capture opens with only the essential restaurant fields", async ({ signedInPage: page }) => {
+  await page.locator("#mobileQuickCaptureButton").tap();
+  await expect(page.locator("#addDialog")).toBeVisible();
+  await expect(page.locator("#restaurantAdvancedFields")).toBeHidden();
+  await expect(page.locator('#restaurantForm select[name="status"]')).toHaveValue("want_to_go");
+  await expect(page.locator('#restaurantForm input[name="personalRating"]')).toHaveValue("0");
+  await page.locator("#toggleRestaurantDetails").tap();
+  await expect(page.locator("#restaurantAdvancedFields")).toBeVisible();
+});
+
+test("@mobile list and recipe capture keep optional fields out of the first task", async ({ signedInPage: page }) => {
+  await page.locator('[data-view="my-lists"]:visible').first().tap();
+  await page.locator("#mobileMyListDrawer > summary").tap();
+  await page.locator("#mobileMyListDrawer [data-mobile-create-list]").tap();
+  await expect(page.locator("#listAdvancedFields")).toBeHidden();
+  await page.locator("#toggleListDetails").tap();
+  await expect(page.locator("#listAdvancedFields")).toBeVisible();
+  await page.locator("#cancelListButton").tap();
+
+  await page.locator('[data-view="recipes"]:visible').first().tap();
+  await page.locator("#openRecipeDialog").tap();
+  await expect(page.locator("#recipeAdvancedFields")).toBeHidden();
+  await expect(page.locator('#recipeForm input[name="rating"]')).toHaveValue("0");
+  await page.locator("#toggleRecipeDetails").tap();
+  await expect(page.locator("#recipeAdvancedFields")).toBeVisible();
+  await page.locator("#cancelRecipeButton").tap();
 });
 
 test("@mobile long form dialogs stay horizontally locked", async ({ signedInPage: page }) => {
@@ -135,6 +184,7 @@ test("@mobile long form dialogs stay horizontally locked", async ({ signedInPage
 
   await page.evaluate(() => document.querySelector("#recipeDialog").showModal());
   const recipeForm = page.locator("#recipeForm");
+  await page.locator("#toggleRecipeDetails").tap();
   await recipeForm.locator('textarea[name="ingredients"]').fill("A".repeat(240));
   await expect(recipeForm.locator('textarea[name="ingredients"]')).toHaveCSS("resize", "none");
   const before = await recipeForm.evaluate((form) => ({ left: form.getBoundingClientRect().left, scrollLeft: form.scrollLeft }));

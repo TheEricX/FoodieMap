@@ -1,6 +1,7 @@
 const LANGUAGE_KEY = "foodiemap:language";
 const LIST_FILTER_ORDER_KEY = "foodiemap:list-filter-order";
 const GOOGLE_GEOCODING_KEY = "foodiemap:google-geocoding-key";
+const MAP_APP_PREFERENCE_KEY = "foodiemap:map-app-preference";
 const LOCATION_PREFERENCE_KEY = "foodiemap.locationMode.v1";
 const LOCATION_CORE_URL = "/location-core.mjs?v=20260710-location";
 const UI_CORE_URL = "/ui-core.mjs?v=20260712-shell";
@@ -115,6 +116,7 @@ let mapViewTemplates = null;
 let mapLinkCore = null;
 let mapGeometry = null;
 let activeFilter = "all";
+const searchTermsByView = Object.create(null);
 let selectedRestaurantId = null;
 let isSpotCardOpen = false;
 let spotCardDragStart = null;
@@ -135,12 +137,16 @@ let discoveryLists = [];
 let sharePacks = [];
 let recipes = [];
 let selectedRecipeId = null;
+let recipeMobileDetailOpen = false;
 let editingRecipeId = null;
 let selectedListId = null;
 let activeMyListKey = "system:all";
 let selectedDiscoveryListId = null;
 let editingListId = null;
 let addSpotsListId = null;
+let listPickerRestaurantId = null;
+let pendingListRestaurantId = null;
+let toastTimer = null;
 let discoverySort = "popular";
 let adminUsers = [];
 let adminLoadTimer = null;
@@ -207,6 +213,7 @@ const elements = {
   authStatusText: document.querySelector("#authStatusText"),
   openAddPanel: document.querySelector("#openAddPanel"),
   pasteAddButton: document.querySelector("#pasteAddButton"),
+  mobileQuickCaptureButton: document.querySelector("#mobileQuickCaptureButton"),
   mobileMapMenu: document.querySelector(".mobile-map-menu"),
   mobileActionButtons: document.querySelectorAll("[data-mobile-action]"),
   mobileListDrawer: document.querySelector("#mobileListDrawer"),
@@ -230,6 +237,9 @@ const elements = {
   cancelSpotButton: document.querySelector("#cancelSpotButton"),
   saveSpotButton: document.querySelector("#saveSpotButton"),
   formHelp: document.querySelector("#formHelp"),
+  quickCaptureIntro: document.querySelector("#quickCaptureIntro"),
+  toggleRestaurantDetails: document.querySelector("#toggleRestaurantDetails"),
+  restaurantAdvancedFields: document.querySelector("#restaurantAdvancedFields"),
   dishEditor: document.querySelector("#dishEditor"),
   dishEditorList: document.querySelector("#dishEditorList"),
   dishNameInput: document.querySelector("#dishNameInput"),
@@ -241,6 +251,7 @@ const elements = {
   closeSettings: document.querySelector("#closeSettings"),
   cancelSettings: document.querySelector("#cancelSettings"),
   googleApiKey: document.querySelector("#googleApiKey"),
+  mapAppPreference: document.querySelector("#mapAppPreference"),
   integrationList: document.querySelector("#integrationList"),
   cuteMap: document.querySelector("#cuteMap"),
   mapZoomOut: document.querySelector("#mapZoomOut"),
@@ -287,6 +298,7 @@ const elements = {
   openGoogleMapChoice: document.querySelector("#openGoogleMapChoice"),
   openAppleMapChoice: document.querySelector("#openAppleMapChoice"),
   openSpotDetail: document.querySelector("#openSpotDetail"),
+  spotAddToList: document.querySelector("#spotAddToList"),
   closeCard: document.querySelector("#closeCard"),
   editSpot: document.querySelector("#editSpot"),
   shareSpot: document.querySelector("#shareSpot"),
@@ -305,6 +317,8 @@ const elements = {
   detailDishNotes: document.querySelector("#detailDishNotes"),
   detailAddDishPanel: document.querySelector("#detailAddDishPanel"),
   detailAddDishToggle: document.querySelector("#detailAddDishToggle"),
+  detailAddToList: document.querySelector("#detailAddToList"),
+  detailQuickAddMenu: document.querySelector("#detailQuickAddMenu"),
   detailAddDish: document.querySelector("#detailAddDish"),
   detailCancelDish: document.querySelector("#detailCancelDish"),
   detailDishList: document.querySelector("#detailDishList"),
@@ -339,6 +353,9 @@ const elements = {
   recipeFormMode: document.querySelector("#recipeFormMode"),
   recipeFormTitle: document.querySelector("#recipeFormTitle"),
   recipeFormHelp: document.querySelector("#recipeFormHelp"),
+  recipeQuickCaptureIntro: document.querySelector("#recipeQuickCaptureIntro"),
+  toggleRecipeDetails: document.querySelector("#toggleRecipeDetails"),
+  recipeAdvancedFields: document.querySelector("#recipeAdvancedFields"),
   recipeImageInput: document.querySelector("#recipeImageInput"),
   recipeImageName: document.querySelector("#recipeImageName"),
   recipeImagePreview: document.querySelector("#recipeImagePreview"),
@@ -383,6 +400,9 @@ const elements = {
   listFormMode: document.querySelector("#listFormMode"),
   listFormTitle: document.querySelector("#listFormTitle"),
   listFormHelp: document.querySelector("#listFormHelp"),
+  listQuickCaptureIntro: document.querySelector("#listQuickCaptureIntro"),
+  toggleListDetails: document.querySelector("#toggleListDetails"),
+  listAdvancedFields: document.querySelector("#listAdvancedFields"),
   cancelListButton: document.querySelector("#cancelListButton"),
   saveListButton: document.querySelector("#saveListButton"),
   closeListDialog: document.querySelector("#closeListDialog"),
@@ -390,6 +410,15 @@ const elements = {
   closeAddSpotsDialog: document.querySelector("#closeAddSpotsDialog"),
   addSpotsSearch: document.querySelector("#addSpotsSearch"),
   addSpotsList: document.querySelector("#addSpotsList"),
+  listPickerDialog: document.querySelector("#listPickerDialog"),
+  closeListPickerDialog: document.querySelector("#closeListPickerDialog"),
+  listPickerHelp: document.querySelector("#listPickerHelp"),
+  listPickerOptions: document.querySelector("#listPickerOptions"),
+  createListForSpot: document.querySelector("#createListForSpot"),
+  appToast: document.querySelector("#appToast"),
+  appToastMessage: document.querySelector("#appToastMessage"),
+  appToastAction: document.querySelector("#appToastAction"),
+  appToastClose: document.querySelector("#appToastClose"),
   adminRefreshButton: document.querySelector("#adminRefreshButton"),
   adminSearchInput: document.querySelector("#adminSearchInput"),
   adminStatusFilter: document.querySelector("#adminStatusFilter"),
@@ -628,12 +657,13 @@ function bindEvents() {
   elements.sendLoginCodeButton?.addEventListener("click", requestLoginCode);
   elements.verifyLoginCodeButton?.addEventListener("click", verifyLoginCode);
   elements.openAddPanel.addEventListener("click", openCreateDialog);
-  elements.pasteAddButton.addEventListener("click", pasteAndAddFromClipboard);
+  elements.pasteAddButton.addEventListener("click", () => openQuickCaptureDialog({ fromClipboard: true }));
+  elements.mobileQuickCaptureButton?.addEventListener("click", () => openQuickCaptureDialog({ fromClipboard: true }));
   elements.mobileActionButtons.forEach((button) => {
     button.addEventListener("click", () => {
       closeMobileMenuDetails(elements.mobileMapMenu);
       if (button.dataset.mobileAction === "new-spot") openCreateDialog();
-      if (button.dataset.mobileAction === "paste-add") pasteAndAddFromClipboard();
+      if (button.dataset.mobileAction === "paste-add") openQuickCaptureDialog({ fromClipboard: true });
     });
   });
   elements.mobileListChips.forEach((button) => {
@@ -653,6 +683,9 @@ function bindEvents() {
   elements.spotCard.addEventListener("pointercancel", cancelMobileSpotCardDrag);
   elements.closeAddPanel.addEventListener("click", () => closeRestaurantDialog());
   elements.cancelSpotButton?.addEventListener("click", () => closeRestaurantDialog());
+  elements.toggleRestaurantDetails?.addEventListener("click", () => {
+    setRestaurantAdvancedVisible(elements.restaurantAdvancedFields?.hidden);
+  });
   elements.closeCard.addEventListener("click", () => {
     setSpotCardOpen(false, { render: true });
   });
@@ -660,6 +693,9 @@ function bindEvents() {
     setSpotCardOpen(true, { render: true });
   });
   elements.openGoogleMaps?.addEventListener("click", () => openMapChoice(selectedRestaurant()));
+  [elements.openGoogleMapChoice, elements.openAppleMapChoice].forEach((link) => {
+    link?.addEventListener("click", () => setMapAppPreference(link.dataset.mapProvider));
+  });
   elements.closeMapChoiceDialog?.addEventListener("click", () => elements.mapChoiceDialog?.close());
   elements.mapChoiceDialog?.addEventListener("click", (event) => {
     if (event.target === elements.mapChoiceDialog) elements.mapChoiceDialog.close();
@@ -673,6 +709,8 @@ function bindEvents() {
     openMapChoice(restaurant);
   });
   elements.openSpotDetail.addEventListener("click", openSpotDetail);
+  elements.spotAddToList?.addEventListener("click", () => openListPicker(selectedRestaurant()));
+  elements.detailAddToList?.addEventListener("click", () => openListPicker(findRestaurantById(activeDetailRestaurantId)));
   elements.closeSpotDetail.addEventListener("pointerup", closeSpotDetailFromPointer);
   elements.closeSpotDetail.addEventListener("click", closeSpotDetailFromClick);
   elements.closeSpotDetail.addEventListener("keydown", closeSpotDetailFromKeyboard);
@@ -686,6 +724,10 @@ function bindEvents() {
     button.addEventListener("click", () => setDetailReviewStatus(button.dataset.detailReviewStatus));
   });
   elements.detailAddDishToggle.addEventListener("click", () => setDetailAddDishOpen(!isDetailAddDishOpen));
+  elements.detailQuickAddMenu?.addEventListener("click", () => {
+    setDetailAddDishOpen(true);
+    elements.detailAddDishToggle?.scrollIntoView({ block: "center", behavior: "smooth" });
+  });
   elements.detailAddDish.addEventListener("click", addDishFromDetail);
   elements.detailCancelDish.addEventListener("click", cancelDetailDishAdd);
   bindDetailFileDropzone(elements.detailDishImage.closest("[data-detail-file-dropzone]"), elements.detailDishImage, {
@@ -697,7 +739,10 @@ function bindEvents() {
   elements.editSpot.addEventListener("click", openEditDialog);
   elements.shareSpot.addEventListener("click", openShareDialog);
   elements.deleteSpot.addEventListener("click", deleteSelectedRestaurant);
-  elements.searchInput.addEventListener("input", render);
+  elements.searchInput.addEventListener("input", () => {
+    searchTermsByView[activeView] = elements.searchInput.value;
+    render();
+  });
   elements.navLinks.forEach((link) => {
     link.addEventListener("click", (event) => {
       event.preventDefault();
@@ -724,9 +769,22 @@ function bindEvents() {
   });
   elements.closeListDialog.addEventListener("click", () => closeListDialog());
   elements.cancelListButton?.addEventListener("click", () => closeListDialog());
+  elements.toggleListDetails?.addEventListener("click", () => {
+    setListAdvancedVisible(elements.listAdvancedFields?.hidden);
+  });
   elements.listForm.addEventListener("submit", saveListFromForm);
   elements.closeAddSpotsDialog.addEventListener("click", () => elements.addSpotsDialog.close());
   elements.addSpotsSearch.addEventListener("input", renderAddSpotsDialog);
+  elements.closeListPickerDialog?.addEventListener("click", closeListPicker);
+  elements.listPickerDialog?.addEventListener("click", (event) => {
+    if (event.target === elements.listPickerDialog) closeListPicker();
+  });
+  elements.createListForSpot?.addEventListener("click", () => {
+    const restaurantId = listPickerRestaurantId;
+    closeListPicker();
+    openCreateListDialog({ restaurantId });
+  });
+  elements.appToastClose?.addEventListener("click", hideToast);
   elements.mapZoomOut.addEventListener("click", () => mapInteractionController?.zoomOut());
   elements.mapZoomIn.addEventListener("click", () => mapInteractionController?.zoomIn());
   elements.mapCenterButton?.addEventListener("click", centerMapOnUser);
@@ -747,6 +805,9 @@ function bindEvents() {
     if (event.target === elements.recipeDialog && !isMobileMapViewport()) closeRecipeDialog();
   });
   elements.recipeForm?.addEventListener("submit", saveRecipeFromForm);
+  elements.toggleRecipeDetails?.addEventListener("click", () => {
+    setRecipeAdvancedVisible(elements.recipeAdvancedFields?.hidden);
+  });
   elements.recipeImageInput?.addEventListener("change", updateRecipeImageName);
   bindDetailFileDropzone(elements.recipeImageInput?.closest("[data-recipe-file-dropzone]"), elements.recipeImageInput, {
     onFileSelected: updateRecipeImageName,
@@ -797,6 +858,7 @@ function bindEvents() {
 
 async function openSettingsDialog() {
   elements.googleApiKey.value = getGoogleGeocodingKey();
+  if (elements.mapAppPreference) elements.mapAppPreference.value = getMapAppPreference();
   elements.settingsDialog.showModal();
   await loadIntegrations();
 }
@@ -831,6 +893,7 @@ function saveSettings(event) {
   event.preventDefault();
   try {
     localStorage.setItem(GOOGLE_GEOCODING_KEY, elements.googleApiKey.value.trim());
+    setMapAppPreference(elements.mapAppPreference?.value || "");
   } catch {
     // The app still works without persisted settings.
   }
@@ -1423,6 +1486,19 @@ function openCreateDialog() {
   elements.addDialog.showModal();
 }
 
+async function openQuickCaptureDialog({ fromClipboard = false } = {}) {
+  openCreateDialog();
+  if (!elements.addDialog.open || !fromClipboard) return;
+  try {
+    const mapUrl = sanitizeMapUrl(extractMapUrl(await navigator.clipboard.readText()));
+    if (!mapUrl) return;
+    elements.googleUrlInput.value = mapUrl;
+    await autofillFromMapsUrl();
+  } catch {
+    // Clipboard permission is optional; the focused link field remains ready for paste.
+  }
+}
+
 function openEditDialog() {
   if (!requireLogin()) return;
   const selected = selectedRestaurant();
@@ -1434,6 +1510,7 @@ function openEditDialog() {
   elements.saveSpotButton.textContent = t("spot.updateButton");
   elements.formHelp.textContent = t("spot.editHelp");
   fillRestaurantForm(selected);
+  setRestaurantAdvancedVisible(true);
   renderDishEditor(selected);
   elements.dishEditor.hidden = false;
   elements.addDialog.showModal();
@@ -1471,10 +1548,15 @@ async function closeRestaurantDialog({ force = false } = {}) {
 function resetRestaurantForm() {
   editingRestaurantId = null;
   elements.restaurantForm.reset();
+  elements.restaurantForm.elements.status.value = "want_to_go";
+  elements.restaurantForm.elements.personalRating.value = "0";
+  elements.restaurantForm.elements.visitCount.value = "0";
   elements.formModeLabel.textContent = t("spot.newMode");
   elements.formTitle.textContent = t("spot.saveTitle");
   elements.saveSpotButton.textContent = t("spot.saveButton");
   elements.formHelp.textContent = t("maps.help");
+  elements.quickCaptureIntro.hidden = false;
+  setRestaurantAdvancedVisible(false);
   elements.dishEditor.hidden = true;
   elements.dishEditorList.innerHTML = "";
 }
@@ -1490,8 +1572,8 @@ function hasUnsavedRestaurantForm() {
       payload.lng ||
       payload.notes ||
       payload.visit_count > 0 ||
-      payload.status !== "visited" ||
-      payload.personal_rating !== 4.5,
+      payload.status !== "want_to_go" ||
+      payload.personal_rating !== 0,
   );
 }
 
@@ -1515,6 +1597,7 @@ async function saveRestaurantFromForm(event) {
   event.preventDefault();
   if (!requireLogin()) return;
   const payload = getRestaurantPayload();
+  const isEditing = Boolean(editingRestaurantId);
   try {
     elements.formHelp.textContent = t("list.saving");
     const coordinates = await resolveCoordinates(payload);
@@ -1537,8 +1620,13 @@ async function saveRestaurantFromForm(event) {
     setSpotCardOpen(true);
     closeRestaurantDialog({ force: true });
     render();
+    showToast(t(isEditing ? "spot.updated" : "spot.saved"), {
+      actionLabel: t("button.view"),
+      onAction: openSpotDetail,
+    });
   } catch (error) {
     elements.formHelp.textContent = error.message;
+    showToast(error.message, { tone: "error" });
   }
 }
 
@@ -1557,6 +1645,15 @@ function getRestaurantPayload() {
     visit_count: Number.isFinite(visitCount) ? Math.max(0, Math.floor(visitCount)) : 0,
     notes: String(form.get("notes") ?? "").trim(),
   };
+}
+
+function setRestaurantAdvancedVisible(visible) {
+  if (!elements.restaurantAdvancedFields || !elements.toggleRestaurantDetails) return;
+  elements.restaurantAdvancedFields.hidden = !visible;
+  elements.toggleRestaurantDetails.hidden = Boolean(editingRestaurantId);
+  elements.toggleRestaurantDetails.setAttribute("aria-expanded", String(visible));
+  elements.toggleRestaurantDetails.textContent = t(visible ? "spot.hideDetails" : "spot.addDetails");
+  if (elements.quickCaptureIntro) elements.quickCaptureIntro.hidden = Boolean(editingRestaurantId);
 }
 
 async function addDishFromEditor() {
@@ -1947,6 +2044,7 @@ function renderSpotDetail(restaurant = selectedRestaurant()) {
   form.visitCount.value = restaurant.visit_count || 0;
   form.notes.value = restaurant.notes || "";
   renderDetailHeader(restaurant);
+  elements.detailAddToList.disabled = !currentUser || Boolean(shareToken);
   elements.detailStatus.textContent = currentUser ? t("detail.autosave") : t("detail.demo");
   renderDetailAddDishState();
   renderDetailDishList(restaurant);
@@ -2700,11 +2798,15 @@ function getInitialView() {
 }
 
 function setActiveView(view, options = {}) {
+  const previousView = activeView;
   const allowedViews = isAdminPortal ? ["admin-login", "admin"] : ["login", "my-map", "my-lists", "recipes", "discovery", "share-pack", "recipe-share"];
   if (!allowedViews.includes(view)) view = isAdminPortal ? "admin-login" : "my-map";
   if (isAdminPortal && view === "admin" && !currentAdmin) view = "admin-login";
   if (!isAdminPortal && !currentUser && !shareToken && !sharePackToken && !recipeShareToken) view = "login";
+  searchTermsByView[activeView] = elements.searchInput.value;
   activeView = recipeShareToken ? "recipe-share" : sharePackToken ? "share-pack" : shareToken ? "my-map" : view;
+  if (activeView === "recipes" && previousView !== "recipes") recipeMobileDetailOpen = false;
+  elements.searchInput.value = searchTermsByView[activeView] || "";
   if (!isAdminPortal && !sharePackToken && !recipeShareToken && activeView !== "login" && options.push !== false && window.location.hash !== `#${activeView}`) {
     window.location.hash = activeView;
   }
@@ -2727,6 +2829,10 @@ function setActiveView(view, options = {}) {
   requestAnimationFrame(updateTopbarElevation);
 }
 
+function searchTermForView(view = activeView) {
+  return String(searchTermsByView[view] || "").trim();
+}
+
 function updateTopbarElevation() {
   const activePanel = document.querySelector(`[data-view-panel="${activeView}"]`);
   const documentScrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
@@ -2745,7 +2851,7 @@ function renderViewShell() {
   elements.navLinks.forEach((link) => link.classList.toggle("active", link.dataset.view === activeView));
   elements.searchInput.placeholder = {
     "my-map": t("search.category"),
-    "my-lists": t("search.category"),
+    "my-lists": t("search.lists"),
     recipes: t("search.recipes"),
     discovery: t("search.discovery"),
     "share-pack": t("search.discovery"),
@@ -2847,7 +2953,7 @@ function isMobileMapViewport() {
 }
 
 function getVisibleRestaurants() {
-  const term = activeView === "my-map" ? elements.searchInput.value : "";
+  const term = activeView === "my-map" ? searchTermForView("my-map") : "";
   return uiCore
     ? uiCore.filterBySearch(restaurantsForActiveCategory(), term, restaurantSearchText)
     : restaurantsForActiveCategory().filter((restaurant) => !term || restaurantSearchText(restaurant).includes(term.trim().toLowerCase()));
@@ -2995,6 +3101,12 @@ function renderMarkers() {
     marker.title = ready ? `${restaurant.name} - ${formatUserDistance(distance)}` : `${restaurant.name} - ${statusLabel(restaurant.status)}`;
     marker.addEventListener("click", () => {
       selectedRestaurantId = restaurant.id;
+      if (isMobileMapViewport()) {
+        setSpotCardOpen(false);
+        render();
+        openSpotDetail();
+        return;
+      }
       setSpotCardOpen(true);
       render();
     });
@@ -3022,9 +3134,99 @@ function renderSpotCard() {
   elements.spotDishes.innerHTML = renderSpotDishes(selected);
   const ownedMode = Boolean(currentUser && !shareToken);
   elements.openSpotDetail.disabled = false;
+  elements.spotAddToList.disabled = !ownedMode;
   elements.editSpot.disabled = !ownedMode;
   elements.shareSpot.disabled = !ownedMode;
   elements.deleteSpot.disabled = !ownedMode;
+}
+
+async function openListPicker(restaurant) {
+  if (!requireLogin() || !restaurant || !elements.listPickerDialog) return;
+  listPickerRestaurantId = restaurant.id;
+  elements.listPickerHelp.textContent = t("list.loading");
+  elements.listPickerOptions.innerHTML = loadingPanel(t("list.loading"));
+  elements.listPickerDialog.showModal();
+  try {
+    const hydrated = await Promise.all(lists.map(async (list) => {
+      if (list.items) return list;
+      const data = await api(`/api/lists/${list.id}`);
+      return normalizeList(data.list);
+    }));
+    if (listPickerRestaurantId !== restaurant.id || !elements.listPickerDialog.open) return;
+    lists = hydrated;
+  } catch (error) {
+    if (listPickerRestaurantId === restaurant.id) elements.listPickerHelp.textContent = error.message;
+    showToast(error.message, { tone: "error" });
+    return;
+  }
+  const ordered = orderedLists();
+  const hasLists = ordered.length > 0;
+  elements.listPickerHelp.textContent = t(hasLists ? "list.addSpotHelp" : "list.addSpotNoLists", { name: restaurant.name });
+  elements.listPickerOptions.innerHTML = ordered.map((list) => {
+    const alreadyAdded = (list.items ?? []).some((item) => item.restaurant_id === restaurant.id);
+    return `
+      <button class="list-picker-option" type="button" data-add-restaurant-to-list="${escapeAttribute(list.id)}" ${alreadyAdded ? "disabled" : ""}>
+        <span><strong>${escapeHtml(list.title)}</strong><small>${escapeHtml(list.description || t("list.noDescription"))}</small></span>
+        <span>${escapeHtml(alreadyAdded ? t("list.inThisList") : t("button.add"))}</span>
+      </button>
+    `;
+  }).join("") || emptyStateTemplate(t("list.addSpotNoLists"), "");
+  elements.listPickerOptions.querySelectorAll("[data-add-restaurant-to-list]").forEach((button) => {
+    button.addEventListener("click", () => addRestaurantToPickedList(button.dataset.addRestaurantToList));
+  });
+}
+
+function closeListPicker() {
+  listPickerRestaurantId = null;
+  elements.listPickerDialog?.close();
+}
+
+async function addRestaurantToPickedList(listId) {
+  const restaurant = findRestaurantById(listPickerRestaurantId);
+  if (!restaurant || !listId) return;
+  try {
+    const data = await api(`/api/lists/${listId}/items`, {
+      method: "POST",
+      body: JSON.stringify({ restaurant_id: restaurant.id }),
+    });
+    const updated = normalizeList(data.list);
+    lists = lists.map((item) => (item.id === updated.id ? updated : item));
+    selectedListId = updated.id;
+    activeMyListKey = `custom:${updated.id}`;
+    closeListPicker();
+    render();
+    showToast(t("list.spotAdded", { name: restaurant.name, title: updated.title }), {
+      actionLabel: t("button.view"),
+      onAction: () => setActiveView("my-lists"),
+    });
+  } catch (error) {
+    elements.listPickerHelp.textContent = error.message;
+    showToast(error.message, { tone: "error" });
+  }
+}
+
+function showToast(message, { actionLabel = "", onAction = null, duration = 4200, tone = "success" } = {}) {
+  if (!elements.appToast) return;
+  clearTimeout(toastTimer);
+  elements.appToastMessage.textContent = message;
+  elements.appToastAction.hidden = !actionLabel || typeof onAction !== "function";
+  elements.appToastAction.textContent = actionLabel;
+  elements.appToastAction.onclick = () => {
+    hideToast();
+    onAction?.();
+  };
+  elements.appToast.dataset.tone = tone;
+  elements.appToast.hidden = false;
+  toastTimer = window.setTimeout(hideToast, duration);
+}
+
+function hideToast() {
+  clearTimeout(toastTimer);
+  toastTimer = null;
+  if (!elements.appToast) return;
+  elements.appToast.hidden = true;
+  delete elements.appToast.dataset.tone;
+  elements.appToastAction.onclick = null;
 }
 
 function findRestaurantById(id) {
@@ -3041,10 +3243,33 @@ function findRestaurantById(id) {
 function openMapChoice(restaurant) {
   if (!restaurant) return;
   const urls = mapChoiceUrls(restaurant);
+  const preferredProvider = getMapAppPreference();
+  if (preferredProvider && urls[preferredProvider]) {
+    window.open(urls[preferredProvider], "_blank", "noopener,noreferrer");
+    return;
+  }
   elements.mapChoiceName.textContent = restaurant.address ? `${restaurant.name} · ${restaurant.address}` : restaurant.name;
   elements.openGoogleMapChoice.href = urls.google;
   elements.openAppleMapChoice.href = urls.apple;
   elements.mapChoiceDialog?.showModal();
+}
+
+function getMapAppPreference() {
+  try {
+    const value = localStorage.getItem(MAP_APP_PREFERENCE_KEY);
+    return value === "google" || value === "apple" ? value : "";
+  } catch {
+    return "";
+  }
+}
+
+function setMapAppPreference(provider) {
+  try {
+    if (provider === "google" || provider === "apple") localStorage.setItem(MAP_APP_PREFERENCE_KEY, provider);
+    else localStorage.removeItem(MAP_APP_PREFERENCE_KEY);
+  } catch {
+    // Preference persistence is optional.
+  }
 }
 
 function mapChoiceUrls(restaurant) {
@@ -3073,7 +3298,7 @@ function renderSpotDishes(restaurant) {
 
 function renderListsView() {
   if (!elements.myListDetail) return;
-  const term = activeView === "my-lists" ? elements.searchInput.value.trim().toLowerCase() : "";
+  const term = activeView === "my-lists" ? searchTermForView("my-lists").toLowerCase() : "";
 
   if (activeMyListKey.startsWith("system:")) {
     const systemKey = activeMyListKey.replace("system:", "");
@@ -3100,7 +3325,7 @@ function renderListsView() {
 
 function renderDiscoveryView() {
   if (!elements.discoveryGrid) return;
-  const term = activeView === "discovery" ? elements.searchInput.value.trim().toLowerCase() : "";
+  const term = activeView === "discovery" ? searchTermForView("discovery").toLowerCase() : "";
   const sorted = domainCore.sortDiscoveryLists(discoveryLists, discoverySort);
   const visible = sorted.filter((list) => listSearchText(list).includes(term));
   elements.discoveryGrid.innerHTML = visible.length
@@ -3153,7 +3378,7 @@ function renderSharePackHistory() {
 
 function renderRecipesView() {
   if (!elements.recipeList || !elements.recipeDetail) return;
-  const term = elements.searchInput.value;
+  const term = searchTermForView("recipes");
   const visible = uiCore
     ? uiCore.filterBySearch(recipes, term, recipeSearchText)
     : recipes.filter((recipe) => recipeSearchText(recipe).includes(term.trim().toLowerCase()));
@@ -3163,14 +3388,20 @@ function renderRecipesView() {
   elements.recipeList.querySelectorAll("[data-recipe-id]").forEach((card) => {
     card.addEventListener("click", () => {
       selectedRecipeId = card.dataset.recipeId;
+      recipeMobileDetailOpen = isMobileMapViewport();
       renderRecipesView();
     });
   });
   const selected = domainCore.selectVisibleItem(recipes, visible, selectedRecipeId);
   selectedRecipeId = selected?.id ?? null;
   elements.recipesView?.classList.toggle("has-selection", Boolean(selected));
+  elements.recipesView?.classList.toggle("mobile-detail-open", Boolean(selected && recipeMobileDetailOpen && isMobileMapViewport()));
   elements.recipeDetail.hidden = !selected;
   elements.recipeDetail.innerHTML = selected ? recipeDetailTemplate(selected) : "";
+  elements.recipeDetail.querySelector("[data-back-recipe-list]")?.addEventListener("click", () => {
+    recipeMobileDetailOpen = false;
+    renderRecipesView();
+  });
   elements.recipeDetail.querySelector("[data-edit-recipe]")?.addEventListener("click", () => openRecipeDialog(selected));
   elements.recipeDetail.querySelector("[data-share-recipe]")?.addEventListener("click", () => openRecipeShareDialog(selected));
   elements.recipeDetail.querySelector("[data-delete-recipe]")?.addEventListener("click", () => deleteRecipe(selected));
@@ -3190,7 +3421,7 @@ function openRecipeDialog(recipe = null) {
   elements.recipeForm.reset();
   elements.recipeForm.elements.id.value = recipe?.id ?? "";
   elements.recipeForm.elements.title.value = recipe?.title ?? "";
-  elements.recipeForm.elements.rating.value = recipe ? Number(recipe.rating || 0).toFixed(1) : "4.5";
+  elements.recipeForm.elements.rating.value = recipe ? Number(recipe.rating || 0).toFixed(1) : "0";
   elements.recipeForm.elements.cookedAt.value = recipe?.cooked_at ? dateInputValue(recipe.cooked_at) : dateInputValue(Math.floor(Date.now() / 1000));
   elements.recipeForm.elements.ingredients.value = recipe?.ingredients ?? "";
   elements.recipeForm.elements.steps.value = recipe?.steps ?? "";
@@ -3199,9 +3430,19 @@ function openRecipeDialog(recipe = null) {
   elements.recipeFormTitle.textContent = recipe ? t("recipes.editTitle") : t("recipes.formTitle");
   elements.saveRecipeButton.textContent = recipe ? t("recipes.update") : t("recipes.save");
   elements.recipeFormHelp.textContent = t("recipes.formHelp");
+  setRecipeAdvancedVisible(Boolean(recipe));
   updateRecipeImageName(recipe);
   recipeFormBaseline = formSnapshot(elements.recipeForm);
   elements.recipeDialog.showModal();
+}
+
+function setRecipeAdvancedVisible(visible) {
+  if (!elements.recipeAdvancedFields || !elements.toggleRecipeDetails) return;
+  elements.recipeAdvancedFields.hidden = !visible;
+  elements.toggleRecipeDetails.hidden = Boolean(editingRecipeId);
+  elements.toggleRecipeDetails.setAttribute("aria-expanded", String(visible));
+  elements.toggleRecipeDetails.textContent = t(visible ? "spot.hideDetails" : "spot.addDetails");
+  if (elements.recipeQuickCaptureIntro) elements.recipeQuickCaptureIntro.hidden = Boolean(editingRecipeId);
 }
 
 async function closeRecipeDialog({ force = false } = {}) {
@@ -3224,6 +3465,7 @@ async function closeRecipeDialog({ force = false } = {}) {
 async function saveRecipeFromForm(event) {
   event.preventDefault();
   try {
+    const isEditing = Boolean(editingRecipeId);
     const form = new FormData(elements.recipeForm);
     const body = {
       title: String(form.get("title") || "").trim(),
@@ -3245,8 +3487,13 @@ async function saveRecipeFromForm(event) {
     elements.recipeFormHelp.textContent = t("recipes.saved");
     await closeRecipeDialog({ force: true });
     render();
+    showToast(t(isEditing ? "recipes.updated" : "recipes.saved"), {
+      actionLabel: t("button.view"),
+      onAction: () => setActiveView("recipes"),
+    });
   } catch (error) {
     elements.recipeFormHelp.textContent = error.message;
+    showToast(error.message, { tone: "error" });
   }
 }
 
@@ -3640,8 +3887,11 @@ function bindMyListDetailActions(list) {
     setActiveView("my-map");
   });
   elements.myListDetail.querySelector('[data-list-action="edit"]')?.addEventListener("click", () => openEditListDialog(list));
-  elements.myListDetail.querySelector('[data-list-action="publish"]')?.addEventListener("click", () => toggleListVisibility(list));
+  elements.myListDetail.querySelectorAll('[data-list-action="publish"]').forEach((button) => {
+    button.addEventListener("click", () => toggleListVisibility(list));
+  });
   elements.myListDetail.querySelector('[data-list-action="add"]')?.addEventListener("click", () => openAddSpotsDialog(list.id));
+  elements.myListDetail.querySelector("[data-empty-action]")?.addEventListener("click", () => openAddSpotsDialog(list.id));
   elements.myListDetail.querySelector('[data-list-action="delete"]')?.addEventListener("click", () => deleteList(list));
   elements.myListDetail.querySelectorAll("[data-open-spot]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -3670,21 +3920,26 @@ function bindRestaurantRows(container) {
   });
 }
 
-function openCreateListDialog() {
+function openCreateListDialog({ restaurantId = null } = {}) {
   if (!requireLogin()) return;
   editingListId = null;
+  pendingListRestaurantId = restaurantId && restaurants.some((restaurant) => restaurant.id === restaurantId) ? restaurantId : null;
   elements.listForm.reset();
   elements.listForm.elements.id.value = "";
   elements.listFormMode.textContent = t("list.newMode");
   elements.listFormTitle.textContent = t("list.createTitle");
   elements.saveListButton.textContent = t("button.createList");
-  elements.listFormHelp.textContent = t("list.defaultPrivate");
+  elements.listFormHelp.textContent = pendingListRestaurantId
+    ? t("list.creatingWithSpot", { name: findRestaurantById(pendingListRestaurantId)?.name || "" })
+    : t("list.defaultPrivate");
+  setListAdvancedVisible(false);
   listFormBaseline = formSnapshot(elements.listForm);
   elements.listDialog.showModal();
 }
 
 function openEditListDialog(list) {
   editingListId = list.id;
+  pendingListRestaurantId = null;
   elements.listForm.reset();
   elements.listForm.elements.id.value = list.id;
   elements.listForm.elements.title.value = list.title;
@@ -3694,8 +3949,18 @@ function openEditListDialog(list) {
   elements.listFormTitle.textContent = t("list.editTitle");
   elements.saveListButton.textContent = t("button.updateList");
   elements.listFormHelp.textContent = t("list.editHelp");
+  setListAdvancedVisible(true);
   listFormBaseline = formSnapshot(elements.listForm);
   elements.listDialog.showModal();
+}
+
+function setListAdvancedVisible(visible) {
+  if (!elements.listAdvancedFields || !elements.toggleListDetails) return;
+  elements.listAdvancedFields.hidden = !visible;
+  elements.toggleListDetails.hidden = Boolean(editingListId);
+  elements.toggleListDetails.setAttribute("aria-expanded", String(visible));
+  elements.toggleListDetails.textContent = t(visible ? "spot.hideDetails" : "spot.addDetails");
+  if (elements.listQuickCaptureIntro) elements.listQuickCaptureIntro.hidden = Boolean(editingListId);
 }
 
 async function closeListDialog({ force = false } = {}) {
@@ -3717,11 +3982,13 @@ async function closeListDialog({ force = false } = {}) {
 async function saveListFromForm(event) {
   event.preventDefault();
   if (!requireLogin()) return;
+  const isEditing = Boolean(editingListId);
   const form = new FormData(elements.listForm);
   const body = {
     title: String(form.get("title") ?? "").trim(),
     description: String(form.get("description") ?? "").trim(),
     cover_image_url: String(form.get("coverImageUrl") ?? "").trim(),
+    ...(editingListId || !pendingListRestaurantId ? {} : { restaurant_ids: [pendingListRestaurantId] }),
   };
   if (!body.title) {
     elements.listFormHelp.textContent = t("list.titleRequired");
@@ -3737,17 +4004,24 @@ async function saveListFromForm(event) {
     selectedListId = list.id;
     activeMyListKey = `custom:${list.id}`;
     if (!editingListId) saveListFilterOrder([list.id, ...orderedLists().filter((item) => item.id !== list.id).map((item) => item.id)]);
+    const addedRestaurant = pendingListRestaurantId ? findRestaurantById(pendingListRestaurantId) : null;
+    pendingListRestaurantId = null;
     await closeListDialog({ force: true });
     setActiveView("my-lists");
+    showToast(addedRestaurant ? t("list.createdWithSpot", { title: list.title, name: addedRestaurant.name }) : t(isEditing ? "list.updated" : "list.created"), {
+      actionLabel: t("button.view"),
+      onAction: () => setActiveView("my-lists"),
+    });
   } catch (error) {
     elements.listFormHelp.textContent = error.message;
+    showToast(error.message, { tone: "error" });
   }
 }
 
 async function toggleListVisibility(list) {
   if (!requireLogin()) return;
   if (list.visibility !== "public" && !list.item_count) {
-    alert(t("list.publishNeedsSpot"));
+    showToast(t("list.publishNeedsSpot"), { tone: "error" });
     return;
   }
   const visibility = list.visibility === "public" ? "private" : "public";
@@ -3759,6 +4033,10 @@ async function toggleListVisibility(list) {
   lists = lists.map((item) => (item.id === updated.id ? updated : item));
   await loadDiscoveryLists();
   render();
+  showToast(t(visibility === "public" ? "list.published" : "list.unpublished"), {
+    actionLabel: visibility === "public" ? t("nav.discovery") : "",
+    onAction: visibility === "public" ? () => setActiveView("discovery") : null,
+  });
 }
 
 async function deleteList(list) {
