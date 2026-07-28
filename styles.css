@@ -5581,8 +5581,17 @@ body[data-view="login"] .top-actions {
     display: none;
   }
 
-  body[data-view="discovery"] .discovery-grid .empty-panel {
-    width: calc(100vw - 38px);
+  body[data-view="discovery"] .discovery-grid.is-empty {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-columns: auto;
+    grid-auto-flow: row;
+    overflow-x: hidden;
+    scroll-snap-type: none;
+  }
+
+  body[data-view="discovery"] .discovery-grid.is-empty .empty-panel {
+    width: 100%;
+    min-width: 0;
   }
 
   body[data-view="discovery"] .list-card {

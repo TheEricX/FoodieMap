@@ -3333,6 +3333,7 @@ function renderDiscoveryView() {
   const term = activeView === "discovery" ? searchTermForView("discovery").toLowerCase() : "";
   const sorted = domainCore.sortDiscoveryLists(discoveryLists, discoverySort);
   const visible = sorted.filter((list) => listSearchText(list).includes(term));
+  elements.discoveryGrid.classList.toggle("is-empty", !visible.length);
   elements.discoveryGrid.innerHTML = visible.length
     ? visible.map((list) => listCardTemplate(list, list.id === selectedDiscoveryListId, "public")).join("")
     : discoveryEmptyStateTemplate(term).grid;

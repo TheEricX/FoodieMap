@@ -43,6 +43,18 @@ test("@mobile bottom navigation is single-tap responsive without horizontal over
 test("@mobile hidden toast stays hidden and Discovery resets its inner scroll", async ({ signedInPage: page }) => {
   await expect(page.locator("#appToast")).toBeHidden();
   await page.locator('[data-view="discovery"]:visible').first().tap();
+  const discoveryGrid = page.locator("#discoveryGrid");
+  await expect(discoveryGrid).toHaveClass(/is-empty/);
+  const horizontalOverflow = await discoveryGrid.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(horizontalOverflow.scrollWidth).toBeLessThanOrEqual(horizontalOverflow.clientWidth);
+  await discoveryGrid.evaluate((element) => {
+    element.scrollLeft = 80;
+  });
+  await expect.poll(() => discoveryGrid.evaluate((element) => element.scrollLeft)).toBe(0);
+
   const discoveryLayout = page.locator("#discoveryView .discovery-layout");
   await discoveryLayout.evaluate((element) => {
     element.scrollTop = 80;

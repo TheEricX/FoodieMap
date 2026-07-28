@@ -75,7 +75,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
-- Kept hidden mobile toasts out of the layout and reset Discovery's inner scroll when re-entering the view.
+- Kept hidden mobile toasts out of the layout, reset Discovery's inner scroll when re-entering the view, and prevented its empty Public Lists panel from drifting horizontally.
 - Standardized success and recoverable-error feedback through an in-app toast, and reinforced narrow-screen content alignment and horizontal overflow coverage.
 - Removed an unmatched closing element from selected-spot dish pills so mobile and desktop browsers build the same DOM structure.
 - Added a compact medium-desktop topbar layout so search, location controls, and the signed-in avatar remain inside the viewport near responsive breakpoints.
