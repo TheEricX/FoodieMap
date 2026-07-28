@@ -40,6 +40,21 @@ test("@mobile bottom navigation is single-tap responsive without horizontal over
   await page.setViewportSize({ width: 390, height: 844 });
 });
 
+test("@mobile hidden toast stays hidden and Discovery resets its inner scroll", async ({ signedInPage: page }) => {
+  await expect(page.locator("#appToast")).toBeHidden();
+  await page.locator('[data-view="discovery"]:visible').first().tap();
+  const discoveryLayout = page.locator("#discoveryView .discovery-layout");
+  await discoveryLayout.evaluate((element) => {
+    element.scrollTop = 80;
+  });
+  await expect.poll(() => discoveryLayout.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
+  await page.locator('[data-view="my-map"]:visible').first().tap();
+  await page.locator('[data-view="discovery"]:visible').first().tap();
+  await expect.poll(() => discoveryLayout.evaluate((element) => element.scrollTop)).toBe(0);
+  await expect(page.locator("#appToast")).toBeHidden();
+});
+
 test("@mobile recipe empty-state guidance is text, not a fake button", async ({ signedInPage: page }) => {
   await page.locator('[data-view="recipes"]:visible').first().tap();
   const emptyState = page.locator("#recipeList .empty-info-panel");

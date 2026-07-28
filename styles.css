@@ -3808,6 +3808,10 @@ body[data-view="login"] .top-actions {
   padding: 12px 12px 12px 16px;
 }
 
+.app-toast[hidden] {
+  display: none;
+}
+
 .app-toast[data-tone="error"] {
   border-color: rgba(189, 55, 46, 0.72);
   background: #7d2d2a;

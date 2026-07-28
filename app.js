@@ -2826,7 +2826,12 @@ function setActiveView(view, options = {}) {
   }
   if (["my-map", "my-lists"].includes(activeView)) selectFirstVisibleRestaurant();
   render();
-  requestAnimationFrame(updateTopbarElevation);
+  requestAnimationFrame(() => {
+    if (activeView === "discovery" && previousView !== "discovery") {
+      elements.discoveryView?.querySelector(".discovery-layout")?.scrollTo({ top: 0 });
+    }
+    updateTopbarElevation();
+  });
 }
 
 function searchTermForView(view = activeView) {
