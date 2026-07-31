@@ -33,6 +33,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Focused the signed-out entry screen on Google or email sign-in, added a stable startup loading gate, and made empty maps lead directly to adding a restaurant or pasting a Maps link.
 - Streamlined core mobile tasks with Maps-link-first restaurant capture, compact List and Recipe creation, per-view search memory, preferred map-app selection, and direct Add to List, Add Spots, and Publish actions.
 - Reworked mobile Recipe browsing into a list-to-detail flow with an explicit return path, while retaining the desktop parallel list/detail workspace.
 - Introduced shared UI core rules and separate desktop/mobile navigation shells while keeping one API and content model.
@@ -75,6 +76,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Kept empty-map restaurant actions above the transparent marker layer so they remain tappable on mobile, with responsive regression coverage for the new entry and capture flows.
 - Kept hidden mobile toasts out of the layout, reset Discovery's inner scroll when re-entering the view, and prevented its empty Public Lists panel from drifting horizontally.
 - Standardized success and recoverable-error feedback through an in-app toast, and reinforced narrow-screen content alignment and horizontal overflow coverage.
 - Removed an unmatched closing element from selected-spot dish pills so mobile and desktop browsers build the same DOM structure.

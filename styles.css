@@ -1119,6 +1119,43 @@ body[data-view="discovery"] .sidebar {
   display: none;
 }
 
+/* Keep the first frame neutral until the session check decides which view is safe to show. */
+body:not([data-app-ready]) .topbar,
+body:not([data-app-ready]) .layout,
+body:not([data-app-ready]) .mobile-bottom-nav {
+  display: none;
+}
+
+.boot-gate {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.boot-gate > div {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  color: var(--primary-dark);
+}
+
+.boot-gate .brand-mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--primary);
+  color: var(--paper);
+  font-size: 28px;
+}
+
+body[data-app-ready] .boot-gate {
+  display: none;
+}
+
 body[data-view="login"] .layout,
 body[data-view="login"] .top-nav,
 body[data-view="login"] .mobile-search-row,
@@ -2905,7 +2942,9 @@ body[data-view="login"] .top-actions {
   position: absolute;
   left: 50%;
   bottom: 44px;
-  z-index: 3;
+  /* The empty-state actions must sit above the otherwise transparent marker
+     canvas: an empty canvas still owns the whole map hit area. */
+  z-index: 6;
   display: grid;
   width: min(330px, calc(100% - 40px));
   gap: 8px;
@@ -2920,6 +2959,16 @@ body[data-view="login"] .top-actions {
 
 .empty-map strong {
   color: var(--primary-dark);
+}
+
+.empty-map-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.empty-map-actions button {
+  width: 100%;
 }
 
 .spot-card {
@@ -5256,6 +5305,15 @@ body[data-view="login"] .top-actions {
     gap: 6px;
     overflow: hidden;
     padding: 9px;
+  }
+
+  body[data-view="my-map"] .map-stage.is-empty {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  body[data-view="my-map"] .map-stage.is-empty .mobile-map-bar,
+  body[data-view="my-map"] .map-stage.is-empty .map-nearest-panel {
+    display: none;
   }
 
   body[data-view="my-map"] .mobile-map-bar {

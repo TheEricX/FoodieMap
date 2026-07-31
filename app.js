@@ -185,9 +185,7 @@ const elements = {
   loginButton: document.querySelector("#loginButton"),
   loginView: document.querySelector("#loginView"),
   loginPageGoogle: document.querySelector("#loginPageGoogle"),
-  loginPagePassword: document.querySelector("#loginPagePassword"),
-  loginPageCode: document.querySelector("#loginPageCode"),
-  loginPageRegister: document.querySelector("#loginPageRegister"),
+  loginPageEmail: document.querySelector("#loginPageEmail"),
   authDialog: document.querySelector("#authDialog"),
   authForm: document.querySelector("#authForm"),
   closeAuthDialog: document.querySelector("#closeAuthDialog"),
@@ -213,6 +211,8 @@ const elements = {
   authStatusText: document.querySelector("#authStatusText"),
   openAddPanel: document.querySelector("#openAddPanel"),
   pasteAddButton: document.querySelector("#pasteAddButton"),
+  emptyMapAddButton: document.querySelector("#emptyMapAddButton"),
+  emptyMapPasteButton: document.querySelector("#emptyMapPasteButton"),
   mobileQuickCaptureButton: document.querySelector("#mobileQuickCaptureButton"),
   mobileMapMenu: document.querySelector(".mobile-map-menu"),
   mobileActionButtons: document.querySelectorAll("[data-mobile-action]"),
@@ -632,9 +632,7 @@ function bindEvents() {
   });
   elements.loginButton.addEventListener("click", handleLoginButton);
   elements.loginPageGoogle?.addEventListener("click", startGoogleSignIn);
-  elements.loginPagePassword?.addEventListener("click", () => openAuthDialog("password", "login"));
-  elements.loginPageCode?.addEventListener("click", () => openAuthDialog("code"));
-  elements.loginPageRegister?.addEventListener("click", () => openAuthDialog("password", "register"));
+  elements.loginPageEmail?.addEventListener("click", () => openAuthDialog("password", "login"));
   elements.authForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     const codePanelOpen = [...elements.authPanels].some((panel) => panel.dataset.authPanelView === "code" && !panel.hidden);
@@ -658,6 +656,8 @@ function bindEvents() {
   elements.verifyLoginCodeButton?.addEventListener("click", verifyLoginCode);
   elements.openAddPanel.addEventListener("click", openCreateDialog);
   elements.pasteAddButton.addEventListener("click", () => openQuickCaptureDialog({ fromClipboard: true }));
+  elements.emptyMapAddButton?.addEventListener("click", openCreateDialog);
+  elements.emptyMapPasteButton?.addEventListener("click", () => openQuickCaptureDialog({ fromClipboard: true }));
   elements.mobileQuickCaptureButton?.addEventListener("click", () => openQuickCaptureDialog({ fromClipboard: true }));
   elements.mobileActionButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -2848,6 +2848,7 @@ function updateTopbarElevation() {
 }
 
 function renderViewShell() {
+  document.body.dataset.appReady = "true";
   document.body.dataset.view = activeView;
   uiShellController?.setActiveView(activeView);
   elements.viewPanels.forEach((panel) => {
@@ -3083,7 +3084,9 @@ function renderRecentList() {
 
 function renderMarkers() {
   const visible = getVisibleRestaurants();
-  elements.emptyMap.style.display = visible.length ? "none" : "grid";
+  const isEmpty = !visible.length;
+  elements.emptyMap.style.display = isEmpty ? "grid" : "none";
+  elements.cuteMap.closest(".map-stage")?.classList.toggle("is-empty", isEmpty);
   elements.markersLayer.innerHTML = "";
   updateMapZoomUi();
   const ready = isLocationReady();

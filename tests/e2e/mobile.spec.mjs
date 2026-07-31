@@ -76,6 +76,20 @@ test("@mobile recipe empty-state guidance is text, not a fake button", async ({ 
   await expect(emptyState.locator("button")).toHaveCount(0);
 });
 
+test("@mobile empty map prioritizes direct restaurant capture", async ({ signedInPage: page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#emptyMap")).toBeVisible();
+  await expect(page.locator("#emptyMapAddButton")).toBeVisible();
+  await expect(page.locator("#emptyMapPasteButton")).toBeVisible();
+  await expect(page.locator(".mobile-map-bar")).toBeHidden();
+  await expect(page.locator(".map-nearest-panel")).toBeHidden();
+  await page.locator("#emptyMapAddButton").tap();
+  await expect(page.locator("#addDialog")).toBeVisible();
+  await page.locator("#closeAddPanel").tap();
+  await page.locator("#emptyMapPasteButton").tap();
+  await expect(page.locator("#addDialog")).toBeVisible();
+});
+
 test("@mobile recipes use a single-detail flow instead of stacked list and detail panes", async ({ signedInPage: page }) => {
   const create = await page.request.post("/api/recipes", { data: {
     title: "Mobile detail flow recipe",

@@ -38,6 +38,38 @@ test("@smoke signed-out startup shows login without protected API errors", async
   await expect(page.locator("#loginView")).toBeVisible();
 });
 
+test("@smoke auth resolution keeps the protected app behind a stable loading gate", async ({ page }) => {
+  let releaseSession;
+  let sessionRequestStarted;
+  const sessionRequest = new Promise((resolve) => { sessionRequestStarted = resolve; });
+  await page.route("**/api/me", async (route) => {
+    sessionRequestStarted();
+    await new Promise((resolve) => { releaseSession = resolve; });
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ user: null }) });
+  });
+
+  const navigation = page.goto("/");
+  await sessionRequest;
+  await expect(page.locator("#bootGate")).toBeVisible();
+  await expect(page.locator(".layout")).toBeHidden();
+  releaseSession();
+  await navigation;
+  await expect(page.locator("#loginView")).toBeVisible();
+  await expect(page.locator("#bootGate")).toBeHidden();
+});
+
+test("@smoke signed-out landing keeps authentication choices focused", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  await expect(page.locator("#loginPageGoogle")).toBeVisible();
+  await expect(page.locator("#loginPageEmail")).toBeVisible();
+  await expect(page.locator("#loginView button")).toHaveCount(2);
+  await page.locator("#loginPageEmail").click();
+  await expect(page.locator("#authDialog")).toBeVisible();
+  await expect(page.locator("[data-auth-panel=code]")).toBeVisible();
+  await expect(page.locator("[data-auth-password-mode=register]")).toBeVisible();
+});
+
 test("@smoke authenticated navigation works after startup and reload", async ({ signedInPage: page }, testInfo) => {
   const shell = testInfo.project.name === "mobile" ? ".mobile-bottom-nav" : ".desktop-primary-nav";
   for (const [view, panel] of [

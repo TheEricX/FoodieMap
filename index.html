@@ -16,6 +16,13 @@
   </head>
   <body>
     <main class="app-shell">
+      <section class="boot-gate" id="bootGate" role="status" aria-live="polite">
+        <div>
+          <span class="brand-mark" aria-hidden="true">◎</span>
+          <p class="eyebrow" data-i18n="boot.eyebrow">FOODIEMAP</p>
+          <strong data-i18n="boot.loading">Loading your map…</strong>
+        </div>
+      </section>
       <header class="topbar">
         <div class="brand">
           <span class="brand-mark">◎</span>
@@ -29,16 +36,16 @@
         </nav>
         <div class="mobile-search-row">
           <label class="search-box">
-            <span>⌕</span>
-            <input id="searchInput" type="search" placeholder="Search for tasty treats..." data-i18n-placeholder="search.default" />
+            <span aria-hidden="true">⌕</span>
+            <input id="searchInput" type="search" placeholder="Search for tasty treats..." data-i18n-placeholder="search.default" aria-label="Search restaurants" data-i18n-aria-label="search.label" />
           </label>
           <button class="mobile-quick-capture" id="mobileQuickCaptureButton" type="button" data-i18n="button.addSpotShort">+ Add</button>
         </div>
         <div class="top-actions">
           <div class="location-status top-location-status" id="locationStatus" aria-live="polite" data-i18n="location.waiting">Location pending</div>
-          <button class="icon-button" id="locateButton" title="Get current location" data-i18n-title="location.button">⌖</button>
+          <button class="icon-button" id="locateButton" title="Get current location" data-i18n-title="location.button" aria-label="Get current location" data-i18n-aria-label="location.button">⌖</button>
           <details class="language-menu" id="languageMenu">
-            <summary class="icon-button language-trigger" title="Language" data-i18n-title="language.label">
+            <summary class="icon-button language-trigger" title="Language" data-i18n-title="language.label" aria-label="Language" data-i18n-aria-label="language.label">
               <span aria-hidden="true">🌐</span>
               <small id="languageLabel">EN</small>
             </summary>
@@ -47,7 +54,7 @@
               <button type="button" data-language-option="zh" data-i18n="language.chinese">中文</button>
             </div>
           </details>
-          <button class="icon-button" id="settingsButton" title="Google API settings" data-i18n-title="settings.button">⚙</button>
+          <button class="icon-button" id="settingsButton" title="Google API settings" data-i18n-title="settings.button" aria-label="Google API settings" data-i18n-aria-label="settings.button">⚙</button>
           <button class="avatar" id="loginButton" type="button">Sign in</button>
         </div>
       </header>
@@ -66,9 +73,7 @@
           </div>
           <div class="login-actions-panel">
             <button class="primary-button" id="loginPageGoogle" type="button" data-i18n="login.google">Continue with Google</button>
-            <button class="secondary-button" id="loginPagePassword" type="button" data-i18n="login.password">Email and password</button>
-            <button class="secondary-button" id="loginPageCode" type="button" data-i18n="login.code">Email code</button>
-            <button class="outline-button" id="loginPageRegister" type="button" data-i18n="login.create">Create account</button>
+            <button class="secondary-button" id="loginPageEmail" type="button" data-i18n="login.email">Continue with email</button>
             <p class="form-help" data-i18n="login.note">Public Share Pack links can still be viewed without signing in.</p>
           </div>
         </div>
@@ -172,11 +177,11 @@
 
           <div class="cute-map" id="cuteMap" aria-label="Relative restaurant map">
             <div class="map-zoom-controls" aria-label="Map zoom controls">
-              <button class="map-zoom-button" id="mapZoomOut" type="button" title="Zoom out" data-i18n-title="map.zoomOut">−</button>
+              <button class="map-zoom-button" id="mapZoomOut" type="button" title="Zoom out" data-i18n-title="map.zoomOut" aria-label="Zoom out" data-i18n-aria-label="map.zoomOut">−</button>
               <span id="mapZoomLabel">100%</span>
-              <button class="map-zoom-button" id="mapZoomIn" type="button" title="Zoom in" data-i18n-title="map.zoomIn">＋</button>
-              <button class="map-zoom-button center" id="mapCenterButton" type="button" title="Center on you" data-i18n-title="map.center" disabled>⌖</button>
-              <button class="map-zoom-button reset" id="mapZoomReset" type="button" title="Reset zoom" data-i18n-title="map.zoomReset">1×</button>
+              <button class="map-zoom-button" id="mapZoomIn" type="button" title="Zoom in" data-i18n-title="map.zoomIn" aria-label="Zoom in" data-i18n-aria-label="map.zoomIn">＋</button>
+              <button class="map-zoom-button center" id="mapCenterButton" type="button" title="Center on you" data-i18n-title="map.center" aria-label="Center on you" data-i18n-aria-label="map.center" disabled>⌖</button>
+              <button class="map-zoom-button reset" id="mapZoomReset" type="button" title="Reset zoom" data-i18n-title="map.zoomReset" aria-label="Reset zoom" data-i18n-aria-label="map.zoomReset">1×</button>
             </div>
             <div class="grid-overlay"></div>
             <div class="range-ring ring-1" hidden><span>1 km</span></div>
@@ -190,12 +195,16 @@
             <div class="empty-map" id="emptyMap">
               <strong data-i18n="map.emptyTitle">Add your first restaurant</strong>
               <span data-i18n="map.emptyBody">Save an address or map link, and it will appear on this playful relative map.</span>
+              <div class="empty-map-actions">
+                <button class="primary-button" id="emptyMapAddButton" type="button" data-i18n="button.addRestaurant">Add a restaurant</button>
+                <button class="secondary-button" id="emptyMapPasteButton" type="button" data-i18n="button.pasteMapsLink">Paste a Maps link</button>
+              </div>
             </div>
           </div>
 
           <article class="spot-card" id="spotCard">
             <span class="tape"></span>
-            <button class="close-card" id="closeCard" type="button" title="Close details" data-i18n-title="modal.closeDetails">×</button>
+            <button class="close-card" id="closeCard" type="button" title="Close details" data-i18n-title="modal.closeDetails" aria-label="Close details" data-i18n-aria-label="modal.closeDetails">×</button>
             <p class="eyebrow" data-i18n="map.selectedSpot">SELECTED SPOT</p>
             <h2 id="spotName">Choose a restaurant</h2>
             <div class="meta-row">
@@ -383,7 +392,7 @@
               <p class="eyebrow" data-i18n="auth.mode">SIGN IN</p>
               <h2 data-i18n="auth.title">Sign in to FoodieMap</h2>
             </div>
-            <button class="icon-button" type="button" id="closeAuthDialog">×</button>
+            <button class="icon-button" type="button" id="closeAuthDialog" aria-label="Close sign-in dialog" data-i18n-aria-label="auth.closeDialog">×</button>
           </div>
 
           <button class="primary-button" id="googleSignInButton" type="button" data-i18n="auth.googleButton">Continue with Google</button>
