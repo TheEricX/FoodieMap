@@ -23,12 +23,12 @@ Each test that needs an account creates a unique `e2e-<timestamp>-<random>@examp
 
 ## First-Time Setup On macOS
 
-Install Python dependencies, Node dependencies, and the pinned browser:
+Install development dependencies, Node dependencies, and the pinned browser:
 
 ```bash
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements-dev.txt
 npm ci
-npx playwright install chromium
+npx playwright install chromium webkit
 ```
 
 Playwright's browser is separate from the user's installed Chrome. Re-run the install command after a Playwright version change.
@@ -40,7 +40,9 @@ npm run test:unit         # Location unit tests and JavaScript syntax
 npm run test:mcp          # OAuth 2.1, service isolation, and MCP protocol tests
 npm run test:e2e          # Desktop Chromium E2E
 npm run test:e2e:mobile   # 390x844 touch E2E and smoke tests
-npm run test:all          # Unit, desktop, and mobile release gate
+npm run test:e2e:webkit   # WebKit smoke checks for Safari-engine regressions
+npm run test:visual       # Review desktop/mobile visual baselines on the current OS
+npm run test:all          # Unit, MCP, Chromium, and WebKit release gate
 npm run test:e2e:ui       # Interactive Playwright test runner
 npm run test:staging      # Tests tagged @staging against STAGING_BASE_URL
 ```
@@ -60,7 +62,7 @@ Failed tests retain a screenshot, video, and trace under `test-results/`. Open a
 npx playwright show-trace test-results/PATH/trace.zip
 ```
 
-The trace contains actions, DOM snapshots, console messages, and network requests. The shared fixture fails a test on unexpected `console.error` or uncaught page exceptions, so a visually correct screen with broken startup code still blocks release.
+The trace contains actions, DOM snapshots, console messages, and network requests. The shared fixture fails a test on unexpected `console.error` or uncaught page exceptions, so a visually correct screen with broken startup code still blocks release. Accessibility scans use axe on the signed-out entry screen; visual tests compare selected desktop and mobile screens against reviewed baselines. Visual tests run in their own projects because screenshot rendering is OS-specific; review them on the same OS that created the baseline.
 
 Use `npm run test:e2e:ui` to step through tests and inspect locators. Prefer stable IDs, `data-*` ownership identifiers, and accessible roles. Do not select elements by layout position or translated display text when a stable attribute exists.
 
@@ -88,6 +90,7 @@ Never configure this token on production. Never point `STAGING_BASE_URL` at prod
 - Put pure state or calculation behavior in a Node unit test.
 - Put browser behavior shared by desktop and mobile in `core-flows.spec.mjs`.
 - Tag touch and responsive checks with `@mobile`.
+- Tag a small, high-value browser-neutral smoke subset with `@cross-browser` so it also runs in WebKit.
 - Tag cloud-only, non-destructive architecture checks with `@staging`.
 - Use API setup when the feature under test is UI behavior; use UI setup when the creation flow itself is under test.
 - Keep tests independent. Do not rely on test order or a fixed account.
@@ -109,7 +112,7 @@ The following require manual verification:
 
 ## Troubleshooting
 
-- `Executable doesn't exist`: run `npx playwright install chromium`.
+- `Executable doesn't exist`: run `npx playwright install chromium webkit`.
 - Port `5197` is occupied: stop the process or run with `E2E_PORT=5198`.
 - Server cannot bind in a restricted shell: permit the command to open a local listening port.
 - Test times out: inspect the trace for a dialog covering the target or an API request that did not finish.

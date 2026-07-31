@@ -38,6 +38,12 @@ python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 ```
 
+To run the automated test suite locally, install the development test dependency as well:
+
+```bash
+.venv/bin/python -m pip install -r requirements-dev.txt
+```
+
 从模板创建 `.env`：
 
 ```bash
@@ -90,6 +96,12 @@ http://localhost:5174
 ```bash
 npm ci
 npx playwright install chromium
+```
+
+For the complete cross-browser test gate, install WebKit too:
+
+```bash
+npx playwright install webkit
 ```
 
 运行完整本地检查：

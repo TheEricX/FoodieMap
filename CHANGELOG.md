@@ -8,6 +8,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added a self-contained development test dependency set, WebKit smoke coverage, axe accessibility scanning, and reviewed desktop/mobile visual regression baselines.
 - Added shared frontend modules for responsive layout state, shell ownership, reusable state panels, accessible confirmations, and API transport without introducing a framework or build step.
 - Added a shared domain model and view-template layer for restaurant, list, recipe, Discovery, and share data used by both desktop and mobile shells.
 - Added a dedicated Lists/Discovery template module with desktop/mobile management-flow regression coverage.
@@ -76,6 +77,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Prevented E2E account cleanup from racing with pending page requests, eliminating teardown-only unauthorized-console failures.
 - Kept empty-map restaurant actions above the transparent marker layer so they remain tappable on mobile, with responsive regression coverage for the new entry and capture flows.
 - Kept hidden mobile toasts out of the layout, reset Discovery's inner scroll when re-entering the view, and prevented its empty Public Lists panel from drifting horizontally.
 - Standardized success and recoverable-error feedback through an in-app toast, and reinforced narrow-screen content alignment and horizontal overflow coverage.

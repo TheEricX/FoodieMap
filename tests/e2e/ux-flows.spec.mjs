@@ -133,11 +133,14 @@ test("@responsive search explains its scope for each product area", async ({ sig
 test("@responsive search terms stay scoped to the active product area", async ({ signedInPage: page }) => {
   await page.locator("#searchInput").fill("map-only");
   await page.locator('[data-view="my-lists"]:visible').first().click();
+  await page.waitForLoadState("networkidle");
   await expect(page.locator("#searchInput")).toHaveValue("");
   await page.locator("#searchInput").fill("lists-only");
   await page.locator('[data-view="my-map"]:visible').first().click();
+  await page.waitForLoadState("networkidle");
   await expect(page.locator("#searchInput")).toHaveValue("map-only");
   await page.locator('[data-view="my-lists"]:visible').first().click();
+  await page.waitForLoadState("networkidle");
   await expect(page.locator("#searchInput")).toHaveValue("lists-only");
 });
 

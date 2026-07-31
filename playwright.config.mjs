@@ -51,7 +51,7 @@ export default defineConfig({
     {
       name: "desktop",
       use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
-      grepInvert: /@staging|@mobile/
+      grepInvert: /@staging|@mobile|@visual/
     },
     {
       name: "mobile",
@@ -60,7 +60,27 @@ export default defineConfig({
         browserName: "chromium",
         viewport: { width: 390, height: 844 }
       },
-      grep: /@mobile|@smoke|@responsive/
+      grep: /@mobile|@smoke|@responsive/,
+      grepInvert: /@visual/
+    },
+    {
+      name: "webkit",
+      use: { ...devices["Desktop Safari"], viewport: { width: 1440, height: 900 } },
+      grep: /@cross-browser|@smoke/
+    },
+    {
+      name: "visual-desktop",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
+      grep: /@visual/
+    },
+    {
+      name: "visual-mobile",
+      use: {
+        ...devices["iPhone 13"],
+        browserName: "chromium",
+        viewport: { width: 390, height: 844 }
+      },
+      grep: /@visual/
     },
     {
       name: "staging",

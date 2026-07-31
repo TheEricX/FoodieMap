@@ -50,6 +50,10 @@ export const test = base.extend({
     await page.waitForLoadState("networkidle");
     await expect(page.locator("#mapView")).toBeVisible();
     await use(page);
+    // A view can schedule a final data refresh after its last user action.
+    // Close the test page before the dependent account fixture revokes its
+    // server-side session and data, avoiding teardown-only 401 noise.
+    await page.close({ runBeforeUnload: false });
   }
 });
 
