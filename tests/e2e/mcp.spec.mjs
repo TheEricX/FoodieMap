@@ -6,7 +6,7 @@ function challenge(verifier) {
   return createHash("sha256").update(verifier).digest("base64url");
 }
 
-test("OAuth consent, connected app, and revocation complete the user flow", async ({ signedInPage: page }) => {
+test("OAuth consent, connected app, and revocation complete the user flow", async ({ signedInPage: page, baseURL }) => {
   const registeredResponse = await page.request.post("/oauth/register", { data: {
     client_name: "Playwright Agent",
     redirect_uris: ["http://127.0.0.1:9876/callback"],
@@ -23,7 +23,7 @@ test("OAuth consent, connected app, and revocation complete the user flow", asyn
     state: "playwright-state",
     code_challenge: challenge(verifier),
     code_challenge_method: "S256",
-    resource: "http://127.0.0.1:5197/mcp"
+    resource: `${baseURL}/mcp`
   });
   await page.goto(`/oauth/authorize?${params}`);
   await expect(page.getByRole("heading", { name: "Connect Playwright Agent" })).toBeVisible();

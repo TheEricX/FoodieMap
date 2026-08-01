@@ -29,8 +29,7 @@
           <span data-i18n="app.brand">Gourmet Map</span>
         </div>
         <nav class="top-nav desktop-primary-nav" aria-label="Primary navigation" data-shell="desktop">
-          <a class="active" href="#my-map" data-view="my-map" data-i18n="nav.map">Map</a>
-          <a href="#my-lists" data-view="my-lists" data-i18n="nav.lists">Lists</a>
+          <a class="active" href="#my-map" data-view="my-map" data-place-nav data-i18n="nav.places">My Places</a>
           <a href="#recipes" data-view="recipes" data-i18n="nav.recipes">Recipes</a>
           <a href="#discovery" data-view="discovery" data-i18n="nav.discovery">Discovery</a>
         </nav>
@@ -39,7 +38,7 @@
             <span aria-hidden="true">⌕</span>
             <input id="searchInput" type="search" placeholder="Search for tasty treats..." data-i18n-placeholder="search.default" aria-label="Search restaurants" data-i18n-aria-label="search.label" />
           </label>
-          <button class="mobile-quick-capture" id="mobileQuickCaptureButton" type="button" data-i18n="button.addSpotShort">+ Add</button>
+          <button class="mobile-quick-capture" id="mobileQuickCaptureButton" type="button" data-i18n="button.addSpot">+ Add a place</button>
         </div>
         <div class="top-actions">
           <div class="location-status top-location-status" id="locationStatus" aria-live="polite" data-i18n="location.waiting">Location pending</div>
@@ -89,9 +88,9 @@
             </div>
           </section>
 
-          <button class="primary-button" id="openAddPanel" data-i18n="button.newSpot">+ New Spot</button>
-          <button class="primary-button alt" id="pasteAddButton" type="button" data-i18n="button.pasteAdd">Paste & Add</button>
-          <p class="action-status" id="pasteStatus">Copy a Google or Apple Maps link, then click Paste & Add.</p>
+          <button class="primary-button" id="openAddPanel" data-i18n="button.addSpot">+ Add a place</button>
+          <button class="text-button" id="pasteAddButton" type="button" data-i18n="button.pasteMapsLink">Paste a Maps link</button>
+          <p class="action-status" id="pasteStatus">Paste a Google or Apple Maps link to fill the details automatically.</p>
 
           <section class="sidebar-index-panel" aria-label="Pantry index">
             <div class="sidebar-section-head compact">
@@ -133,6 +132,10 @@
 
         <section class="map-stage app-view" id="mapView" data-view-panel="my-map">
           <section class="mobile-map-bar" aria-label="Mobile map tools">
+            <div class="place-view-switcher mobile-place-view-switcher" role="tablist" aria-label="Places view" data-i18n-aria-label="places.viewLabel">
+              <button class="active" type="button" data-place-view="my-map" data-view="my-map" data-i18n="places.map">Map</button>
+              <button type="button" data-place-view="my-lists" data-view="my-lists" data-i18n="places.list">List</button>
+            </div>
             <nav class="mobile-filter-chips" aria-label="Restaurant filters">
               <button class="filter-item mobile-filter-chip active" data-filter="all" type="button" title="All Spots" data-i18n-title="system.all.title"><span data-i18n="mobileFilter.all">All</span></button>
               <button class="filter-item mobile-filter-chip" data-filter="visited" type="button" title="Visited" data-i18n-title="system.visited.title"><span data-i18n="mobileFilter.visited">Visited</span></button>
@@ -157,6 +160,10 @@
                 <p class="eyebrow" id="mapCategoryEyebrow">MAP VIEW</p>
                 <strong id="mapCategoryTitle">All Spots</strong>
                 <small id="mapCategorySummary">Sorted by distance from you</small>
+              </div>
+              <div class="place-view-switcher" role="tablist" aria-label="Places view" data-i18n-aria-label="places.viewLabel">
+                <button class="active" type="button" data-place-view="my-map" data-view="my-map" data-i18n="places.map">Map</button>
+                <button type="button" data-place-view="my-lists" data-view="my-lists" data-i18n="places.list">List</button>
               </div>
             </div>
             <section class="location-prompt" id="locationPrompt" aria-live="polite" hidden>
@@ -217,10 +224,16 @@
             <div class="card-actions">
               <button class="outline-button" id="openSpotDetail" type="button" data-i18n="button.details">Details</button>
               <button class="outline-button" id="spotAddToList" type="button" data-i18n="button.addToList">Add to list</button>
-              <button class="outline-button" id="editSpot" type="button" data-i18n="button.edit">Edit</button>
-              <button class="outline-button" id="shareSpot" type="button" data-i18n="button.share">Share</button>
-              <button class="outline-button danger" id="deleteSpot" type="button" data-i18n="button.delete">Delete</button>
               <button class="outline-link map-action" id="openGoogleMaps" type="button" data-i18n="map.openMaps">Open Maps ›</button>
+              <button class="outline-button status-action" id="markVisited" type="button" data-i18n="button.markVisited">Mark visited</button>
+              <details class="spot-more-menu">
+                <summary data-i18n="button.more">More</summary>
+                <div>
+                  <button id="editSpot" type="button" data-i18n="button.edit">Edit</button>
+                  <button id="shareSpot" type="button" data-i18n="button.share">Share</button>
+                  <button class="danger" id="deleteSpot" type="button" data-i18n="button.delete">Delete</button>
+                </div>
+              </details>
             </div>
           </article>
           <button class="spot-card-tab" id="spotCardTab" type="button" hidden>
@@ -230,6 +243,16 @@
         </section>
 
         <section class="lists-stage app-view" id="listsView" data-view-panel="my-lists" hidden>
+          <header class="place-list-header">
+            <div>
+              <p class="eyebrow" data-i18n="places.eyebrow">MY PLACES</p>
+              <h1 data-i18n="places.title">Your saved places</h1>
+            </div>
+            <div class="place-view-switcher" role="tablist" aria-label="Places view" data-i18n-aria-label="places.viewLabel">
+              <button type="button" data-place-view="my-map" data-view="my-map" data-i18n="places.map">Map</button>
+              <button class="active" type="button" data-place-view="my-lists" data-view="my-lists" data-i18n="places.list">List</button>
+            </div>
+          </header>
           <section class="mobile-list-bar" aria-label="Mobile list tools">
             <nav class="mobile-filter-chips" aria-label="List filters">
               <button class="mobile-list-chip" data-mobile-system-list="all" type="button"><span data-i18n="mobileFilter.all">All</span></button>
@@ -273,19 +296,8 @@
                   <p class="eyebrow" data-i18n="discovery.publicLists">PUBLIC LISTS</p>
                   <strong data-i18n="discovery.publishedBy">Published by food explorers</strong>
                 </div>
-                <button class="secondary-button compact-action" id="openSharePackDialog" type="button" data-i18n="button.createSharePack">Create Share Pack</button>
               </div>
               <div class="list-grid discovery-grid" id="discoveryGrid"></div>
-              <section class="share-pack-history-panel" id="sharePackHistoryPanel" hidden>
-                <div class="section-head">
-                  <div>
-                    <p class="eyebrow" data-i18n="sharePack.historyEyebrow">PRIVATE HISTORY</p>
-                    <strong data-i18n="sharePack.historyTitle">My Share Packs</strong>
-                  </div>
-                </div>
-                <p class="form-help" data-i18n="sharePack.historyHelp">Links and cards you generated from Discovery.</p>
-                <div class="share-pack-history-list" id="sharePackHistoryList"></div>
-              </section>
             </section>
             <section class="panel-surface list-detail-panel" id="discoveryDetail"></section>
           </div>
@@ -299,7 +311,7 @@
                 <h2 data-i18n="recipes.title">My Recipes</h2>
                 <p data-i18n="recipes.body">Keep photos, ingredients, and notes for dishes you cooked.</p>
               </div>
-              <button class="icon-button mini-action" id="openRecipeDialog" type="button" title="Add recipe" data-i18n-title="recipes.addTitle">＋</button>
+              <button class="secondary-button compact-action" id="openRecipeDialog" type="button" data-i18n="button.addRecipe">+ Add recipe</button>
             </div>
             <div class="recipe-list" id="recipeList"></div>
           </section>
@@ -379,8 +391,7 @@
       </section>
 
       <nav class="mobile-bottom-nav" aria-label="Primary navigation" data-shell="mobile">
-        <a class="active" href="#my-map" data-view="my-map" data-i18n="nav.map">Map</a>
-        <a href="#my-lists" data-view="my-lists" data-i18n="nav.lists">Lists</a>
+        <a class="active" href="#my-map" data-view="my-map" data-place-nav data-i18n="nav.places">Places</a>
         <a href="#recipes" data-view="recipes" data-i18n="nav.recipes">Recipes</a>
         <a href="#discovery" data-view="discovery" data-i18n="nav.discovery">Discovery</a>
       </nav>

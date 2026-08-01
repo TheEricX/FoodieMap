@@ -125,6 +125,7 @@ export function createListViewTemplates({
               <button type="button" data-list-action="edit">${text("button.edit")}</button>
               <button type="button" data-list-action="publish">${text(isPublic ? "button.unpublish" : "button.publish")}</button>
               <button type="button" data-list-action="add">${text("button.addSpots")}</button>
+              ${items.length ? `<button type="button" data-list-action="share">${text("button.sharePrivate")}</button>` : ""}
               <button class="danger-text" type="button" data-list-action="delete">${text("button.deleteList")}</button>
             </div>
           </details>
@@ -132,7 +133,7 @@ export function createListViewTemplates({
       </div>
       <div class="detail-actions system-actions compact-actions">
         <button class="outline-button" type="button" data-list-action="map">${text("button.openMap")}</button>
-        ${!isPublic && items.length ? `<button class="primary-button" type="button" data-list-action="publish">${text("button.publish")}</button>` : ""}
+        ${!isPublic && items.length ? `<button class="primary-button" type="button" data-list-action="share">${text("button.sharePrivate")}</button><button class="outline-button" type="button" data-list-action="publish">${text("button.publish")}</button>` : ""}
       </div>
       <div class="spot-row-list restaurant-list-mode">
         ${items.length ? items.map(ownedListItem).join("") : emptyState((list.items ?? []).length ? translate("list.noSearchResults") : translate("list.empty"), (list.items ?? []).length ? "" : translate("button.addSpots"))}

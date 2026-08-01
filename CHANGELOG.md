@@ -8,6 +8,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added a unified My Places workspace with Map/List switching, one-tap visited status, list-scoped private sharing, and responsive regression coverage for the simplified navigation.
+
 - Added a self-contained development test dependency set, WebKit smoke coverage, axe accessibility scanning, and reviewed desktop/mobile visual regression baselines.
 - Added shared frontend modules for responsive layout state, shell ownership, reusable state panels, accessible confirmations, and API transport without introducing a framework or build step.
 - Added a shared domain model and view-template layer for restaurant, list, recipe, Discovery, and share data used by both desktop and mobile shells.
@@ -33,6 +35,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Added a dedicated `/admin` portal with fixed username/password login from server environment variables.
 
 ### Changed
+
+- Simplified place capture to one primary Add a place action, clarified recipe creation, and focused Discovery on public list exploration.
 
 - Focused the signed-out entry screen on Google or email sign-in, added a stable startup loading gate, and made empty maps lead directly to adding a restaurant or pasting a Maps link.
 - Streamlined core mobile tasks with Maps-link-first restaurant capture, compact List and Recipe creation, per-view search memory, preferred map-app selection, and direct Add to List, Add Spots, and Publish actions.
@@ -76,6 +80,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Admin access now uses a separate admin session instead of ordinary user email allowlisting.
 
 ### Fixed
+
+- Made the OAuth end-to-end test use its active local test URL instead of a hard-coded port.
 
 - Prevented E2E account cleanup from racing with pending page requests, eliminating teardown-only unauthorized-console failures.
 - Kept empty-map restaurant actions above the transparent marker layer so they remain tappable on mobile, with responsive regression coverage for the new entry and capture flows.

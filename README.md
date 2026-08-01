@@ -9,8 +9,8 @@ Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱
 - SQLite 保存用户、餐厅、菜品、菜谱、分享链接、私密推荐分享包、自定义 list 和公开 Discovery list
 - 保存餐厅状态、去过次数、个人评分、备注、地图链接和坐标
 - 每家店可记录菜品：`Liked` / `Tried`、5 星评分、备注、1 张压缩图片
-- `Paste & Add` 支持 Google Maps、Apple Maps 和地图短链接，并会尽量识别店名、地址和坐标；链接只有坐标时可用 Google Geocoding API Key 反查地址
-- `Paste & Add` 会检测相似餐厅；发现重复时先询问用户是否继续创建
+- `添加地点` 是唯一主入口；可粘贴 Google Maps、Apple Maps 或地图短链接自动识别店名、地址和坐标，链接只有坐标时可用 Google Geocoding API Key 反查地址
+- 粘贴地图链接会检测相似餐厅；发现重复时先询问用户是否继续创建
 - 左侧分类支持系统智能分类和自定义清单：`All Spots`、`Visited`、`Want to Go`、`Favorites`，以及用户创建的私密/公开 list
 - `Map View` 和 `List View` 是同一分类的两种展示方式；系统分类和自定义 list 都可以在地图与列表之间切换
 - 定位是可选功能：允许定位后显示附近距离和排序；拒绝时进入隐私浏览地图，仍可查看全部餐厅且不会使用假坐标。设备坐标只保留在浏览器内存中，不上传到服务器
@@ -18,7 +18,7 @@ Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱
 - `List View` 行内操作保持统一：`Map` 打开当前分类地图，`Open Maps` 让用户选择 Google Maps 或 Apple Maps；系统分类里的 `Delete` 会删除餐厅记录，自定义 list 里的 `Remove` 只从当前清单移除餐厅
 - 自定义 list 默认私密，可手动 `Publish` 到 Discovery；公开 list 可被其他用户复制到自己的 My Lists
 - `Discovery` 支持浏览公开清单、按 Popular / Recent 排序、搜索公开清单，并提供独立手机布局；没有公开清单时会根据登录和 list 状态引导创建、添加餐厅或手动发布
-- `Discovery` 可创建私密推荐分享包，选择要推荐的餐厅和菜品后生成链接与可保存的 PNG 推荐图；别人无需登录即可预览，登录后可一键复制到自己的 My Lists，创建者可在历史记录里撤销分享
+- 自定义 list 可发起私密推荐分享，选择该清单中的餐厅和菜品后生成链接与可保存的 PNG 推荐图；别人无需登录即可预览，登录后可一键复制到自己的 My Lists，创建者可在历史记录里撤销分享
 - `Recipes / 菜谱` 可记录自己做过的菜，包含成品图、食材、做法、备注、评分和做菜日期；单个菜谱可生成公开预览链接、QR code 和 PNG 分享图，别人登录后可一键保存到自己的 My Recipes
 - 系统语言默认英文，顶部 globe 菜单可切换 English / 中文，并会在当前浏览器中记住选择
 - 管理员可通过独立 `/admin` 地址登录后台，管理账号状态、手动切换 Free/Paid 计划、暂停账号、软删除账号和恢复账号
@@ -196,23 +196,22 @@ docker compose down
 ## 使用流程
 
 1. 打开主站会先进入登录页，可选择 Google、邮箱密码或邮箱验证码登录；朋友分享的 `/share/{token}` 和 `/share-pack/{token}` 仍可免登录预览。
-2. 点击 `New Spot` 或复制 Google Maps / Apple Maps 链接后点 `Paste & Add`。
+2. 点击 `添加地点`；粘贴 Google Maps / Apple Maps 链接可自动填写地点详情，手动填写仍可作为备用方式。
 3. Map 首次使用时可选择 `Use my location` 查看距离，或选择 `Not now` 进入不显示距离的隐私浏览模式；之后可随时通过顶部定位图标切换。
 4. 如果自动添加时发现相似餐厅，确认是否继续创建重复记录。
 5. 编辑店铺时可以记录去过次数、个人评分和菜品。
 6. 在菜品区域添加菜名、状态、评分，并可上传一张图片。
 7. 在左侧选择系统分类或自定义 list，例如 `All Spots`、`Visited` 或自己创建的 `333`。
-8. 点击顶部 `Map View` / `List View`，用地图或列表查看当前选中的同一个分类。
+8. 在 `我的地点` 中切换 `Map` / `List`，用地图或列表查看当前选中的同一个分类。
 9. 在系统分类的列表行点击 `Delete` 会删除餐厅记录；在自定义 list 的列表行点击 `Remove` 只会把餐厅移出当前清单。
 10. 创建自定义 list 后，可以在 `List View` 的 `Manage` 菜单里编辑清单、打开 `Manage Spots` 添加或移除餐厅，也可以点击 `Open on Map` 用地图显示该 list。
-11. 自定义 list 默认私密；在 `Manage` 菜单里点击 `Publish` 后会进入 `Discovery`。
+11. 自定义 list 默认私密；可在清单页面选择 `私密分享`，或在 `Manage` 菜单里点击 `Publish` 后进入 `Discovery`。
 12. 如果 `Discovery` 还没有公开清单，页面会提示下一步；有可发布私密 list 时，`Publish a list` 会跳回对应清单，但仍需要用户手动通过 `Manage > Publish` 发布。
 13. 在 `Discovery` 浏览公开清单；登录后可 `Copy to My Lists` 复制到自己的私密清单。
-14. 在 `Discovery` 点击 `Create Share Pack`，选择餐厅和菜品后生成私密链接和 PNG 推荐图。
-15. `Discovery` 会保留当前账号创建过的私密推荐历史，可重新复制链接、打开推荐图、打开预览页或撤销分享。
-16. 朋友打开 `/share-pack/{token}` 或扫描推荐图二维码可以预览整组推荐；登录后点 `Add to My Lists` 会复制成自己的私密清单。撤销后旧链接、二维码和图片都会失效。
-17. 打开 `Recipes / 菜谱`，点击右上角 `+` 记录自己做过的菜，可添加照片、食材、做法、备注、评分和做菜日期。
-18. 在菜谱详情点击 `Share` 可生成公开菜谱链接、QR code 和 PNG 分享图；朋友打开 `/recipe-share/{token}` 可免登录预览，登录后点 `Save to My Recipes` 保存到自己的菜谱。
+14. 在自定义 list 点击 `私密分享`，选择餐厅和菜品后生成私密链接和 PNG 推荐图。
+15. 朋友打开 `/share-pack/{token}` 或扫描推荐图二维码可以预览整组推荐；登录后点 `Add to My Lists` 会复制成自己的私密清单。撤销后旧链接、二维码和图片都会失效。
+16. 打开 `Recipes / 菜谱`，点击 `添加菜谱` 记录自己做过的菜，可添加照片、食材、做法、备注、评分和做菜日期。
+17. 在菜谱详情点击 `Share` 可生成公开菜谱链接、QR code 和 PNG 分享图；朋友打开 `/recipe-share/{token}` 可免登录预览，登录后点 `Save to My Recipes` 保存到自己的菜谱。
 19. 点击顶部 globe 菜单可切换 English / 中文；选择会保存到当前浏览器。
 20. 打开 `/admin`，用 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 登录后台后，可暂停、软删除、恢复账号，并手动切换 Free/Paid。
 21. Free 用户达到餐厅额度后，新增餐厅、复制公开清单、复制私密推荐包或从分享链接添加餐厅会被阻止；删除餐厅或升级为 Paid 后可继续添加。

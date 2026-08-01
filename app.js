@@ -303,6 +303,7 @@ const elements = {
   editSpot: document.querySelector("#editSpot"),
   shareSpot: document.querySelector("#shareSpot"),
   deleteSpot: document.querySelector("#deleteSpot"),
+  markVisited: document.querySelector("#markVisited"),
   spotDetailDialog: document.querySelector("#spotDetailDialog"),
   spotDetailForm: document.querySelector("#spotDetailForm"),
   closeSpotDetail: document.querySelector("#closeSpotDetail"),
@@ -658,7 +659,7 @@ function bindEvents() {
   elements.pasteAddButton.addEventListener("click", () => openQuickCaptureDialog({ fromClipboard: true }));
   elements.emptyMapAddButton?.addEventListener("click", openCreateDialog);
   elements.emptyMapPasteButton?.addEventListener("click", () => openQuickCaptureDialog({ fromClipboard: true }));
-  elements.mobileQuickCaptureButton?.addEventListener("click", () => openQuickCaptureDialog({ fromClipboard: true }));
+  elements.mobileQuickCaptureButton?.addEventListener("click", openCreateDialog);
   elements.mobileActionButtons.forEach((button) => {
     button.addEventListener("click", () => {
       closeMobileMenuDetails(elements.mobileMapMenu);
@@ -739,6 +740,7 @@ function bindEvents() {
   elements.editSpot.addEventListener("click", openEditDialog);
   elements.shareSpot.addEventListener("click", openShareDialog);
   elements.deleteSpot.addEventListener("click", deleteSelectedRestaurant);
+  elements.markVisited?.addEventListener("click", markSelectedRestaurantVisited);
   elements.searchInput.addEventListener("input", () => {
     searchTermsByView[activeView] = elements.searchInput.value;
     render();
@@ -1798,9 +1800,9 @@ async function copyShareLink() {
   window.setTimeout(() => (elements.copyShareButton.textContent = t("button.copy")), 1200);
 }
 
-function openSharePackDialog() {
+function openSharePackDialog(spots = restaurants) {
   if (!requireLogin()) return;
-  if (!restaurants.length) {
+  if (!spots.length) {
     alert(t("sharePack.noSpots"));
     return;
   }
@@ -1814,7 +1816,7 @@ function openSharePackDialog() {
   elements.openSharePackImage.hidden = true;
   elements.downloadSharePackImage.hidden = true;
   elements.sharePackHelp.textContent = `${t("sharePack.help")} ${t("sharePack.privacyNotice")}`;
-  elements.sharePackPicker.innerHTML = restaurants.map(sharePackRestaurantOptionTemplate).join("");
+  elements.sharePackPicker.innerHTML = spots.map(sharePackRestaurantOptionTemplate).join("");
   elements.sharePackDialog.showModal();
 }
 
@@ -2119,6 +2121,24 @@ async function saveDetailRestaurantReview({ rerenderDetail = false } = {}) {
     elements.detailStatus.textContent = error.message;
     throw error;
   }
+}
+
+async function markSelectedRestaurantVisited() {
+  if (!requireLogin()) return;
+  const restaurant = selectedRestaurant();
+  if (!restaurant || restaurant.status === "visited") return;
+  const data = await api(`/api/restaurants/${restaurant.id}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      status: "visited",
+      personal_rating: Number(restaurant.personal_rating || 0),
+      visit_count: Math.max(1, Number(restaurant.visit_count || 0)),
+      notes: restaurant.notes || "",
+    }),
+  });
+  upsertRestaurant(data.restaurant);
+  render();
+  showToast(t("spot.markedVisited"));
 }
 
 async function addDishFromDetail() {
@@ -2854,7 +2874,11 @@ function renderViewShell() {
   elements.viewPanels.forEach((panel) => {
     panel.hidden = panel.dataset.viewPanel !== activeView;
   });
-  elements.navLinks.forEach((link) => link.classList.toggle("active", link.dataset.view === activeView));
+  elements.navLinks.forEach((link) => link.classList.toggle("active", link.dataset.view === activeView || (link.hasAttribute("data-place-nav") && ["my-map", "my-lists"].includes(activeView))));
+  document.querySelectorAll("[data-place-view]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.placeView === activeView);
+    button.setAttribute("aria-selected", String(button.dataset.placeView === activeView));
+  });
   elements.searchInput.placeholder = {
     "my-map": t("search.category"),
     "my-lists": t("search.lists"),
@@ -3138,6 +3162,10 @@ function renderSpotCard() {
   elements.spotDistance.textContent = distance == null ? "" : formatUserDistance(distance);
   elements.spotRating.textContent = `☆ ${Number(selected.personal_rating || 0).toFixed(1)}`;
   elements.spotStatus.textContent = `${statusLabel(selected.status)} · ${t("count.visits", { count: selected.visit_count || 0 })}`;
+  if (elements.markVisited) {
+    const isVisited = selected.status === "visited";
+    elements.markVisited.hidden = isVisited;
+  }
   elements.spotNotes.textContent = selected.notes || selected.address || t("map.noNotes");
   elements.spotDishes.innerHTML = renderSpotDishes(selected);
   const ownedMode = Boolean(currentUser && !shareToken);
@@ -3900,6 +3928,9 @@ function bindMyListDetailActions(list) {
     button.addEventListener("click", () => toggleListVisibility(list));
   });
   elements.myListDetail.querySelector('[data-list-action="add"]')?.addEventListener("click", () => openAddSpotsDialog(list.id));
+  elements.myListDetail.querySelectorAll('[data-list-action="share"]').forEach((button) => {
+    button.addEventListener("click", () => openSharePackDialog((list.items || []).map((item) => item.restaurant).filter(Boolean)));
+  });
   elements.myListDetail.querySelector("[data-empty-action]")?.addEventListener("click", () => openAddSpotsDialog(list.id));
   elements.myListDetail.querySelector('[data-list-action="delete"]')?.addEventListener("click", () => deleteList(list));
   elements.myListDetail.querySelectorAll("[data-open-spot]").forEach((button) => {

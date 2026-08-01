@@ -46,7 +46,7 @@ export function createUiShell({ window, document, onLayoutChange = () => {} }) {
     model = reduceUiState(model, { type: "view.changed", view });
     applyLayout();
     document.querySelectorAll("[data-view]").forEach((link) => {
-      const active = link.dataset.view === view;
+      const active = link.dataset.view === view || (link.hasAttribute("data-place-nav") && ["my-map", "my-lists"].includes(view));
       link.classList.toggle("active", active);
       if (active) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");
