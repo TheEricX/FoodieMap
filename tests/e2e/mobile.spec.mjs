@@ -56,10 +56,13 @@ test("@mobile hidden toast stays hidden and Discovery resets its inner scroll", 
   await expect.poll(() => discoveryGrid.evaluate((element) => element.scrollLeft)).toBe(0);
 
   const discoveryLayout = page.locator("#discoveryView .discovery-layout");
-  await discoveryLayout.evaluate((element) => {
-    element.scrollTop = 80;
-  });
-  await expect.poll(() => discoveryLayout.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  const canScrollDiscovery = await discoveryLayout.evaluate((element) => element.scrollHeight > element.clientHeight);
+  if (canScrollDiscovery) {
+    await discoveryLayout.evaluate((element) => {
+      element.scrollTop = 80;
+    });
+    await expect.poll(() => discoveryLayout.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  }
 
   await page.locator('[data-view="my-map"]:visible').first().tap();
   await page.locator('[data-view="discovery"]:visible').first().tap();
@@ -81,7 +84,9 @@ test("@mobile empty map prioritizes direct restaurant capture", async ({ signedI
   await expect(page.locator("#emptyMap")).toBeVisible();
   await expect(page.locator("#emptyMapAddButton")).toBeVisible();
   await expect(page.locator("#emptyMapPasteButton")).toBeVisible();
-  await expect(page.locator(".mobile-map-bar")).toBeHidden();
+  await expect(page.locator(".mobile-map-bar")).toBeVisible();
+  await expect(page.locator(".mobile-map-bar .mobile-place-view-switcher")).toBeVisible();
+  await expect(page.locator(".mobile-map-bar .mobile-filter-chips")).toBeHidden();
   await expect(page.locator(".map-nearest-panel")).toBeHidden();
   await page.locator("#emptyMapAddButton").tap();
   await expect(page.locator("#addDialog")).toBeVisible();

@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures.mjs";
 
 test("@responsive places workspace keeps map and list as one task", async ({ signedInPage: page }) => {
   await expect(page.locator('[data-place-nav]:visible')).toHaveText(/My Places/);
+  await expect(page.locator('[data-place-view="my-lists"]:visible')).toHaveCount(1);
   await expect(page.locator('[data-place-view="my-lists"]:visible').first()).toBeVisible();
 
   await page.locator('[data-place-view="my-lists"]:visible').first().click();
@@ -10,6 +11,7 @@ test("@responsive places workspace keeps map and list as one task", async ({ sig
 
   await page.locator('[data-place-view="my-map"]:visible').first().click();
   await expect(page.locator("#mapView")).toBeVisible();
+  await expect(page.locator('[data-place-view="my-map"]:visible')).toHaveCount(1);
   await expect(page.locator("#openAddPanel:visible, #mobileQuickCaptureButton:visible")).toBeVisible();
 });
 

@@ -1373,11 +1373,11 @@ body[data-view="login"] .top-actions {
     gap: 10px;
   }
 
-  .place-view-switcher {
+  .place-list-header .place-view-switcher {
     width: 100%;
   }
 
-  .place-view-switcher button {
+  .place-list-header .place-view-switcher button {
     flex: 1;
   }
 }
@@ -4837,6 +4837,10 @@ body[data-view="login"] .top-actions {
     width: fit-content;
     margin: 0 0 8px;
   }
+
+  body[data-view="my-map"] .desktop-place-view-switcher {
+    display: none;
+  }
   html,
   body {
     width: 100%;
@@ -5212,8 +5216,8 @@ body[data-view="login"] .top-actions {
     grid-column: 2;
     grid-row: auto;
     display: grid;
-    width: 76px;
-    min-width: 76px;
+    width: 92px;
+    min-width: 92px;
     min-height: 40px;
     place-items: center;
     border: 1px solid rgba(217, 197, 183, 0.86);
@@ -5221,7 +5225,8 @@ body[data-view="login"] .top-actions {
     background: var(--primary);
     color: var(--paper);
     box-shadow: 0 3px 0 var(--primary-dark);
-    font-size: 13px;
+    font-size: 12px;
+    white-space: nowrap;
     font-weight: 700;
   }
 
@@ -5239,6 +5244,7 @@ body[data-view="login"] .top-actions {
   }
 
   body[data-view="my-map"] .top-location-status,
+  body[data-view="my-map"] #locateButton,
   body[data-view="my-map"] #settingsButton,
   body[data-view="my-lists"] .top-location-status,
   body[data-view="my-lists"] #settingsButton,
@@ -6187,13 +6193,13 @@ body[data-view="login"] .top-actions {
   body[data-view="my-map"] .map-nearest-panel {
     border: 0;
     background: transparent;
-    min-height: 34px;
+    min-height: 0;
     padding: 0;
     box-shadow: none;
   }
 
   body[data-view="my-map"] .map-nearest-panel .section-head {
-    margin: 0;
+    display: none;
   }
 
   body[data-view="my-map"] .map-nearest-panel .section-head .eyebrow {
@@ -6201,17 +6207,17 @@ body[data-view="login"] .top-actions {
   }
 
   body[data-view="my-map"] .map-nearest-list {
-    margin-top: 6px;
+    display: none;
   }
 
   body[data-view="my-map"] .location-prompt {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-    margin: 7px 0 4px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+    margin: 0 0 3px;
     border: 1px solid rgba(217, 197, 183, 0.82);
     border-radius: 8px;
     background: rgba(255, 250, 244, 0.92);
-    padding: 9px 10px;
+    padding: 7px 8px;
   }
 
   body[data-view="my-map"] .location-prompt-copy {
@@ -6230,19 +6236,21 @@ body[data-view="login"] .top-actions {
   }
 
   body[data-view="my-map"] .location-prompt-copy small {
-    font-size: 10px;
+    display: none;
   }
 
   body[data-view="my-map"] .location-prompt-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    gap: 5px;
   }
 
   body[data-view="my-map"] .location-prompt-actions .primary-button,
   body[data-view="my-map"] .location-prompt-actions .secondary-button {
     width: 100%;
-    min-height: 40px;
-    padding: 7px 8px;
-    white-space: normal;
+    min-height: 34px;
+    padding: 6px 9px;
+    white-space: nowrap;
+    font-size: 11px;
   }
 
   body[data-view="my-map"] .cute-map {
@@ -6269,9 +6277,9 @@ body[data-view="login"] .top-actions {
   }
 
   body[data-view="my-map"] .restaurant-marker {
-    width: clamp(62px, 17vw, 82px);
-    min-height: clamp(74px, 20vw, 96px);
-    grid-template-rows: minmax(44px, 1fr) auto;
+    width: clamp(54px, 15vw, 68px);
+    min-height: clamp(58px, 16vw, 74px);
+    grid-template-rows: minmax(40px, 1fr) auto;
     gap: 3px;
     border-radius: 14px;
     padding: 5px;
@@ -6288,13 +6296,13 @@ body[data-view="login"] .top-actions {
   }
 
   body[data-view="my-map"] .marker-caption strong {
-    font-size: 9px;
+    display: none;
   }
 
   body[data-view="my-map"] .marker-caption small {
-    min-height: 15px;
-    padding: 2px 5px;
-    font-size: 8px;
+    min-height: 13px;
+    padding: 2px 4px;
+    font-size: 7px;
   }
 
   body[data-view="my-map"] .restaurant-marker.selected {
@@ -6434,22 +6442,27 @@ body[data-view="login"] .top-actions {
   }
 
   body[data-view="my-map"] .spot-card-tab {
-    display: grid;
-    min-height: 58px;
-    grid-template-columns: minmax(0, 1fr);
+    display: flex;
+    min-height: 50px;
+    align-items: center;
+    gap: 8px;
     border-radius: 18px;
     background: var(--primary);
     color: var(--paper);
-    padding: 12px 18px;
+    padding: 8px 14px;
     box-shadow: 0 7px 0 var(--primary-dark), 0 16px 32px rgba(82, 61, 48, 0.22);
   }
 
   body[data-view="my-map"] .spot-card-tab span {
+    flex: 0 0 auto;
     color: rgba(255, 250, 244, 0.82);
+    font-size: 10px;
   }
 
   body[data-view="my-map"] .spot-card-tab strong {
+    min-width: 0;
     color: var(--paper);
+    font-size: 16px;
   }
 
   body[data-view="my-map"] .spot-card[hidden],

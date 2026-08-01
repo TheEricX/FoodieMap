@@ -8,6 +8,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added responsive geometry checks across five mobile and three desktop widths plus reviewed non-empty Map visual baselines.
+
 - Added a unified My Places workspace with Map/List switching, one-tap visited status, list-scoped private sharing, and responsive regression coverage for the simplified navigation.
 
 - Added a self-contained development test dependency set, WebKit smoke coverage, axe accessibility scanning, and reviewed desktop/mobile visual regression baselines.
@@ -80,6 +82,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Admin access now uses a separate admin session instead of ordinary user email allowlisting.
 
 ### Fixed
+
+- Removed duplicated mobile Map/List controls, restored readable category layout, and reduced mobile map chrome, marker density, and selected-spot obstruction.
 
 - Made the OAuth end-to-end test use its active local test URL instead of a hard-coded port.
 

@@ -83,13 +83,13 @@ Mobile Map View is intentionally different:
 
 - Topbar is compact.
 - Search and `+ Add` share one row. `+ Add` opens the important add actions: manual new spot and Google link paste/auto-detection.
-- System filters are short, fixed-size pills: `All`, `Visited`, `Want`, `Favs`.
+- My Places has one Map/List switcher on mobile; system filters are short, fixed-size pills: `All`, `Visited`, `Want`, `Favs`.
 - Custom lists are behind the `Lists` drawer in the same category row.
 - The sidebar is hidden on mobile Map View.
 - The map gets the remaining vertical space.
 - Selected spot details use a bottom tab and bottom sheet instead of a desktop floating card.
-- Bottom navigation switches primary views: Map View, List View, Recipes, Discovery.
-- Location consent appears as a compact inline strip below the active map category, never as an automatic system prompt on page load.
+- Bottom navigation switches the three primary workspaces: My Places, Recipes, Discovery.
+- Location consent appears as a compact inline strip; it is the only mobile map location entry point and never appears as an automatic system prompt on page load.
 - Without location, the map remains a usable saved-spots board: restaurant markers stay visible while the user marker, distance rings, distance labels, and center-on-user control are removed.
 
 The goal is to make the common mobile flow fast:

@@ -12,6 +12,8 @@ tests/e2e/smoke.spec.mjs         Startup, assets, navigation, staging health
 tests/e2e/core-flows.spec.mjs    Auth, persistence, map URL, location modes
 tests/e2e/content.spec.mjs       Lists, recipes, uploads, and persisted UI
 tests/e2e/mobile.spec.mjs        Touch navigation, close controls, overflow
+tests/e2e/responsive-places-layout.spec.mjs  Cross-breakpoint map geometry, touch targets, and singular controls
+tests/e2e/visual.spec.mjs        Reviewed signed-out, empty-map, and non-empty map visual baselines
 tests/e2e/ux-flows.spec.mjs      Quick capture, list recovery, publishing, and scoped search
 tests/e2e/staging.spec.mjs       PostgreSQL/GCS create-upload-read-clean lifecycle
 playwright.config.mjs            Local server and desktop/mobile/staging projects
@@ -62,7 +64,7 @@ Failed tests retain a screenshot, video, and trace under `test-results/`. Open a
 npx playwright show-trace test-results/PATH/trace.zip
 ```
 
-The trace contains actions, DOM snapshots, console messages, and network requests. The shared fixture fails a test on unexpected `console.error` or uncaught page exceptions, so a visually correct screen with broken startup code still blocks release. Accessibility scans use axe on the signed-out entry screen; visual tests compare selected desktop and mobile screens against reviewed baselines. Visual tests run in their own projects because screenshot rendering is OS-specific; review them on the same OS that created the baseline.
+The trace contains actions, DOM snapshots, console messages, and network requests. The shared fixture fails a test on unexpected `console.error` or uncaught page exceptions, so a visually correct screen with broken startup code still blocks release. Accessibility scans use axe on the signed-out entry screen; visual tests compare signed-out, empty-map, and non-empty map screens against reviewed baselines. Responsive geometry tests additionally run across 320px, 375px, 390px, 430px, 768px, 1024px, 1280px, and 1440px to detect duplicate controls, clipped map controls, unreachable primary actions, and horizontal overflow. Visual tests run in their own projects because screenshot rendering is OS-specific; review them on the same OS that created the baseline.
 
 Use `npm run test:e2e:ui` to step through tests and inspect locators. Prefer stable IDs, `data-*` ownership identifiers, and accessible roles. Do not select elements by layout position or translated display text when a stable attribute exists.
 
