@@ -78,10 +78,11 @@ test("@smoke authenticated navigation works after startup and reload", async ({ 
     ["recipes", "#recipesView"],
     ["discovery", "#discoveryView"]
   ]) {
+    const navigationView = view === "my-lists" ? "my-map" : view;
     await page.locator(`[data-view="${view}"]:visible`).first().click();
     await expect(page.locator(panel)).toBeVisible();
-    await expect(page.locator(`${shell} [data-view="${view}"]`)).toHaveClass(/active/);
-    await expect(page.locator(`${shell} [data-view="${view}"]`)).toHaveAttribute("aria-current", "page");
+    await expect(page.locator(`${shell} [data-view="${navigationView}"]`)).toHaveClass(/active/);
+    await expect(page.locator(`${shell} [data-view="${navigationView}"]`)).toHaveAttribute("aria-current", "page");
   }
   await page.reload();
   await page.waitForLoadState("networkidle");
@@ -92,11 +93,11 @@ test("@smoke authenticated navigation works after startup and reload", async ({ 
 test("@smoke language selection persists through reload", async ({ signedInPage: page }) => {
   await page.locator("#languageMenu > summary").click();
   await page.locator('[data-language-option="zh"]').click();
-  await expect(page.locator('a[data-view="my-map"]:visible').first()).toHaveText("地图");
+  await expect(page.locator('[data-place-nav]:visible').first()).toHaveText("我的地点");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   await page.reload();
   await page.waitForLoadState("networkidle");
-  await expect(page.locator('a[data-view="my-map"]:visible').first()).toHaveText("地图");
+  await expect(page.locator('[data-place-nav]:visible').first()).toHaveText("我的地点");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
 });
 

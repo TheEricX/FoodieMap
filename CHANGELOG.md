@@ -83,6 +83,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Prevented mobile saved-place filters from overlapping list actions or restaurant cards, and corrected navigation/localization smoke assertions for the unified My Places workspace.
+
 - Removed duplicated mobile Map/List controls, restored readable category layout, and reduced mobile map chrome, marker density, and selected-spot obstruction.
 
 - Made the OAuth end-to-end test use its active local test URL instead of a hard-coded port.
@@ -110,6 +112,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Fixed hidden auth dialog fields showing in the wrong sign-in mode.
 
 ### Documentation
+
+- Added a mobile UI audit with responsive acceptance criteria and documented saved-place-list visual and geometry regression coverage.
 
 - Added the remote MCP server setup, authorization, client connection, security, testing, and Cloud Run deployment guide.
 - Added an automated testing operations guide covering local commands, staging secrets, diagnostics, data cleanup, CI, and extension patterns.
