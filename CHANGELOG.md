@@ -38,6 +38,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Let the mobile saved-place list use natural page scrolling so its header, filters, and results share the available screen space instead of trapping scroll inside the result panel.
+
 - Simplified place capture to one primary Add a place action, clarified recipe creation, and focused Discovery on public list exploration.
 
 - Focused the signed-out entry screen on Google or email sign-in, added a stable startup loading gate, and made empty maps lead directly to adding a restaurant or pasting a Maps link.

@@ -78,9 +78,6 @@ test("@responsive @cross-browser mobile list filters never overlap saved-place c
       const filters = rect("#listsView .mobile-list-bar");
       const detail = rect("#myListDetail");
       const nav = rect(".mobile-bottom-nav");
-      const actionableBottom = Math.max(...[...document.querySelectorAll("#myListDetail button, #myListDetail a")]
-        .map((element) => element.getBoundingClientRect().bottom)
-        .filter((bottom) => bottom > detail.top && bottom <= detail.bottom));
       return {
         viewport: document.documentElement.clientWidth,
         scrollWidth: document.documentElement.scrollWidth,
@@ -88,14 +85,16 @@ test("@responsive @cross-browser mobile list filters never overlap saved-place c
         filters,
         detail,
         nav,
-        actionableBottom,
+        documentScrollHeight: document.documentElement.scrollHeight,
+        detailOverflow: getComputedStyle(document.querySelector("#myListDetail")).overflowY,
       };
     });
 
     expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewport + 1);
     expect(layout.filters.top).toBeGreaterThanOrEqual(layout.header.bottom + 7);
     expect(layout.detail.top).toBeGreaterThanOrEqual(layout.filters.bottom + 7);
-    expect(layout.actionableBottom).toBeLessThanOrEqual(layout.nav.top - 7);
+    expect(layout.detailOverflow).toBe("visible");
+    expect(layout.documentScrollHeight).toBeGreaterThan(layout.nav.bottom);
   }
 });
 

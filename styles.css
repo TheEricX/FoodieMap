@@ -5390,7 +5390,8 @@ body[data-view="login"] .top-actions {
   }
 
   body[data-view="my-lists"] {
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   body[data-view="recipes"] {
@@ -5398,9 +5399,9 @@ body[data-view="login"] .top-actions {
   }
 
   body[data-view="my-lists"] .app-shell {
-    height: 100svh;
-    min-height: 0;
-    overflow: hidden;
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
   }
 
   body[data-view="recipes"] .app-shell {
@@ -5411,9 +5412,9 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-lists"] .layout {
     display: block;
-    height: calc(100svh - 119px - env(safe-area-inset-bottom, 0px));
-    min-height: 0;
-    overflow: hidden;
+    height: auto;
+    min-height: calc(100svh - 119px - env(safe-area-inset-bottom, 0px));
+    overflow: visible;
   }
 
   body[data-view="discovery"] .layout {
@@ -5470,23 +5471,20 @@ body[data-view="login"] .top-actions {
   }
 
   body[data-view="my-lists"] .lists-stage {
-    display: grid;
-    height: 100%;
+    display: block;
+    height: auto;
     min-height: 0;
-    /* Header, filters, and results are three separate grid rows. Keeping the
-       filter bar in its own row prevents it from being painted over the first
-       result when the list view is short on mobile. */
-    grid-template-rows: auto auto minmax(0, 1fr);
     gap: 8px;
-    overflow: hidden;
-    padding: 9px;
+    overflow: visible;
+    padding: 9px 9px calc(82px + env(safe-area-inset-bottom, 0px));
   }
 
   body[data-view="my-lists"] .mobile-list-bar {
-    position: relative;
+    position: static;
     display: block;
     min-width: 0;
     min-height: 0;
+    margin: 8px 0;
   }
 
   body[data-view="recipes"] .recipes-stage {
@@ -5560,10 +5558,9 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-lists"] .list-detail-panel {
     min-height: 0;
-    overflow: auto;
+    overflow: visible;
     border-radius: 15px;
-    padding: 12px 12px calc(72px + env(safe-area-inset-bottom, 0px));
-    scroll-padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    padding: 12px;
   }
 
   body[data-view="my-lists"] .list-view-head {
