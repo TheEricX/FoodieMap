@@ -38,6 +38,8 @@ export function createListViewTemplates({
 
   function systemListDetail(definition, term = "") {
     const spots = sortRestaurants(restaurantsForSystemList(definition).filter((restaurant) => restaurantSearchText(restaurant).includes(term)));
+    const emptyMessage = definition.key === "favorite" && !term ? translate("list.noFavoriteSpots") : translate("list.noSmartSpots");
+    const emptyAction = !term ? translate("button.viewAllPlaces") : "";
     return `
       <div class="list-view-head">
         <div>
@@ -54,7 +56,7 @@ export function createListViewTemplates({
         <button class="outline-button" type="button" data-view-system-map>${text("button.openMap")}</button>
       </div>
       <div class="spot-row-list restaurant-list-mode">
-        ${spots.length ? spots.map(systemSpotItem).join("") : emptyState(translate("list.noSmartSpots"), "")}
+        ${spots.length ? spots.map(systemSpotItem).join("") : emptyState(emptyMessage, emptyAction)}
       </div>
     `;
   }

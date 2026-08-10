@@ -83,6 +83,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Replaced the ambiguous empty Favorites map with clear guidance, a one-tap return to all saved places, and a mobile layout that keeps category controls available when a filter has no results.
+
 - Prevented mobile saved-place filters from overlapping list actions or restaurant cards, and corrected navigation/localization smoke assertions for the unified My Places workspace.
 
 - Removed duplicated mobile Map/List controls, restored readable category layout, and reduced mobile map chrome, marker density, and selected-spot obstruction.

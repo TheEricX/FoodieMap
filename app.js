@@ -213,6 +213,9 @@ const elements = {
   pasteAddButton: document.querySelector("#pasteAddButton"),
   emptyMapAddButton: document.querySelector("#emptyMapAddButton"),
   emptyMapPasteButton: document.querySelector("#emptyMapPasteButton"),
+  emptyMapViewAllButton: document.querySelector("#emptyMapViewAllButton"),
+  emptyMapTitle: document.querySelector("#emptyMapTitle"),
+  emptyMapBody: document.querySelector("#emptyMapBody"),
   mobileQuickCaptureButton: document.querySelector("#mobileQuickCaptureButton"),
   mobileMapMenu: document.querySelector(".mobile-map-menu"),
   mobileActionButtons: document.querySelectorAll("[data-mobile-action]"),
@@ -659,6 +662,10 @@ function bindEvents() {
   elements.pasteAddButton.addEventListener("click", () => openQuickCaptureDialog({ fromClipboard: true }));
   elements.emptyMapAddButton?.addEventListener("click", openCreateDialog);
   elements.emptyMapPasteButton?.addEventListener("click", () => openQuickCaptureDialog({ fromClipboard: true }));
+  elements.emptyMapViewAllButton?.addEventListener("click", () => {
+    setActiveCategory("system:all");
+    render();
+  });
   elements.mobileQuickCaptureButton?.addEventListener("click", openCreateDialog);
   elements.mobileActionButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -3109,8 +3116,12 @@ function renderRecentList() {
 function renderMarkers() {
   const visible = getVisibleRestaurants();
   const isEmpty = !visible.length;
+  const hasSavedPlaces = restaurants.length > 0;
   elements.emptyMap.style.display = isEmpty ? "grid" : "none";
-  elements.cuteMap.closest(".map-stage")?.classList.toggle("is-empty", isEmpty);
+  renderMapEmptyState(isEmpty);
+  const mapStage = elements.cuteMap.closest(".map-stage");
+  mapStage?.classList.toggle("is-empty", isEmpty && !hasSavedPlaces);
+  mapStage?.classList.toggle("is-filter-empty", isEmpty && hasSavedPlaces);
   elements.markersLayer.innerHTML = "";
   updateMapZoomUi();
   const ready = isLocationReady();
@@ -3144,6 +3155,21 @@ function renderMarkers() {
     });
     elements.markersLayer.appendChild(marker);
   });
+}
+
+function renderMapEmptyState(isEmpty) {
+  if (!isEmpty) return;
+  const selectedSystemList = activeSystemListDefinition();
+  const hasNoRestaurants = restaurants.length === 0;
+  const isEmptyFavorite = selectedSystemList?.key === "favorite" && !searchTermForView("my-map").trim();
+  const isFilteredEmpty = !hasNoRestaurants && !isEmptyFavorite;
+  const titleKey = isEmptyFavorite ? "map.emptyFavoriteTitle" : isFilteredEmpty ? "map.emptyFilterTitle" : "map.emptyTitle";
+  const bodyKey = isEmptyFavorite ? "map.emptyFavoriteBody" : isFilteredEmpty ? "map.emptyFilterBody" : "map.emptyBody";
+  elements.emptyMapTitle.textContent = t(titleKey);
+  elements.emptyMapBody.textContent = t(bodyKey);
+  elements.emptyMapAddButton.hidden = !hasNoRestaurants;
+  elements.emptyMapPasteButton.hidden = !hasNoRestaurants;
+  elements.emptyMapViewAllButton.hidden = hasNoRestaurants;
 }
 
 function renderSpotCard() {
@@ -3831,6 +3857,10 @@ function bindSystemListDetailActions(definition) {
     setActiveView("my-map");
   });
   elements.myListDetail.querySelector("[data-create-list-from-system]")?.addEventListener("click", openCreateListDialog);
+  elements.myListDetail.querySelector("[data-empty-action]")?.addEventListener("click", () => {
+    setActiveCategory("system:all");
+    render();
+  });
   elements.myListDetail.querySelectorAll("[data-open-spot]").forEach((button) => {
     button.addEventListener("click", () => {
       selectedRestaurantId = button.dataset.openSpot;

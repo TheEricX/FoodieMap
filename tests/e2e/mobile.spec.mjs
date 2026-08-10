@@ -95,6 +95,32 @@ test("@mobile empty map prioritizes direct restaurant capture", async ({ signedI
   await expect(page.locator("#addDialog")).toBeVisible();
 });
 
+test("@mobile empty favorites explains the state and recovers to all places", async ({ signedInPage: page }) => {
+  const created = await page.request.post("/api/restaurants", { data: {
+    name: "Not a favorite yet",
+    address: "Toronto",
+    lat: 43.6532,
+    lng: -79.3832,
+    google_url: "https://maps.apple.com/?ll=43.6532,-79.3832&q=Not%20a%20favorite%20yet",
+    status: "want_to_go",
+    visit_count: 0,
+    personal_rating: 0,
+    notes: ""
+  }});
+  expect(created.ok()).toBeTruthy();
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+
+  await page.locator('.mobile-map-bar [data-filter="favorite"]').tap();
+  await expect(page.locator("#emptyMap")).toBeVisible();
+  await expect(page.locator("#emptyMapTitle")).toHaveText("No favorites yet");
+  await expect(page.locator("#emptyMapBody")).toContainText("Mark a place as Favorite");
+  await expect(page.locator("#emptyMapViewAllButton")).toBeVisible();
+  await page.locator("#emptyMapViewAllButton").tap();
+  await expect(page.locator("#emptyMap")).toBeHidden();
+  await expect(page.locator('.mobile-map-bar [data-filter="all"]')).toHaveClass(/active/);
+});
+
 test("@mobile recipes use a single-detail flow instead of stacked list and detail panes", async ({ signedInPage: page }) => {
   const create = await page.request.post("/api/recipes", { data: {
     title: "Mobile detail flow recipe",
