@@ -178,6 +178,17 @@ test("@mobile quick capture opens with only the essential restaurant fields", as
   await expect(page.locator("#restaurantAdvancedFields")).toBeVisible();
 });
 
+test("@mobile an incoming Maps link opens a prefilled quick capture", async ({ signedInPage: page }) => {
+  const mapUrl = "https://www.google.com/maps/place/Gui+Gui+Korean+skewer+BBQ,+5935+Yonge+St,+North+York,+ON+M2M+2E4/@43.7891,-79.4168,15z";
+  await page.goto(`/?import-map=${encodeURIComponent(mapUrl)}`);
+  await page.waitForLoadState("networkidle");
+  await expect(page.locator("#addDialog")).toBeVisible();
+  await expect(page.locator('#restaurantForm input[name="googleUrl"]')).toHaveValue(mapUrl);
+  await expect(page.locator('#restaurantForm input[name="name"]')).toHaveValue("Gui Gui Korean skewer BBQ");
+  await expect(page.locator("#quickCaptureIntro")).toContainText("Maps link was sent");
+  await expect(page).not.toHaveURL(/import-map/);
+});
+
 test("@mobile list and recipe capture keep optional fields out of the first task", async ({ signedInPage: page }) => {
   await page.locator('[data-view="my-lists"]:visible').first().tap();
   await page.locator("#mobileMyListDrawer > summary").tap();
@@ -283,12 +294,17 @@ test("@mobile long form dialogs stay horizontally locked", async ({ signedInPage
   const confirmLayout = await page.locator("#confirmDialog .confirm-card").evaluate((card) => ({
     left: card.getBoundingClientRect().left,
     right: card.getBoundingClientRect().right,
+    top: card.getBoundingClientRect().top,
+    bottom: card.getBoundingClientRect().bottom,
     viewport: document.documentElement.clientWidth,
+    viewportHeight: window.innerHeight,
     scrollWidth: document.documentElement.scrollWidth
   }));
   expect(confirmLayout.left).toBeGreaterThanOrEqual(0);
   expect(confirmLayout.right).toBeLessThanOrEqual(confirmLayout.viewport);
   expect(confirmLayout.scrollWidth).toBeLessThanOrEqual(confirmLayout.viewport);
+  expect(confirmLayout.bottom).toBe(confirmLayout.viewportHeight);
+  expect(confirmLayout.top).toBeGreaterThan(0);
   await page.locator("[data-confirm-accept]").tap();
   await expect(page.locator("#recipeDialog")).toBeHidden();
 });

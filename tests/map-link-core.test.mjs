@@ -47,6 +47,14 @@ test("pasted links are trimmed and short links are identified for server resolut
   assert.equal(isResolvableMapLink("https://maps.apple.com/?q=Pho"), false);
 });
 
+test("Google Maps iOS shared-address queries retain the restaurant name", () => {
+  const parsed = parseMapUrl("https://www.google.com/maps?q=Ontario,+Toronto,+Spadina+Ave.,+%E7%83%B9%E5%B0%8F%E9%B2%9C+Hao%E2%80%99s+Bistro%E9%82%AE%E6%94%BF%E7%BC%96%E7%A0%81:+M5T+2G3");
+  assert.deepEqual(parsed, {
+    name: "烹小鲜 Hao’s Bistro",
+    address: "Ontario, Toronto, Spadina Ave.",
+  });
+});
+
 test("invalid coordinates and malformed provider URLs are rejected", () => {
   assert.equal(validateCoordinates(91, 0), null);
   assert.equal(validateCoordinates("43.6", "-79.3").lat, 43.6);

@@ -10,6 +10,7 @@ Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱
 - 保存餐厅状态、去过次数、个人评分、备注、地图链接和坐标
 - 每家店可记录菜品：`Liked` / `Tried`、5 星评分、备注、1 张压缩图片
 - `添加地点` 是唯一主入口；可粘贴 Google Maps、Apple Maps 或地图短链接自动识别店名、地址和坐标，链接只有坐标时可用 Google Geocoding API Key 反查地址
+- 通过 `?import-map=<编码后的地图链接>` 打开 FoodieMap 时，已登录用户会直接进入预填的地点录入界面；未登录用户完成登录后会继续该录入流程
 - 粘贴地图链接会检测相似餐厅；发现重复时先询问用户是否继续创建
 - 左侧分类支持系统智能分类和自定义清单：`All Spots`、`Visited`、`Want to Go`、`Favorites`，以及用户创建的私密/公开 list
 - `Map View` 和 `List View` 是同一分类的两种展示方式；系统分类和自定义 list 都可以在地图与列表之间切换
@@ -27,6 +28,8 @@ Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱
 - 私密推荐链接 `/share-pack/{token}` 和菜谱分享链接 `/recipe-share/{token}` 支持未登录预览，推荐图 `/api/share-packs/{token}/card.png` 与 `/api/recipe-shares/{token}/card.png` 可单独打开和保存
 - 朋友登录后可一键添加分享店铺到自己的列表，默认分类为 `Want to Go`
 - 木质手账风响应式布局，支持桌面、平板和手机；桌面 topbar 固定在顶部，只有内容滚动到其下方时才显示阴影
+
+> iPhone 的网页无法直接接管 `maps.app.goo.gl` 链接或出现在 Google Maps 的系统分享目标中；若需要该原生分享体验，需要单独提供 iOS Share Extension。
 
 ## 本地运行
 

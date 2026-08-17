@@ -6224,6 +6224,7 @@ body[data-view="login"] .top-actions {
   body[data-view="my-map"] .location-prompt-copy {
     grid-template-columns: 34px minmax(0, 1fr);
     gap: 8px;
+    min-width: 0;
   }
 
   body[data-view="my-map"] .location-prompt-mark {
@@ -6234,6 +6235,9 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .location-prompt-copy strong {
     font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   body[data-view="my-map"] .location-prompt-copy small {
@@ -6242,16 +6246,18 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .location-prompt-actions {
     display: flex;
+    flex: 0 0 auto;
     gap: 5px;
+    min-width: 0;
   }
 
   body[data-view="my-map"] .location-prompt-actions .primary-button,
   body[data-view="my-map"] .location-prompt-actions .secondary-button {
-    width: 100%;
+    width: auto;
     min-height: 34px;
-    padding: 6px 9px;
+    padding: 6px 8px;
     white-space: nowrap;
-    font-size: 11px;
+    font-size: 10px;
   }
 
   body[data-view="my-map"] .cute-map {
@@ -6337,7 +6343,7 @@ body[data-view="login"] .top-actions {
 
   body[data-view="my-map"] .spot-card {
     display: grid;
-    max-height: calc(100svh - 112px - env(safe-area-inset-bottom, 0px));
+    max-height: min(56svh, calc(100svh - 172px - env(safe-area-inset-bottom, 0px)));
     overflow-x: clip;
     overflow-y: auto;
     gap: 9px;

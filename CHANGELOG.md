@@ -8,6 +8,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added a direct Maps-link import entry point that opens a prefilled place-capture task after sign-in.
+
 - Added responsive geometry checks across five mobile and three desktop widths plus reviewed non-empty Map visual baselines.
 
 - Added a unified My Places workspace with Map/List switching, one-tap visited status, list-scoped private sharing, and responsive regression coverage for the simplified navigation.
@@ -84,6 +86,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Admin access now uses a separate admin session instead of ordinary user email allowlisting.
 
 ### Fixed
+
+- Fixed iOS Google Maps shared-address parsing so the restaurant name is not mistaken for a province or region, and tightened iPhone confirmation, location-prompt, and selected-place-sheet layout.
 
 - Replaced the ambiguous empty Favorites map with clear guidance, a one-tap return to all saved places, and a mobile layout that keeps category controls available when a filter has no results.
 

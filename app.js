@@ -129,6 +129,7 @@ let sharePackToken = getSharePackToken();
 let sharePackData = null;
 let recipeShareToken = getRecipeShareToken();
 let recipeShareData = null;
+let pendingMapImportText = getInboundMapImportText();
 let pendingAddSharePack = false;
 let pendingAddRecipeShare = false;
 let activeView = getInitialView();
@@ -620,6 +621,7 @@ async function boot() {
   await locationController.bootstrap();
   locationUiReady = true;
   render();
+  await openInboundMapImport();
 }
 
 function bindEvents() {
@@ -1245,6 +1247,7 @@ async function refreshAfterAuth() {
   } else {
     render();
   }
+  await openInboundMapImport();
 }
 
 async function submitPasswordAuth() {
@@ -1506,6 +1509,32 @@ async function openQuickCaptureDialog({ fromClipboard = false } = {}) {
   } catch {
     // Clipboard permission is optional; the focused link field remains ready for paste.
   }
+}
+
+function getInboundMapImportText() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("import-map") || params.get("url") || params.get("text") || "";
+}
+
+function clearInboundMapImportFromUrl() {
+  const url = new URL(window.location.href);
+  ["import-map", "url", "text", "title"].forEach((key) => url.searchParams.delete(key));
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+async function openInboundMapImport() {
+  if (!pendingMapImportText || !currentUser) return;
+  const mapUrl = sanitizeMapUrl(extractMapUrl(pendingMapImportText) || pendingMapImportText);
+  pendingMapImportText = "";
+  clearInboundMapImportFromUrl();
+  if (!extractMapUrl(mapUrl) || !canAddOneRestaurant()) return;
+
+  openCreateDialog();
+  if (!elements.addDialog.open) return;
+  elements.quickCaptureIntro.textContent = t("maps.inboundIntro");
+  elements.googleUrlInput.value = mapUrl;
+  await autofillFromMapsUrl({ immediate: true });
+  elements.googleUrlInput.focus();
 }
 
 function openEditDialog() {
@@ -2461,7 +2490,7 @@ function setPasteStatus(message) {
   elements.pasteStatus.textContent = message;
 }
 
-async function autofillFromMapsUrl() {
+async function autofillFromMapsUrl({ immediate = false } = {}) {
   const form = elements.restaurantForm.elements;
   const mapUrl = sanitizeMapUrl(elements.googleUrlInput.value);
   if (mapUrl && mapUrl !== elements.googleUrlInput.value.trim()) {
@@ -2470,7 +2499,7 @@ async function autofillFromMapsUrl() {
   if (isResolvableMapLink(mapUrl)) {
     elements.formHelp.textContent = t("maps.shortExpanding");
     window.clearTimeout(shortLinkResolveTimer);
-    shortLinkResolveTimer = window.setTimeout(async () => {
+    const resolveShortLink = async () => {
       try {
         const parsed = await parseAnyMapLink(mapUrl);
         form.googleUrl.value = parsed.url || mapUrl;
@@ -2481,7 +2510,12 @@ async function autofillFromMapsUrl() {
       } catch (error) {
         elements.formHelp.textContent = error.message;
       }
-    }, 450);
+    };
+    if (immediate) {
+      await resolveShortLink();
+    } else {
+      shortLinkResolveTimer = window.setTimeout(resolveShortLink, 450);
+    }
     return;
   }
 

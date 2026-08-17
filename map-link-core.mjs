@@ -130,6 +130,15 @@ function splitPlaceAddressText(value) {
   const text = safeDecode(value).replace(/\s+/g, " ").trim();
   if (!text) return {};
   const parts = text.split(",").map((part) => part.trim()).filter(Boolean);
+  // Google Maps iOS shares can encode a result as
+  // "province, city, street, restaurant postal code: A1A 1A1". In that
+  // format the first token is a region, not the restaurant name.
+  const postalLabel = /(?:邮政编码|postal(?:\s+code)?|zip(?:\s+code)?)\s*[:：]\s*[^,]+$/iu;
+  if (parts.length >= 3 && postalLabel.test(parts.at(-1) || "")) {
+    const name = parts.at(-1).replace(postalLabel, "").trim();
+    const address = parts.slice(0, -1).join(", ");
+    if (name) return { name, address };
+  }
   if (parts.length >= 2 && parts.slice(1).some(looksLikeAddress)) return { name: parts[0], address: parts.slice(1).join(", ") };
   return { name: text };
 }
