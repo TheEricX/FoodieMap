@@ -471,7 +471,7 @@ async function loadBrowserCore() {
       }
     });
     uiShellController.start();
-    confirmController = loadedUiDialogs.createConfirmController({ document });
+    confirmController = loadedUiDialogs.createConfirmController({ document, window });
     uiComponents = loadedUiComponents;
     dataClient = loadedDataClient.createDataClient({
       fetch: window.fetch.bind(window),

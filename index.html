@@ -928,17 +928,17 @@
       </dialog>
 
       <dialog class="modal confirm-dialog" id="confirmDialog" aria-labelledby="confirmDialogTitle" aria-describedby="confirmDialogMessage">
-        <section class="modal-card confirm-card" role="document">
+        <form class="modal-card confirm-card" method="dialog" role="document">
           <div class="confirm-copy">
             <p class="eyebrow">CONFIRM</p>
             <h2 id="confirmDialogTitle" data-confirm-title>Confirm action</h2>
             <p id="confirmDialogMessage" data-confirm-message></p>
           </div>
           <div class="form-actions confirm-actions">
-            <button class="secondary-button ghost-button" type="button" data-confirm-cancel>Cancel</button>
-            <button class="primary-button" type="button" data-confirm-accept>Continue</button>
+            <button class="secondary-button ghost-button" type="submit" value="cancel" data-confirm-cancel>Cancel</button>
+            <button class="primary-button" type="submit" value="accept" data-confirm-accept>Continue</button>
           </div>
-        </section>
+        </form>
       </dialog>
     </main>
     <div class="app-toast" id="appToast" role="status" aria-live="polite" aria-atomic="true" hidden>
@@ -946,6 +946,16 @@
       <button class="app-toast-action" id="appToastAction" type="button" hidden></button>
       <button class="app-toast-close" id="appToastClose" type="button" aria-label="Dismiss">×</button>
     </div>
+    <script>
+      (() => {
+        const dialog = document.querySelector("#confirmDialog");
+        const closeRestoredDialog = () => {
+          if (dialog?.open) dialog.close();
+        };
+        closeRestoredDialog();
+        window.addEventListener("pageshow", closeRestoredDialog);
+      })();
+    </script>
     <script src="/app.js?v=20260728-public-list"></script>
   </body>
 </html>

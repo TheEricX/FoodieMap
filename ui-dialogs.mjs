@@ -1,4 +1,4 @@
-export function createConfirmController({ document }) {
+export function createConfirmController({ document, window = globalThis.window }) {
   const dialog = document.querySelector("#confirmDialog");
   const title = dialog?.querySelector("[data-confirm-title]");
   const message = dialog?.querySelector("[data-confirm-message]");
@@ -6,12 +6,25 @@ export function createConfirmController({ document }) {
   const acceptButton = dialog?.querySelector("[data-confirm-accept]");
   let resolvePending = null;
 
+  // Safari can restore an open native dialog from a previous page snapshot
+  // without restoring this controller's pending Promise. Start from a usable
+  // page rather than leaving that stale modal over the entire app.
+  function dismissRestoredDialog() {
+    if (!dialog?.open) return;
+    const resolve = resolvePending;
+    resolvePending = null;
+    dialog.close();
+    resolve?.(false);
+  }
+
+  if (dialog?.open && !resolvePending) dismissRestoredDialog();
+  window?.addEventListener?.("pageshow", dismissRestoredDialog);
+
   function finish(accepted) {
-    if (!resolvePending) return;
     const resolve = resolvePending;
     resolvePending = null;
     if (dialog.open) dialog.close();
-    resolve(accepted);
+    resolve?.(accepted);
   }
 
   dialog?.addEventListener("cancel", (event) => {

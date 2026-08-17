@@ -189,6 +189,17 @@ test("@mobile an incoming Maps link opens a prefilled quick capture", async ({ s
   await expect(page).not.toHaveURL(/import-map/);
 });
 
+test("@mobile a restored confirmation dialog is cleared when the page becomes visible", async ({ signedInPage: page }) => {
+  const remainsOpen = await page.evaluate(() => {
+    const dialog = document.querySelector("#confirmDialog");
+    dialog.showModal();
+    window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
+    return dialog.open;
+  });
+  expect(remainsOpen).toBe(false);
+  await expect(page.locator("#confirmDialog")).toBeHidden();
+});
+
 test("@mobile list and recipe capture keep optional fields out of the first task", async ({ signedInPage: page }) => {
   await page.locator('[data-view="my-lists"]:visible').first().tap();
   await page.locator("#mobileMyListDrawer > summary").tap();

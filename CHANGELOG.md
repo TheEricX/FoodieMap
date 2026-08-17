@@ -6,6 +6,10 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ## Unreleased
 
+### Fixed
+
+- Fixed a Safari-restored confirmation sheet that could remain open without an active action, blocking every control on the page.
+
 ### Added
 
 - Added a direct Maps-link import entry point that opens a prefilled place-capture task after sign-in.

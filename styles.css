@@ -4431,6 +4431,10 @@ body[data-view="login"] .top-actions {
   background: transparent;
 }
 
+dialog.modal:not([open]) {
+  display: none !important;
+}
+
 .modal::backdrop {
   background: rgba(45, 41, 38, 0.38);
   backdrop-filter: blur(3px);
