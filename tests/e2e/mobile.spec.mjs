@@ -190,14 +190,18 @@ test("@mobile an incoming Maps link opens a prefilled quick capture", async ({ s
 });
 
 test("@mobile a restored confirmation dialog is cleared when the page becomes visible", async ({ signedInPage: page }) => {
-  const remainsOpen = await page.evaluate(() => {
-    const dialog = document.querySelector("#confirmDialog");
-    dialog.showModal();
-    window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
-    return dialog.open;
+  const restoredDialogs = await page.evaluate(() => {
+    const dialogIds = ["confirmDialog", "spotDetailDialog"];
+    return dialogIds.filter((id) => {
+      const dialog = document.querySelector(`#${id}`);
+      dialog.showModal();
+      window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
+      return dialog.open;
+    });
   });
-  expect(remainsOpen).toBe(false);
+  expect(restoredDialogs).toEqual([]);
   await expect(page.locator("#confirmDialog")).toBeHidden();
+  await expect(page.locator("#spotDetailDialog")).toBeHidden();
 });
 
 test("@mobile list and recipe capture keep optional fields out of the first task", async ({ signedInPage: page }) => {

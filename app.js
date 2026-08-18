@@ -2020,10 +2020,15 @@ function openSpotDetail() {
   });
 }
 
-function closeSpotDetail() {
+function closeSpotDetail({ immediate = false } = {}) {
   if (!elements.spotDetailDialog.open) return;
   clearTimeout(detailCloseTimer);
   elements.spotDetailDialog.classList.remove("is-open");
+  if (immediate) {
+    elements.spotDetailDialog.classList.remove("is-closing");
+    elements.spotDetailDialog.close();
+    return;
+  }
   elements.spotDetailDialog.classList.add("is-closing");
   detailCloseTimer = window.setTimeout(() => {
     elements.spotDetailDialog.classList.remove("is-closing");
@@ -2866,6 +2871,7 @@ function setActiveView(view, options = {}) {
   if (!isAdminPortal && !currentUser && !shareToken && !sharePackToken && !recipeShareToken) view = "login";
   searchTermsByView[activeView] = elements.searchInput.value;
   activeView = recipeShareToken ? "recipe-share" : sharePackToken ? "share-pack" : shareToken ? "my-map" : view;
+  if (activeView !== "my-map") closeSpotDetail({ immediate: true });
   if (activeView === "recipes" && previousView !== "recipes") recipeMobileDetailOpen = false;
   elements.searchInput.value = searchTermsByView[activeView] || "";
   if (!isAdminPortal && !sharePackToken && !recipeShareToken && activeView !== "login" && options.push !== false && window.location.hash !== `#${activeView}`) {
@@ -2888,6 +2894,7 @@ function setActiveView(view, options = {}) {
   if (["my-map", "my-lists"].includes(activeView)) selectFirstVisibleRestaurant();
   render();
   requestAnimationFrame(() => {
+    if (activeView !== "my-map") closeSpotDetail({ immediate: true });
     if (activeView === "discovery" && previousView !== "discovery") {
       elements.discoveryView?.querySelector(".discovery-layout")?.scrollTo({ top: 0 });
     }

@@ -948,12 +948,11 @@
     </div>
     <script>
       (() => {
-        const dialog = document.querySelector("#confirmDialog");
-        const closeRestoredDialog = () => {
-          if (dialog?.open) dialog.close();
+        const closeRestoredDialogs = () => {
+          document.querySelectorAll("dialog[open]").forEach((dialog) => dialog.close());
         };
-        closeRestoredDialog();
-        window.addEventListener("pageshow", closeRestoredDialog);
+        closeRestoredDialogs();
+        window.addEventListener("pageshow", closeRestoredDialogs);
       })();
     </script>
     <script src="/app.js?v=20260728-public-list"></script>

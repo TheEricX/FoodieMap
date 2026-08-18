@@ -9,6 +9,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 ### Fixed
 
 - Fixed a Safari-restored confirmation sheet that could remain open without an active action, blocking every control on the page.
+- Fixed restored restaurant-detail drawers blocking navigation, and kept empty-map actions clear of the mobile map toolbar.
 
 ### Added
 

@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures.mjs";
 
 async function closeMobileSpotDetailIfOpen(page) {
   const mobile = await page.locator("body").getAttribute("data-layout") === "mobile";
-  if (mobile && await page.locator("#spotDetailDialog").isVisible()) {
+  if (await page.locator("#spotDetailDialog").isVisible()) {
     await page.locator("#closeSpotDetail").click();
     await expect(page.locator("#spotDetailDialog")).toBeHidden();
   }
@@ -20,8 +20,8 @@ async function openListPickerForRestaurant(page, title) {
 async function openOwnedList(page, listId) {
   const mobile = await closeMobileSpotDetailIfOpen(page);
   await page.locator('[data-view="my-lists"]:visible').first().click();
+  await closeMobileSpotDetailIfOpen(page);
   if (mobile) {
-    await closeMobileSpotDetailIfOpen(page);
     await page.locator("#mobileMyListDrawer > summary").click();
     await page.locator(`[data-mobile-my-list-id="${listId}"]`).click();
   } else {
