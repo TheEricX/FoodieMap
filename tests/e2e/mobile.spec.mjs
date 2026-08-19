@@ -204,6 +204,84 @@ test("@mobile a restored confirmation dialog is cleared when the page becomes vi
   await expect(page.locator("#spotDetailDialog")).toBeHidden();
 });
 
+test("@mobile map choice is a compact bottom sheet", async ({ signedInPage: page }) => {
+  await page.setViewportSize({ width: 430, height: 932 });
+  await page.evaluate(() => document.querySelector("#mapChoiceDialog").showModal());
+  const layout = await page.locator("#mapChoiceDialog .map-choice-card").evaluate((card) => {
+    const bounds = card.getBoundingClientRect();
+    return {
+      bottom: bounds.bottom,
+      height: bounds.height,
+      viewportHeight: window.innerHeight,
+    };
+  });
+  expect(Math.abs(layout.bottom - layout.viewportHeight)).toBeLessThanOrEqual(1);
+  expect(layout.height).toBeLessThanOrEqual(290);
+  await expect(page.locator("#openGoogleMapChoice")).toBeVisible();
+  await expect(page.locator("#openAppleMapChoice")).toBeVisible();
+  await page.locator("#closeMapChoiceDialog").tap();
+  await expect(page.locator("#mapChoiceDialog")).toBeHidden();
+});
+
+test("@mobile new recipe is a compact sheet and expands into one scrollable editor", async ({ signedInPage: page }) => {
+  await page.setViewportSize({ width: 430, height: 932 });
+  await page.locator('[data-view="recipes"]:visible').first().tap();
+  await page.locator("#openRecipeDialog").tap();
+  const compactLayout = await page.locator("#recipeForm").evaluate((form) => {
+    const bounds = form.getBoundingClientRect();
+    const details = form.querySelector("#toggleRecipeDetails").getBoundingClientRect();
+    return { bottom: bounds.bottom, height: bounds.height, viewportHeight: window.innerHeight, detailsHeight: details.height };
+  });
+  expect(Math.abs(compactLayout.bottom - compactLayout.viewportHeight)).toBeLessThanOrEqual(1);
+  expect(compactLayout.height).toBeLessThanOrEqual(500);
+  expect(compactLayout.detailsHeight).toBeLessThanOrEqual(48);
+
+  await page.locator("#toggleRecipeDetails").tap();
+  const expandedLayout = await page.locator("#recipeForm").evaluate((form) => ({
+    clientHeight: form.clientHeight,
+    scrollHeight: form.scrollHeight,
+    overflowY: getComputedStyle(form).overflowY,
+  }));
+  expect(expandedLayout.scrollHeight).toBeGreaterThan(expandedLayout.clientHeight);
+  expect(expandedLayout.overflowY).toBe("auto");
+});
+
+test("@mobile Map and List share one compact places toolbar on iPhone 16 Pro Max", async ({ signedInPage: page }) => {
+  await page.setViewportSize({ width: 430, height: 932 });
+  const mapToolbar = await page.locator("#mapView .mobile-place-view-switcher").evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { left: rect.left, width: rect.width };
+  });
+  await page.locator('[data-view="my-lists"]:visible').first().tap();
+  const layout = await page.evaluate(() => {
+    const bounds = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return { left: rect.left, right: rect.right, width: rect.width, center: rect.left + rect.width / 2 };
+    };
+    return {
+      viewportWidth: window.innerWidth,
+      quickCapture: bounds("#mobileQuickCaptureButton"),
+      switcher: bounds("#listsView .place-view-switcher"),
+      map: bounds('#listsView [data-place-view="my-map"]'),
+      list: bounds('#listsView [data-place-view="my-lists"]'),
+    };
+  });
+  expect(layout.quickCapture.right).toBeLessThanOrEqual(layout.viewportWidth);
+  expect(layout.switcher.left).toBeGreaterThanOrEqual(0);
+  expect(layout.switcher.right).toBeLessThanOrEqual(layout.viewportWidth);
+  expect(Math.abs(layout.switcher.left - mapToolbar.left)).toBeLessThanOrEqual(1);
+  expect(Math.abs(layout.switcher.width - mapToolbar.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(layout.map.width - layout.list.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(layout.map.center + layout.list.center - 2 * layout.switcher.center)).toBeLessThanOrEqual(1);
+  const hiddenTitle = await page.locator("#listsView .place-list-header > div:first-child").evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { width: rect.width, height: rect.height };
+  });
+  expect(hiddenTitle.width).toBeLessThanOrEqual(1);
+  expect(hiddenTitle.height).toBeLessThanOrEqual(1);
+  await expect(page.locator("#myListDetail [data-view-system-map]")).toBeHidden();
+});
+
 test("@mobile list and recipe capture keep optional fields out of the first task", async ({ signedInPage: page }) => {
   await page.locator('[data-view="my-lists"]:visible').first().tap();
   await page.locator("#mobileMyListDrawer > summary").tap();
@@ -250,8 +328,8 @@ test("@mobile long form dialogs stay horizontally locked", async ({ signedInPage
     expect(layout.dialogLeft).toBe(0);
     expect(layout.dialogRight).toBe(layout.viewportWidth);
     expect(layout.dialogWidth).toBe(layout.viewportWidth);
-    expect(layout.actionsLeft).toBe(0);
-    expect(layout.actionsRight).toBe(layout.viewportWidth);
+    expect(layout.actionsLeft).toBeLessThanOrEqual(1);
+    expect(layout.actionsRight).toBeGreaterThanOrEqual(layout.viewportWidth - 1);
     expect(["clip", "hidden"]).toContain(layout.cardOverflowX);
     expect(layout.cardTouchAction).toBe("pan-y");
     await page.evaluate(() => document.querySelector("#recipeDialog").close());

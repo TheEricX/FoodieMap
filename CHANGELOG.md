@@ -6,6 +6,10 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ## Unreleased
 
+### Changed
+
+- Unified the mobile Map and List workspace controls, kept capture actions within the viewport, and compacted Maps and Recipe sheets for iPhone-sized screens.
+
 ### Fixed
 
 - Fixed a Safari-restored confirmation sheet that could remain open without an active action, blocking every control on the page.

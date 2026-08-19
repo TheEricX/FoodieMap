@@ -5177,7 +5177,7 @@ dialog.modal:not([open]) {
     display: grid;
     grid-column: 1 / -1;
     grid-row: 2;
-    grid-template-columns: minmax(0, 1fr) 76px;
+    grid-template-columns: minmax(0, 1fr) 92px;
     gap: 8px;
     align-items: center;
   }
@@ -5232,6 +5232,33 @@ dialog.modal:not([open]) {
     font-size: 12px;
     white-space: nowrap;
     font-weight: 700;
+  }
+
+  body[data-view="my-lists"] .place-list-header {
+    display: block;
+    margin: 0 0 6px;
+  }
+
+  body[data-view="my-lists"] .place-list-header > div:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  body[data-view="my-lists"] .place-list-header .place-view-switcher {
+    display: inline-flex;
+    width: fit-content;
+  }
+
+  body[data-view="my-lists"] .place-list-header .place-view-switcher button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 13px;
+    text-align: center;
   }
 
   body[data-view="my-map"] .top-actions,
@@ -5568,29 +5595,24 @@ dialog.modal:not([open]) {
   }
 
   body[data-view="my-lists"] .list-view-head {
-    display: grid;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
+    margin-bottom: 6px;
+    padding-bottom: 0;
+    border: 0;
   }
 
   body[data-view="my-lists"] .list-view-head h2 {
-    display: -webkit-box;
-    margin-bottom: 4px;
-    overflow: hidden;
-    font-size: clamp(22px, 6vw, 28px);
-    line-height: 1.05;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.15;
   }
 
+  body[data-view="my-lists"] .list-view-head .eyebrow,
   body[data-view="my-lists"] .list-view-head p:not(.eyebrow) {
-    display: -webkit-box;
-    overflow: hidden;
-    font-size: 13px;
-    line-height: 1.35;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    display: none;
   }
 
   body[data-view="my-lists"] .list-view-tools {
@@ -5647,6 +5669,11 @@ dialog.modal:not([open]) {
     min-height: 34px;
     padding: 6px 10px;
     font-size: 12px;
+  }
+
+  body[data-view="my-lists"] [data-view-system-map],
+  body[data-view="my-lists"] [data-list-action="map"] {
+    display: none;
   }
 
   body[data-view="my-lists"] .restaurant-list-mode,
@@ -6923,6 +6950,38 @@ dialog.modal:not([open]) {
     transform: translateY(100dvh);
   }
 
+  /* A new recipe needs only a title. Keep that first task compact; the
+     optional editor expands inside the same scrollable sheet when requested. */
+  #recipeDialog[open] {
+    display: grid;
+    align-items: end;
+    justify-items: stretch;
+    padding: 0;
+  }
+
+  #recipeForm {
+    align-content: start;
+    width: 100%;
+    height: auto;
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 12px);
+    border: 1px solid rgba(217, 197, 183, 0.86);
+    border-radius: 22px 22px 0 0;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  #recipeForm .modal-head h2 {
+    font-size: clamp(26px, 7vw, 32px);
+  }
+
+  #recipeForm .quick-capture-intro {
+    margin: 0;
+  }
+
+  #recipeForm .form-details-toggle {
+    min-height: 42px;
+    padding: 8px 14px;
+  }
+
   .modal-drag-handle {
     display: block;
     width: 42px;
@@ -7112,8 +7171,23 @@ dialog.modal:not([open]) {
   }
 
   .map-choice-card {
-    width: min(100%, calc(100vw - 28px));
-    margin: 14px auto;
+    width: 100%;
+    height: auto;
+    max-height: min(290px, calc(100dvh - env(safe-area-inset-top, 0px) - 16px));
+    margin: 0;
+    border-radius: 22px 22px 0 0;
+    padding: 18px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  #mapChoiceDialog[open] {
+    display: grid;
+    align-items: end;
+    justify-items: stretch;
+    padding: 0;
+  }
+
+  .map-choice-card .modal-head h2 {
+    font-size: clamp(25px, 7vw, 30px);
   }
 
   .map-choice-card .map-choice-actions {
