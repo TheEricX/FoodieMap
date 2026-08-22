@@ -68,7 +68,9 @@ body.admin-portal .mobile-bottom-nav {
     left: 10px;
     z-index: var(--ui-layer-navigation);
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* There are three primary destinations. Matching the grid to the actual
+       links keeps the tap targets centred instead of leaving a phantom column. */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 5px;
     min-width: 0;
     border: 1px solid rgba(139, 106, 87, 0.22);

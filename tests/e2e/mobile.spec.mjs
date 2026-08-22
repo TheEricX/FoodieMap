@@ -40,6 +40,43 @@ test("@mobile bottom navigation is single-tap responsive without horizontal over
   await page.setViewportSize({ width: 390, height: 844 });
 });
 
+test("@mobile selected-map tab clears the centred bottom navigation", async ({ signedInPage: page }) => {
+  await page.setViewportSize({ width: 430, height: 932 });
+  const created = await page.request.post("/api/restaurants", { data: {
+    name: "Mobile navigation clearance",
+    address: "Toronto",
+    lat: 43.6532,
+    lng: -79.3832,
+    google_url: "https://maps.apple.com/?ll=43.6532,-79.3832&q=Mobile%20navigation%20clearance",
+    status: "want_to_go",
+    visit_count: 0,
+    personal_rating: 0,
+    notes: ""
+  }});
+  expect(created.ok()).toBeTruthy();
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await expect(page.locator("#spotCardTab")).toBeVisible();
+
+  const layout = await page.evaluate(() => {
+    const rect = (selector) => {
+      const box = document.querySelector(selector).getBoundingClientRect();
+      return { left: box.left, right: box.right, bottom: box.bottom, width: box.width };
+    };
+    const nav = rect(".mobile-bottom-nav");
+    const links = Array.from(document.querySelectorAll(".mobile-bottom-nav a")).map((link) => {
+      const box = link.getBoundingClientRect();
+      return { left: box.left, width: box.width };
+    });
+    return { nav, tab: rect("#spotCardTab"), links };
+  });
+  expect(layout.tab.bottom).toBeLessThanOrEqual(layout.nav.bottom - 72);
+  expect(layout.links).toHaveLength(3);
+  expect(Math.abs(layout.links[0].left - layout.nav.left - 5)).toBeLessThanOrEqual(1);
+  expect(Math.abs(layout.links[0].width - layout.links[1].width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(layout.links[1].width - layout.links[2].width)).toBeLessThanOrEqual(1);
+});
+
 test("@mobile hidden toast stays hidden and Discovery resets its inner scroll", async ({ signedInPage: page }) => {
   await expect(page.locator("#appToast")).toBeHidden();
   await page.locator('[data-view="discovery"]:visible').first().tap();

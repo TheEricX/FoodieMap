@@ -6364,7 +6364,9 @@ dialog.modal:not([open]) {
   body[data-view="my-map"] .spot-card-tab {
     position: fixed;
     right: 12px;
-    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    /* Leave room for the fixed navigation and the tab's shadow. The former
+       74px offset left only a hairline gap on iPhone Safari. */
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
     left: 12px;
     z-index: 35;
     width: auto;
