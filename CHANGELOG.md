@@ -12,7 +12,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
-- Fixed the mobile selected-place tab visually crowding the bottom navigation, and centred the three navigation destinations evenly.
+- Fixed the mobile selected-place tab visually crowding the now more compact, raised bottom navigation, and centred the three navigation destinations evenly.
 - Fixed a Safari-restored confirmation sheet that could remain open without an active action, blocking every control on the page.
 - Fixed restored restaurant-detail drawers blocking navigation, and kept empty-map actions clear of the mobile map toolbar.
 

@@ -64,7 +64,8 @@ body.admin-portal .mobile-bottom-nav {
   .mobile-bottom-nav {
     position: fixed;
     right: 10px;
-    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    /* Keep the control visibly detached from the phone edge and the map. */
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
     left: 10px;
     z-index: var(--ui-layer-navigation);
     display: grid;
@@ -84,11 +85,11 @@ body.admin-portal .mobile-bottom-nav {
   .mobile-bottom-nav a {
     display: grid;
     min-width: 0;
-    min-height: 44px;
+    min-height: 40px;
     place-items: center;
     border-radius: 999px;
     color: var(--muted);
-    padding: 0 5px;
+    padding: 0 4px;
     font-size: 14px;
     font-weight: 700;
     line-height: 1;

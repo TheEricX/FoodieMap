@@ -61,7 +61,7 @@ test("@mobile selected-map tab clears the centred bottom navigation", async ({ s
   const layout = await page.evaluate(() => {
     const rect = (selector) => {
       const box = document.querySelector(selector).getBoundingClientRect();
-      return { left: box.left, right: box.right, bottom: box.bottom, width: box.width };
+      return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width };
     };
     const nav = rect(".mobile-bottom-nav");
     const links = Array.from(document.querySelectorAll(".mobile-bottom-nav a")).map((link) => {
@@ -70,7 +70,7 @@ test("@mobile selected-map tab clears the centred bottom navigation", async ({ s
     });
     return { nav, tab: rect("#spotCardTab"), links };
   });
-  expect(layout.tab.bottom).toBeLessThanOrEqual(layout.nav.bottom - 72);
+  expect(layout.tab.bottom).toBeLessThanOrEqual(layout.nav.top - 28);
   expect(layout.links).toHaveLength(3);
   expect(Math.abs(layout.links[0].left - layout.nav.left - 5)).toBeLessThanOrEqual(1);
   expect(Math.abs(layout.links[0].width - layout.links[1].width)).toBeLessThanOrEqual(1);
