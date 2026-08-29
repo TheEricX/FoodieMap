@@ -127,6 +127,23 @@ test("@mobile empty map prioritizes direct restaurant capture", async ({ signedI
   await expect(page.locator(".map-nearest-panel")).toBeHidden();
   await page.locator("#emptyMapAddButton").tap();
   await expect(page.locator("#addDialog")).toBeVisible();
+  await page.locator("#toggleRestaurantDetails").tap();
+  const addFormLayout = await page.locator("#restaurantForm").evaluate((form) => {
+    const content = form.querySelector(".restaurant-form-content");
+    const actions = form.querySelector(".form-actions");
+    const lastField = form.querySelector('[name="notes"]');
+    content.scrollTop = content.scrollHeight;
+    return {
+      contentCanScroll: content.scrollHeight > content.clientHeight,
+      actionsTop: actions.getBoundingClientRect().top,
+      actionsBottom: actions.getBoundingClientRect().bottom,
+      lastFieldBottom: lastField.getBoundingClientRect().bottom,
+      viewportHeight: window.innerHeight,
+    };
+  });
+  expect(addFormLayout.contentCanScroll).toBeTruthy();
+  expect(addFormLayout.lastFieldBottom).toBeLessThanOrEqual(addFormLayout.actionsTop - 12);
+  expect(addFormLayout.actionsBottom).toBeLessThanOrEqual(addFormLayout.viewportHeight + 1);
   await page.locator("#closeAddPanel").tap();
   await page.locator("#emptyMapPasteButton").tap();
   await expect(page.locator("#addDialog")).toBeVisible();

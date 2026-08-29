@@ -551,86 +551,88 @@
 
       <dialog class="modal" id="addDialog">
         <form class="modal-card" id="restaurantForm" method="dialog">
-          <div class="modal-drag-handle" aria-hidden="true"></div>
-          <div class="modal-head">
-            <div>
-              <p class="eyebrow" id="formModeLabel">NEW_SPOT</p>
-              <h2 id="formTitle">Save a Bite</h2>
-            </div>
-            <button class="icon-button" type="button" id="closeAddPanel">×</button>
-          </div>
-
-          <input name="id" type="hidden" />
-          <p class="form-help quick-capture-intro" id="quickCaptureIntro" data-i18n="spot.quickCaptureHelp">Paste a map link, confirm the name, and save it for later.</p>
-          <label>
-            <span data-i18n="spot.googleUrl">Maps link</span>
-            <input name="googleUrl" autocomplete="url" autocapitalize="off" placeholder="Paste a Google Maps or Apple Maps link to detect name, address, and coordinates" data-i18n-placeholder="spot.googleUrlPlaceholder" />
-            <small class="form-help map-link-hint" data-i18n="maps.pasteHint">Paste a Google Maps or Apple Maps link here to auto-detect the restaurant name and location.</small>
-          </label>
-          <label>
-            <span data-i18n="spot.name">Name</span>
-            <input name="name" required placeholder="Auto-detected, or enter a restaurant name" data-i18n-placeholder="spot.namePlaceholder" />
-          </label>
-          <label>
-            <span data-i18n="detail.status">Status</span>
-            <select name="status">
-              <option value="visited" data-i18n="status.visited">Visited</option>
-              <option value="want_to_go" selected data-i18n="status.want_to_go">Want to Go</option>
-              <option value="favorite" data-i18n="status.favorite">Favorite</option>
-            </select>
-          </label>
-          <button class="secondary-button compact-action restaurant-advanced-toggle" id="toggleRestaurantDetails" type="button" aria-expanded="false" aria-controls="restaurantAdvancedFields" data-i18n="spot.addDetails">Add details</button>
-          <section class="restaurant-advanced-fields" id="restaurantAdvancedFields" hidden>
-            <label>
-              <span data-i18n="spot.address">Address</span>
-              <input name="address" placeholder="Optional: record the address manually" data-i18n-placeholder="spot.addressPlaceholder" />
-            </label>
-            <div class="two-col">
-              <label>
-                <span data-i18n="spot.lat">Latitude</span>
-                <input name="lat" type="number" min="-90" max="90" step="any" placeholder="Auto-filled" data-i18n-placeholder="spot.coordPlaceholder" />
-              </label>
-              <label>
-                <span data-i18n="spot.lng">Longitude</span>
-                <input name="lng" type="number" min="-180" max="180" step="any" placeholder="Auto-filled" data-i18n-placeholder="spot.coordPlaceholder" />
-              </label>
-            </div>
-            <div class="two-col">
-            <label>
-              <span data-i18n="detail.rating">Rating</span>
-              <input name="personalRating" type="number" min="0" max="5" step="0.1" value="0" />
-            </label>
-              <label>
-                <span data-i18n="detail.visitCount">Visit count</span>
-                <input name="visitCount" type="number" min="0" step="1" value="0" />
-              </label>
-            </div>
-            <label>
-              <span data-i18n="spot.notes">Notes</span>
-              <textarea name="notes" rows="4" placeholder="Rich broth, good for a slow dinner after work." data-i18n-placeholder="spot.notesPlaceholder"></textarea>
-            </label>
-          </section>
-          <section class="dish-editor" id="dishEditor" hidden>
-            <div class="section-head">
+          <div class="restaurant-form-content">
+            <div class="modal-drag-handle" aria-hidden="true"></div>
+            <div class="modal-head">
               <div>
-                <p class="eyebrow" data-i18n="spot.dishes">DISHES</p>
-                <strong data-i18n="spot.dishRecords">Dish records</strong>
+                <p class="eyebrow" id="formModeLabel">NEW_SPOT</p>
+                <h2 id="formTitle">Save a Bite</h2>
               </div>
+              <button class="icon-button" type="button" id="closeAddPanel">×</button>
             </div>
-            <div class="dish-form-grid">
-              <input id="dishNameInput" placeholder="Dish name, e.g. Black Garlic Tonkotsu" data-i18n-placeholder="spot.dishPlaceholder" />
-              <select id="dishStatusInput">
-                <option value="liked" data-i18n="status.liked">Liked</option>
-                <option value="tried" data-i18n="status.tried">Tried</option>
+
+            <input name="id" type="hidden" />
+            <p class="form-help quick-capture-intro" id="quickCaptureIntro" data-i18n="spot.quickCaptureHelp">Paste a map link, confirm the name, and save it for later.</p>
+            <label>
+              <span data-i18n="spot.googleUrl">Maps link</span>
+              <input name="googleUrl" autocomplete="url" autocapitalize="off" placeholder="Paste a Google Maps or Apple Maps link to detect name, address, and coordinates" data-i18n-placeholder="spot.googleUrlPlaceholder" />
+              <small class="form-help map-link-hint" data-i18n="maps.pasteHint">Paste a Google Maps or Apple Maps link here to auto-detect the restaurant name and location.</small>
+            </label>
+            <label>
+              <span data-i18n="spot.name">Name</span>
+              <input name="name" required placeholder="Auto-detected, or enter a restaurant name" data-i18n-placeholder="spot.namePlaceholder" />
+            </label>
+            <label>
+              <span data-i18n="detail.status">Status</span>
+              <select name="status">
+                <option value="visited" data-i18n="status.visited">Visited</option>
+                <option value="want_to_go" selected data-i18n="status.want_to_go">Want to Go</option>
+                <option value="favorite" data-i18n="status.favorite">Favorite</option>
               </select>
-              <input id="dishRatingInput" type="number" min="0" max="5" step="0.1" value="4.5" />
-              <button class="secondary-button" id="addDishButton" type="button" data-i18n="button.addDish">Add Dish</button>
-            </div>
-            <div class="dish-editor-list" id="dishEditorList"></div>
-          </section>
-          <p class="form-help" id="formHelp" data-i18n="maps.help">
-            Paste a Google Maps or Apple Maps link. Short links will be expanded by the local service.
-          </p>
+            </label>
+            <button class="secondary-button compact-action restaurant-advanced-toggle" id="toggleRestaurantDetails" type="button" aria-expanded="false" aria-controls="restaurantAdvancedFields" data-i18n="spot.addDetails">Add details</button>
+            <section class="restaurant-advanced-fields" id="restaurantAdvancedFields" hidden>
+              <label>
+                <span data-i18n="spot.address">Address</span>
+                <input name="address" placeholder="Optional: record the address manually" data-i18n-placeholder="spot.addressPlaceholder" />
+              </label>
+              <div class="two-col">
+                <label>
+                  <span data-i18n="spot.lat">Latitude</span>
+                  <input name="lat" type="number" min="-90" max="90" step="any" placeholder="Auto-filled" data-i18n-placeholder="spot.coordPlaceholder" />
+                </label>
+                <label>
+                  <span data-i18n="spot.lng">Longitude</span>
+                  <input name="lng" type="number" min="-180" max="180" step="any" placeholder="Auto-filled" data-i18n-placeholder="spot.coordPlaceholder" />
+                </label>
+              </div>
+              <div class="two-col">
+              <label>
+                <span data-i18n="detail.rating">Rating</span>
+                <input name="personalRating" type="number" min="0" max="5" step="0.1" value="0" />
+              </label>
+                <label>
+                  <span data-i18n="detail.visitCount">Visit count</span>
+                  <input name="visitCount" type="number" min="0" step="1" value="0" />
+                </label>
+              </div>
+              <label>
+                <span data-i18n="spot.notes">Notes</span>
+                <textarea name="notes" rows="4" placeholder="Rich broth, good for a slow dinner after work." data-i18n-placeholder="spot.notesPlaceholder"></textarea>
+              </label>
+            </section>
+            <section class="dish-editor" id="dishEditor" hidden>
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow" data-i18n="spot.dishes">DISHES</p>
+                  <strong data-i18n="spot.dishRecords">Dish records</strong>
+                </div>
+              </div>
+              <div class="dish-form-grid">
+                <input id="dishNameInput" placeholder="Dish name, e.g. Black Garlic Tonkotsu" data-i18n-placeholder="spot.dishPlaceholder" />
+                <select id="dishStatusInput">
+                  <option value="liked" data-i18n="status.liked">Liked</option>
+                  <option value="tried" data-i18n="status.tried">Tried</option>
+                </select>
+                <input id="dishRatingInput" type="number" min="0" max="5" step="0.1" value="4.5" />
+                <button class="secondary-button" id="addDishButton" type="button" data-i18n="button.addDish">Add Dish</button>
+              </div>
+              <div class="dish-editor-list" id="dishEditorList"></div>
+            </section>
+            <p class="form-help" id="formHelp" data-i18n="maps.help">
+              Paste a Google Maps or Apple Maps link. Short links will be expanded by the local service.
+            </p>
+          </div>
           <div class="form-actions">
             <button class="secondary-button ghost-button" id="cancelSpotButton" type="button" data-i18n="button.cancel">Cancel</button>
             <button class="primary-button" id="saveSpotButton" type="submit" data-i18n="spot.saveButton">Save Spot</button>
