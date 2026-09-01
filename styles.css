@@ -5629,10 +5629,10 @@ dialog.modal:not([open]) {
   }
 
   body[data-view="my-lists"] .list-view-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
     margin-bottom: 6px;
     padding-bottom: 0;
     border: 0;
@@ -5650,12 +5650,17 @@ dialog.modal:not([open]) {
   }
 
   body[data-view="my-lists"] .list-view-tools {
+    display: flex;
     width: 100%;
     min-width: 0;
-    justify-items: stretch;
+    align-items: center;
+    gap: 8px;
+    justify-content: space-between;
   }
 
   body[data-view="my-lists"] .list-view-meta {
+    flex: 1 1 0;
+    min-width: 0;
     flex-wrap: nowrap;
     justify-content: flex-start;
     gap: 6px;
@@ -5674,12 +5679,12 @@ dialog.modal:not([open]) {
   }
 
   body[data-view="my-lists"] .manage-list-menu {
-    justify-self: start;
+    flex: 0 0 auto;
     width: auto;
   }
 
   body[data-view="my-lists"] .manage-list-menu summary {
-    min-height: 34px;
+    min-height: 44px;
     width: auto;
     padding: 6px 13px;
     border-width: 1px;
@@ -6027,9 +6032,10 @@ dialog.modal:not([open]) {
   }
 
   body[data-view="my-lists"] .spot-row-actions .icon-link {
-    min-height: 30px;
-    padding: 5px 9px;
-    font-size: 11px;
+    min-height: 44px;
+    padding: 9px 13px;
+    font-size: 12px;
+    font-weight: 700;
   }
 
   body[data-view="my-map"] .mobile-map-bar::after {

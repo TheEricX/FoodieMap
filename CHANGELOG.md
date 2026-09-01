@@ -12,6 +12,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Fixed mobile restaurant detail navigation so an iPhone edge-back gesture closes the detail view, and made list actions easier to distinguish and tap.
 - Fixed mobile restaurant-capture fields being obscured by the fixed Cancel and Save actions.
 - Fixed the mobile selected-place tab visually crowding the now more compact, raised bottom navigation, and centred the three navigation destinations evenly.
 - Fixed a Safari-restored confirmation sheet that could remain open without an active action, blocking every control on the page.

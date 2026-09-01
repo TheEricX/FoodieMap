@@ -761,6 +761,7 @@ function bindEvents() {
     });
   });
   window.addEventListener("hashchange", () => setActiveView(getInitialView(), { push: false }));
+  window.addEventListener("popstate", syncMobileSpotDetailFromHistory);
   window.addEventListener("focus", resumeLocationController);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") resumeLocationController();
@@ -1351,6 +1352,7 @@ async function loadRestaurants() {
   selectedRestaurantId = restaurants[0]?.id ?? null;
   setSpotCardOpenForCurrentViewport();
   render();
+  restoreMobileSpotDetailFromRoute();
 }
 
 async function loadLists() {
@@ -2005,9 +2007,62 @@ async function deleteRestaurantById(restaurantId) {
   render();
 }
 
-function openSpotDetail() {
+function mobileSpotDetailRouteId() {
+  return new URL(window.location.href).searchParams.get("spot") || "";
+}
+
+function mobileSpotDetailHistoryState() {
+  return window.history.state?.foodieMapSpotDetailId || "";
+}
+
+function openMobileSpotDetailRoute(restaurantId) {
+  if (!isMobileMapViewport() || mobileSpotDetailRouteId() === restaurantId) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set("spot", restaurantId);
+  window.history.pushState({
+    ...(window.history.state || {}),
+    foodieMapSpotDetailId: restaurantId,
+  }, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function clearMobileSpotDetailRoute() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("spot")) return;
+  url.searchParams.delete("spot");
+  const nextState = { ...(window.history.state || {}) };
+  delete nextState.foodieMapSpotDetailId;
+  window.history.replaceState(nextState, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function restoreMobileSpotDetailFromRoute() {
+  if (!isMobileMapViewport()) return;
+  const restaurantId = mobileSpotDetailRouteId();
+  if (!restaurantId) return;
+  const restaurant = findRestaurantById(restaurantId);
+  if (!restaurant) {
+    clearMobileSpotDetailRoute();
+    return;
+  }
+  selectedRestaurantId = restaurant.id;
+  setSpotCardOpen(false);
+  render();
+  openSpotDetail({ skipHistory: true });
+}
+
+function syncMobileSpotDetailFromHistory() {
+  if (!isMobileMapViewport()) return;
+  const restaurantId = mobileSpotDetailRouteId();
+  if (!restaurantId) {
+    closeSpotDetail({ immediate: true, fromHistory: true });
+    return;
+  }
+  restoreMobileSpotDetailFromRoute();
+}
+
+function openSpotDetail({ skipHistory = false } = {}) {
   const selected = selectedRestaurant();
   if (!selected) return;
+  if (!skipHistory) openMobileSpotDetailRoute(selected.id);
   renderSpotDetail(selected);
   clearTimeout(detailCloseTimer);
   detailClosePointerAt = null;
@@ -2020,8 +2075,15 @@ function openSpotDetail() {
   });
 }
 
-function closeSpotDetail({ immediate = false } = {}) {
+function closeSpotDetail({ immediate = false, fromHistory = false } = {}) {
   if (!elements.spotDetailDialog.open) return;
+  if (isMobileMapViewport() && !fromHistory && mobileSpotDetailRouteId()) {
+    if (!immediate && mobileSpotDetailHistoryState() === mobileSpotDetailRouteId()) {
+      window.history.back();
+      return;
+    }
+    clearMobileSpotDetailRoute();
+  }
   clearTimeout(detailCloseTimer);
   elements.spotDetailDialog.classList.remove("is-open");
   if (immediate) {

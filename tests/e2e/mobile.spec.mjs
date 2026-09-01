@@ -200,7 +200,7 @@ test("@mobile recipes use a single-detail flow instead of stacked list and detai
   await expect(page.locator("#recipesView .recipes-panel")).toBeVisible();
 });
 
-test("@mobile restaurant marker opens the detail sheet and closes with one tap", async ({ signedInPage: page }) => {
+test("@mobile restaurant detail uses browser history so an edge-back gesture closes it", async ({ signedInPage: page }) => {
   const create = await page.request.post("/api/restaurants", { data: {
     name: "E2E Mobile Close",
     address: "Toronto",
@@ -218,8 +218,10 @@ test("@mobile restaurant marker opens the detail sheet and closes with one tap",
   await page.waitForLoadState("networkidle");
   await page.locator("#markersLayer .restaurant-marker").first().tap();
   await expect(page.locator("#spotDetailDialog")).toBeVisible();
-  await page.locator("#closeSpotDetail").tap();
+  await expect(page).toHaveURL(new RegExp(`spot=${restaurant.id}`));
+  await page.goBack();
   await expect(page.locator("#spotDetailDialog")).toBeHidden();
+  await expect(page).not.toHaveURL(/(?:\?|&)spot=/);
 });
 
 test("@mobile quick capture opens with only the essential restaurant fields", async ({ signedInPage: page }) => {
