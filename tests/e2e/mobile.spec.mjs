@@ -500,7 +500,12 @@ test("@mobile recipe task swipe shares the same discard protection as the close 
   await expect(page.locator("#recipeDialog")).toBeHidden();
 });
 
-test("@mobile recipe editor keeps actions clear, closes after update, and supports left swipe", async ({ signedInPage: page }) => {
+test("@mobile @cross-browser recipe editor keeps actions clear, closes after update, and supports left swipe", async ({ signedInPage: page }) => {
+  await page.setViewportSize({ width: 430, height: 932 });
+  let updateRequests = 0;
+  page.on("request", (request) => {
+    if (request.method() === "PATCH" && /\/api\/recipes\//.test(request.url())) updateRequests += 1;
+  });
   const created = await page.request.post("/api/recipes", { data: {
     title: "Mobile editor original",
     rating: 4,
@@ -512,9 +517,9 @@ test("@mobile recipe editor keeps actions clear, closes after update, and suppor
   expect(created.ok()).toBeTruthy();
   await page.reload();
   await page.waitForLoadState("networkidle");
-  await page.locator('[data-view="recipes"]:visible').first().tap();
-  await page.locator("#recipeList [data-recipe-id]").filter({ hasText: "Mobile editor original" }).tap();
-  await page.locator("[data-edit-recipe]").tap();
+  await page.locator('[data-view="recipes"]:visible').first().click();
+  await page.locator("#recipeList [data-recipe-id]").filter({ hasText: "Mobile editor original" }).click();
+  await page.locator("[data-edit-recipe]").click();
 
   const layout = await page.locator("#recipeForm").evaluate((form) => {
     const body = form.querySelector(".recipe-form-body");
@@ -537,12 +542,22 @@ test("@mobile recipe editor keeps actions clear, closes after update, and suppor
   expect(layout.actionsBottom).toBeLessThanOrEqual(layout.viewportHeight + 1);
   expect(layout.bodyScrollable).toBeTruthy();
 
+  await page.locator("#recipeDialog").evaluate((dialog) => {
+    dialog.testNativeClose = dialog.close.bind(dialog);
+    dialog.close = () => { throw new DOMException("Simulated Safari close failure", "InvalidStateError"); };
+  });
   await page.locator('#recipeForm input[name="title"]').fill("Mobile editor updated");
-  await page.locator("#saveRecipeButton").tap();
+  await page.locator("#saveRecipeButton").click();
   await expect(page.locator("#recipeDialog")).toBeHidden();
   await expect(page.locator("#recipeDetail")).toContainText("Mobile editor updated");
+  expect(updateRequests).toBe(1);
 
-  await page.locator("[data-edit-recipe]").tap();
+  await page.locator("#recipeDialog").evaluate((dialog) => {
+    dialog.close = dialog.testNativeClose;
+    delete dialog.testNativeClose;
+  });
+
+  await page.locator("[data-edit-recipe]").click();
   await page.evaluate(() => {
     const body = document.querySelector("#recipeForm .recipe-form-body");
     const form = document.querySelector("#recipeForm");

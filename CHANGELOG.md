@@ -12,7 +12,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
-- Fixed the mobile Recipe editor footer obscuring fields, made successful saves close reliably, and added left-swipe dismissal with unsaved-change protection.
+- Fixed the mobile Recipe editor footer obscuring fields, made successful saves close reliably on Safari without duplicate updates, and added left-swipe dismissal with unsaved-change protection.
 - Fixed Recipe share generation stopping before showing its link and card, and replaced the oversized mobile share controls with a compact bottom sheet.
 - Fixed mobile restaurant detail navigation so an iPhone edge-back gesture closes the detail view, and made list actions easier to distinguish and tap.
 - Fixed mobile restaurant-capture fields being obscured by the fixed Cancel and Save actions.

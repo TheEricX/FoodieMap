@@ -1,3 +1,26 @@
+export function closeDialogSafely(dialog, returnValue = "") {
+  if (!dialog) return true;
+  try {
+    if (dialog.open) dialog.close(returnValue);
+  } catch {
+    // Some restored or transitioning Safari dialogs can reject close().
+  }
+  if (dialog.open) {
+    const nativeClose = dialog.ownerDocument?.defaultView?.HTMLDialogElement?.prototype?.close;
+    if (nativeClose && dialog.close !== nativeClose) {
+      try {
+        nativeClose.call(dialog, returnValue);
+      } catch {
+        // Fall through to clearing stale open state below.
+      }
+    }
+  }
+  if (dialog.open || dialog.hasAttribute?.("open")) {
+    dialog.removeAttribute?.("open");
+  }
+  return !dialog.open && !dialog.hasAttribute?.("open");
+}
+
 export function createConfirmController({ document, window = globalThis.window }) {
   const dialog = document.querySelector("#confirmDialog");
   const title = dialog?.querySelector("[data-confirm-title]");
@@ -13,7 +36,7 @@ export function createConfirmController({ document, window = globalThis.window }
     if (!dialog?.open) return;
     const resolve = resolvePending;
     resolvePending = null;
-    dialog.close();
+    closeDialogSafely(dialog);
     resolve?.(false);
   }
 
@@ -23,7 +46,7 @@ export function createConfirmController({ document, window = globalThis.window }
   function finish(accepted) {
     const resolve = resolvePending;
     resolvePending = null;
-    if (dialog.open) dialog.close();
+    closeDialogSafely(dialog);
     resolve?.(accepted);
   }
 

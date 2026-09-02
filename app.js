@@ -6,7 +6,7 @@ const LOCATION_PREFERENCE_KEY = "foodiemap.locationMode.v1";
 const LOCATION_CORE_URL = "/location-core.mjs?v=20260710-location";
 const UI_CORE_URL = "/ui-core.mjs?v=20260712-shell";
 const UI_SHELL_URL = "/ui-shell.mjs?v=20260712-shell";
-const UI_DIALOGS_URL = "/ui-dialogs.mjs?v=20260714-dialogs";
+const UI_DIALOGS_URL = "/ui-dialogs.mjs?v=20260902-safe-close";
 const UI_COMPONENTS_URL = "/ui-components.mjs?v=20260714-components";
 const UI_SWIPE_DISMISS_URL = "/ui-swipe-dismiss.mjs?v=20260901-recipe-horizontal-dismiss";
 const DATA_CLIENT_URL = "/data-client.mjs?v=20260714-client";
@@ -16,7 +16,7 @@ const LIST_VIEW_TEMPLATES_URL = "/list-view-templates.mjs?v=20260714-lists";
 const ACCOUNT_SHARE_TEMPLATES_URL = "/account-share-templates.mjs?v=20260714-account";
 const FORM_TEMPLATES_URL = "/form-templates.mjs?v=20260714-forms";
 const MAP_VIEW_TEMPLATES_URL = "/map-view-templates.mjs?v=20260714-map";
-const I18N_URL = "/i18n.mjs?v=20260714-i18n";
+const I18N_URL = "/i18n.mjs?v=20260902-recipe-save";
 const MAP_LINK_CORE_URL = "/map-link-core.mjs?v=20260714-map-links";
 const MAP_GEOMETRY_URL = "/map-geometry.mjs?v=20260714-map-geometry";
 const MAP_INTERACTIONS_URL = "/map-interactions.mjs?v=20260714-map-interactions";
@@ -162,8 +162,11 @@ let detailCloseTimer = null;
 let detailClosePointerAt = null;
 let restaurantSwipeDismiss = null;
 let recipeSwipeDismiss = null;
+let dialogUtilities = null;
 let listFormBaseline = "";
 let recipeFormBaseline = "";
+let recipeSaveInFlight = false;
+let recipeSaveCompleted = false;
 
 const DISH_AUTOSAVE_DELAY = 700;
 const REVIEW_AUTOSAVE_DELAY = 700;
@@ -472,6 +475,7 @@ async function loadBrowserCore() {
     });
     uiShellController.start();
     confirmController = loadedUiDialogs.createConfirmController({ document, window });
+    dialogUtilities = loadedUiDialogs;
     uiComponents = loadedUiComponents;
     dataClient = loadedDataClient.createDataClient({
       fetch: window.fetch.bind(window),
@@ -3586,6 +3590,8 @@ function recipeDetailTemplate(recipe) {
 function openRecipeDialog(recipe = null) {
   if (!requireLogin()) return;
   editingRecipeId = recipe?.id ?? null;
+  recipeSaveInFlight = false;
+  recipeSaveCompleted = false;
   elements.recipeForm.reset();
   elements.recipeForm.elements.id.value = recipe?.id ?? "";
   elements.recipeForm.elements.title.value = recipe?.title ?? "";
@@ -3628,17 +3634,27 @@ async function closeRecipeDialog({ force = false } = {}) {
   editingRecipeId = null;
   recipeFormBaseline = "";
   recipeSwipeDismiss?.reset();
-  elements.recipeDialog?.close();
-  return true;
+  if (dialogUtilities?.closeDialogSafely) {
+    return dialogUtilities.closeDialogSafely(elements.recipeDialog);
+  }
+  try {
+    elements.recipeDialog?.close();
+  } catch {
+    elements.recipeDialog?.removeAttribute("open");
+  }
+  return !elements.recipeDialog?.open;
 }
 
 async function saveRecipeFromForm(event) {
   event.preventDefault();
-  if (elements.saveRecipeButton.disabled) return;
+  if (recipeSaveInFlight || recipeSaveCompleted) return;
+  recipeSaveInFlight = true;
   elements.saveRecipeButton.disabled = true;
   elements.saveRecipeButton.setAttribute("aria-busy", "true");
+  elements.saveRecipeButton.textContent = t("recipes.saving");
+  elements.recipeFormHelp.textContent = t("recipes.saving");
+  const wasEditing = Boolean(editingRecipeId);
   try {
-    const isEditing = Boolean(editingRecipeId);
     const form = new FormData(elements.recipeForm);
     const body = {
       title: String(form.get("title") || "").trim(),
@@ -3655,21 +3671,28 @@ async function saveRecipeFromForm(event) {
     if (elements.recipeImageInput.files?.[0]) {
       recipe = await uploadRecipeImage(recipe.id, elements.recipeImageInput.files[0]);
     }
+    recipeSaveCompleted = true;
     upsertRecipe(recipe);
     selectedRecipeId = recipe.id;
     elements.recipeFormHelp.textContent = t("recipes.saved");
     await closeRecipeDialog({ force: true });
-    if (elements.recipeDialog.open) elements.recipeDialog.close();
     render();
-    showToast(t(isEditing ? "recipes.updated" : "recipes.saved"), {
+    showToast(t(wasEditing ? "recipes.updated" : "recipes.saved"), {
       actionLabel: t("button.view"),
       onAction: () => setActiveView("recipes"),
     });
   } catch (error) {
-    elements.recipeFormHelp.textContent = error.message;
-    showToast(error.message, { tone: "error" });
+    if (recipeSaveCompleted) {
+      await closeRecipeDialog({ force: true });
+      showToast(t(wasEditing ? "recipes.updated" : "recipes.saved"));
+    } else {
+      elements.recipeFormHelp.textContent = error.message;
+      elements.saveRecipeButton.textContent = t(wasEditing ? "recipes.update" : "recipes.save");
+      showToast(error.message, { tone: "error" });
+    }
   } finally {
-    elements.saveRecipeButton.disabled = false;
+    recipeSaveInFlight = false;
+    elements.saveRecipeButton.disabled = recipeSaveCompleted;
     elements.saveRecipeButton.removeAttribute("aria-busy");
   }
 }
