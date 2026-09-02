@@ -110,7 +110,7 @@ Confirm these static URLs return their expected content type rather than `index.
 
 - At 390×844, controls and text do not overlap or create horizontal page scrolling.
 - Bottom navigation remains aligned and single-tap responsive on every primary view.
-- Add/Edit dialogs fit the viewport; close, Cancel, Save, swipe-close, and unsaved-change confirmation work.
+- Add/Edit surfaces fit the viewport; close, Cancel, Save, and unsaved-change confirmation work. Recipe editing uses native browser Back on mobile and a modal on desktop; Restaurant swipe-close remains covered separately.
 - Selected spot sheet opens/closes with one tap, outside tap, and downward swipe without activating content behind it.
 - Keyboard Tab, Enter, Space, Escape, focus return, and visible focus work for dialogs and primary actions.
 - English and Chinese labels fit controls and update location/recovery text immediately.

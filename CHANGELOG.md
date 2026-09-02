@@ -8,11 +8,12 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
-- Unified the mobile Map and List workspace controls, kept capture actions within the viewport, and compacted Maps and Recipe sheets for iPhone-sized screens.
+- Unified the mobile Map and List workspace controls, kept capture actions within the viewport, compacted Maps sheets, and made Recipe editing a full-page mobile task.
 
 ### Fixed
 
-- Fixed the mobile Recipe editor footer obscuring fields, made successful saves close reliably on Safari without duplicate updates, and added left-swipe dismissal with unsaved-change protection.
+- Fixed Recipe photo uploads failing on an undefined image-compression function, and added browser-level upload coverage in Chromium and WebKit.
+- Fixed the mobile Recipe editor footer obscuring fields, made successful saves close reliably on Safari without duplicate updates, and replaced custom swipe dismissal with native browser history Back while retaining unsaved-change protection.
 - Fixed Recipe share generation stopping before showing its link and card, and replaced the oversized mobile share controls with a compact bottom sheet.
 - Fixed mobile restaurant detail navigation so an iPhone edge-back gesture closes the detail view, and made list actions easier to distinguish and tap.
 - Fixed mobile restaurant-capture fields being obscured by the fixed Cancel and Save actions.
@@ -38,7 +39,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Added tested shared parsing for Google Maps and Apple Maps links, coordinates, short-link detection, and pasted URL cleanup.
 - Added tested map geometry for marker placement, collision handling, pan limits, and stable food placeholder images.
 - Added a tested map interaction controller that owns pointer pan, wheel/pinch zoom, viewport clamping, and map transform state.
-- Added a tested shared mobile task swipe-dismiss controller for Restaurant and Recipe editors.
+- Added a tested shared mobile task swipe-dismiss controller for the Restaurant editor.
 - Added an OAuth 2.1-protected remote MCP server for authorized restaurant, list, and recipe access plus private list creation, with connected-app revocation and audit metadata.
 - Added repeatable Playwright desktop/mobile regression tests, isolated test accounts and data, protected staging cleanup, and GitHub Actions release gates.
 - Added an optional privacy browsing map that keeps restaurant markers usable without location permission, plus a tested location state controller and permission recovery flow.
@@ -63,7 +64,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Reworked mobile Recipe browsing into a list-to-detail flow with an explicit return path, while retaining the desktop parallel list/detail workspace.
 - Introduced shared UI core rules and separate desktop/mobile navigation shells while keeping one API and content model.
 - Standardized layout modes at mobile, compact desktop, and desktop breakpoints, with explicit modal, task, drawer, and sheet presentations.
-- Unified Restaurant, List, and Recipe unsaved-change handling across close, cancel, desktop backdrop, and mobile swipe interactions.
+- Unified Restaurant, List, and Recipe unsaved-change handling across close, cancel, desktop backdrop, mobile browser Back, and remaining Restaurant swipe interactions.
 - Replaced browser-native confirmation prompts with an accessible in-app confirmation surface for sign-out, delete, revoke, discard, duplicate, and admin actions.
 - Moved nested API normalization, collection selection, Discovery ordering, and repeated Recipe/Restaurant/List templates out of the main frontend orchestrator.
 - Moved system-list, private-list, and public Discovery details out of `app.js` while preserving shared edit, delete, map, publish, and copy action hooks.
@@ -73,7 +74,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Moved map-link parsing and coordinate validation out of `app.js` while keeping existing autofill, short-link resolution, and map-opening behavior.
 - Moved relative-map geometry and generated food placeholders out of `app.js` while retaining the existing pointer, gesture, and zoom interactions.
 - Moved relative-map pointer, gesture, zoom, and pan state out of `app.js` into a dedicated controller with explicit interactive-target exclusions.
-- Consolidated Restaurant and Recipe mobile swipe dismissal, touch locking, and drag-reset behavior behind one reusable controller.
+- Consolidated Restaurant mobile swipe dismissal, touch locking, and drag-reset behavior behind one reusable controller.
 
 - Location is now requested only after user intent, keeps coordinates in browser memory only, reports approximate accuracy, and sorts by recent updates when distance is unavailable.
 - Standardized mobile form action bars, close controls, selected spot actions, and modal button grids for more reliable touch interaction.

@@ -4949,14 +4949,24 @@ dialog.modal:not([open]) {
 
   #recipeForm {
     grid-template-areas:
-      "drag"
       "head"
       "body"
       "actions";
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     gap: 0;
     overflow: hidden;
     padding: 0;
+    overscroll-behavior-x: auto;
+    touch-action: auto;
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+
+  html:has(#recipeDialog[open]),
+  body:has(#recipeDialog[open]),
+  #recipeDialog {
+    overscroll-behavior-x: auto;
   }
 
   #recipeForm > .modal-head {
@@ -7074,30 +7084,25 @@ dialog.modal:not([open]) {
     transform: translateX(-100vw);
   }
 
-  /* A new recipe needs only a title. Keep that first task compact; the
-     optional editor expands inside the same scrollable sheet when requested. */
+  /* On mobile the recipe editor is a full-page history entry. Native browser
+     Back and iOS edge-back own dismissal instead of custom drag gestures. */
   #recipeDialog[open] {
     display: grid;
-    align-items: end;
+    align-items: stretch;
     justify-items: stretch;
     padding: 0;
   }
 
   #recipeForm {
     width: 100%;
-    height: auto;
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 12px);
-    border: 1px solid rgba(217, 197, 183, 0.86);
-    border-radius: 22px 22px 0 0;
-  }
-
-  #recipeForm > .modal-drag-handle {
-    grid-area: drag;
-    margin: 14px auto 8px;
+    height: 100%;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
   }
 
   #recipeForm > .modal-head {
-    padding: 0 16px 12px;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
   }
 
   #recipeForm .recipe-form-body {

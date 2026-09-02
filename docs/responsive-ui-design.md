@@ -12,7 +12,7 @@ map-interactions.mjs map pan, wheel/pinch zoom, pointer ownership, and DOM trans
 ui-core.mjs       pure layout, search, validation, and presentation rules
 ui-shell.mjs      DOM adapter that activates one shell and labels surfaces
 ui-components.mjs shared empty, guidance, loading, and error components
-ui-swipe-dismiss.mjs shared mobile task drag-dismiss controller
+ui-swipe-dismiss.mjs Restaurant mobile task drag-dismiss controller
 ui-dialogs.mjs    accessible confirmation and destructive-action controller
 data-client.mjs   shared authenticated API request and error boundary
 domain-core.mjs   restaurant, dish, list, recipe, and share normalization plus collection selectors
@@ -50,8 +50,8 @@ JavaScript must use `classifyLayoutMode()` rather than user-agent detection. CSS
 ## Shared Interaction Rules
 
 - Browser-native confirmation dialogs are not used. `ui-dialogs.mjs` owns confirmation, focus, Escape, backdrop cancellation, labels, and destructive tone.
-- Restaurant, List, and Recipe forms capture a baseline when opened. Close, Cancel, and mobile swipe dismissal must confirm before losing changed values.
-- Restaurant and Recipe mobile task dismissal uses `ui-swipe-dismiss.mjs`; new full-screen task flows must use the same controller instead of introducing view-specific pointer listeners.
+- Restaurant, List, and Recipe forms capture a baseline when opened. Close, Cancel, mobile browser Back, and remaining swipe dismissal must confirm before losing changed values.
+- Recipe editing uses a full-page browser history entry on mobile so native Back and iPhone edge-back dismiss it; desktop retains the shared modal. The Restaurant mobile task continues to use `ui-swipe-dismiss.mjs`.
 - Mobile form surfaces are full-screen tasks; desktop form surfaces are modals. Their fields and validation remain shared.
 - Empty guidance is rendered as text. A button is included only when an actual command is available.
 - UI rendering code reads the layout mode from `ui-shell.mjs`; it must not query viewport width, user agent, or device brand directly.

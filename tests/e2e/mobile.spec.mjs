@@ -279,18 +279,20 @@ test("@mobile map choice is a compact bottom sheet", async ({ signedInPage: page
   await expect(page.locator("#mapChoiceDialog")).toBeHidden();
 });
 
-test("@mobile new recipe is a compact sheet and expands into one scrollable editor", async ({ signedInPage: page }) => {
+test("@mobile new recipe is a full page and expands into one scrollable editor", async ({ signedInPage: page }) => {
   await page.setViewportSize({ width: 430, height: 932 });
   await page.locator('[data-view="recipes"]:visible').first().tap();
   await page.locator("#openRecipeDialog").tap();
   const compactLayout = await page.locator("#recipeForm").evaluate((form) => {
     const bounds = form.getBoundingClientRect();
     const details = form.querySelector("#toggleRecipeDetails").getBoundingClientRect();
-    return { bottom: bounds.bottom, height: bounds.height, viewportHeight: window.innerHeight, detailsHeight: details.height };
+    return { top: bounds.top, bottom: bounds.bottom, height: bounds.height, viewportHeight: window.innerHeight, detailsHeight: details.height };
   });
+  expect(Math.abs(compactLayout.top)).toBeLessThanOrEqual(1);
   expect(Math.abs(compactLayout.bottom - compactLayout.viewportHeight)).toBeLessThanOrEqual(1);
-  expect(compactLayout.height).toBeLessThanOrEqual(500);
+  expect(Math.abs(compactLayout.height - compactLayout.viewportHeight)).toBeLessThanOrEqual(1);
   expect(compactLayout.detailsHeight).toBeLessThanOrEqual(48);
+  await expect(page).toHaveURL(/[?&]recipe-editor=new(?:&|#|$)/);
 
   await page.locator("#toggleRecipeDetails").tap();
   const expandedLayout = await page.locator("#recipeForm .recipe-form-body").evaluate((body) => ({
@@ -387,7 +389,7 @@ test("@mobile long form dialogs stay horizontally locked", async ({ signedInPage
     expect(layout.actionsLeft).toBeLessThanOrEqual(1);
     expect(layout.actionsRight).toBeGreaterThanOrEqual(layout.viewportWidth - 1);
     expect(["clip", "hidden"]).toContain(layout.cardOverflowX);
-    expect(layout.cardTouchAction).toBe("pan-y");
+    expect(layout.cardTouchAction).toBe("auto");
     await page.evaluate(() => document.querySelector("#recipeDialog").close());
   }
 
@@ -473,34 +475,24 @@ test("@mobile list task preserves unsaved input until discard is confirmed", asy
   await expect(page.locator("#listDialog")).toBeHidden();
 });
 
-test("@mobile recipe task swipe shares the same discard protection as the close button", async ({ signedInPage: page }) => {
+test("@mobile recipe editor uses browser history and protects unsaved input", async ({ signedInPage: page }) => {
   await page.locator('[data-view="recipes"]:visible').first().tap();
   await page.locator("#openRecipeDialog").tap();
-  await page.locator('#recipeForm input[name="title"]').fill("Swipe discard check");
-  await page.evaluate(() => {
-    const head = document.querySelector("#recipeModalHead");
-    const form = document.querySelector("#recipeForm");
-    const pointer = (type, target, clientY) => target.dispatchEvent(new PointerEvent(type, {
-      bubbles: true,
-      pointerId: 31,
-      button: 0,
-      clientX: 120,
-      clientY,
-    }));
-    pointer("pointerdown", head, 100);
-    pointer("pointermove", form, 250);
-    pointer("pointerup", form, 250);
-  });
+  await expect(page).toHaveURL(/[?&]recipe-editor=new(?:&|#|$)/);
+  await page.locator('#recipeForm input[name="title"]').fill("History discard check");
+  await page.goBack();
   await expect(page.locator("#confirmDialog")).toBeVisible();
   await page.locator("[data-confirm-cancel]").tap();
   await expect(page.locator("#recipeDialog")).toBeVisible();
-  await expect(page.locator('#recipeForm input[name="title"]')).toHaveValue("Swipe discard check");
+  await expect(page).toHaveURL(/[?&]recipe-editor=new(?:&|#|$)/);
+  await expect(page.locator('#recipeForm input[name="title"]')).toHaveValue("History discard check");
   await page.locator("#closeRecipeDialog").tap();
   await page.locator("[data-confirm-accept]").tap();
   await expect(page.locator("#recipeDialog")).toBeHidden();
+  await expect(page).not.toHaveURL(/[?&]recipe-editor=/);
 });
 
-test("@mobile @cross-browser recipe editor keeps actions clear, closes after update, and supports left swipe", async ({ signedInPage: page }) => {
+test("@mobile @cross-browser recipe editor keeps actions clear and uses native history Back", async ({ signedInPage: page }) => {
   await page.setViewportSize({ width: 430, height: 932 });
   let updateRequests = 0;
   page.on("request", (request) => {
@@ -520,6 +512,7 @@ test("@mobile @cross-browser recipe editor keeps actions clear, closes after upd
   await page.locator('[data-view="recipes"]:visible').first().click();
   await page.locator("#recipeList [data-recipe-id]").filter({ hasText: "Mobile editor original" }).click();
   await page.locator("[data-edit-recipe]").click();
+  await expect(page).toHaveURL(/[?&]recipe-editor=[^&#]+/);
 
   const layout = await page.locator("#recipeForm").evaluate((form) => {
     const body = form.querySelector(".recipe-form-body");
@@ -558,21 +551,10 @@ test("@mobile @cross-browser recipe editor keeps actions clear, closes after upd
   });
 
   await page.locator("[data-edit-recipe]").click();
-  await page.evaluate(() => {
-    const body = document.querySelector("#recipeForm .recipe-form-body");
-    const form = document.querySelector("#recipeForm");
-    const pointer = (type, target, clientX) => target.dispatchEvent(new PointerEvent(type, {
-      bubbles: true,
-      pointerId: 41,
-      button: 0,
-      clientX,
-      clientY: 420,
-    }));
-    pointer("pointerdown", body, 260);
-    pointer("pointermove", form, 120);
-    pointer("pointerup", form, 120);
-  });
+  await expect(page).toHaveURL(/[?&]recipe-editor=[^&#]+/);
+  await page.goBack();
   await expect(page.locator("#recipeDialog")).toBeHidden();
+  await expect(page).not.toHaveURL(/[?&]recipe-editor=/);
 });
 
 test("@mobile recipe share is a compact sheet and reveals the generated result", async ({ signedInPage: page }) => {

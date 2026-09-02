@@ -55,6 +55,29 @@ test("list and recipe content persists with image readback", async ({ signedInPa
   await expect(page.getByText("E2E Tomato Noodles", { exact: true }).first()).toBeVisible();
 });
 
+test("@cross-browser recipe form saves an uploaded image", async ({ signedInPage: page }) => {
+  await page.locator('[data-view="recipes"]:visible').first().click();
+  await page.locator("#openRecipeDialog").click();
+  await expect(page.locator("#recipeDialog")).toHaveAttribute("data-presentation", "desktop-modal");
+  await expect(page).not.toHaveURL(/[?&]recipe-editor=/);
+  await page.locator('#recipeForm input[name="title"]').fill("E2E Recipe Form Upload");
+  await page.locator("#toggleRecipeDetails").click();
+  await page.locator("#recipeImageInput").setInputFiles({
+    name: "recipe-form.png",
+    mimeType: "image/png",
+    buffer: onePixelPng
+  });
+
+  const uploadResponse = page.waitForResponse((response) => (
+    response.request().method() === "POST" && /\/api\/recipes\/[^/]+\/image$/.test(response.url())
+  ));
+  await page.locator("#saveRecipeButton").click();
+
+  expect((await uploadResponse).ok()).toBeTruthy();
+  await expect(page.locator("#recipeDialog")).toBeHidden();
+  await expect(page.getByText("E2E Recipe Form Upload", { exact: true }).first()).toBeVisible();
+});
+
 test("@responsive share actions keep generate and copy aligned in equal columns", async ({ signedInPage: page }) => {
   const actions = page.locator("#recipeShareForm .share-actions");
   await page.evaluate(() => document.querySelector("#recipeShareDialog").showModal());

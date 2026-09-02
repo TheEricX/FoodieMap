@@ -140,6 +140,7 @@ let recipes = [];
 let selectedRecipeId = null;
 let recipeMobileDetailOpen = false;
 let editingRecipeId = null;
+let recipeHistoryClosePending = false;
 let selectedListId = null;
 let activeMyListKey = "system:all";
 let selectedDiscoveryListId = null;
@@ -161,7 +162,6 @@ let activeDetailRestaurantId = null;
 let detailCloseTimer = null;
 let detailClosePointerAt = null;
 let restaurantSwipeDismiss = null;
-let recipeSwipeDismiss = null;
 let dialogUtilities = null;
 let listFormBaseline = "";
 let recipeFormBaseline = "";
@@ -558,15 +558,6 @@ async function loadBrowserCore() {
       isEnabled: isMobileMapViewport,
       onDismiss: () => closeRestaurantDialog(),
     });
-    recipeSwipeDismiss = loadedUiSwipeDismiss.createSwipeDismissController({
-      surface: elements.recipeDialog,
-      dragTarget: elements.recipeForm,
-      handles: [document.querySelector("#recipeModalHead"), document.querySelector("#recipeDragHandle")],
-      horizontalTargets: [elements.recipeForm],
-      horizontalDirection: "left",
-      isEnabled: isMobileMapViewport,
-      onDismiss: () => closeRecipeDialog(),
-    });
     await boot();
   } catch (error) {
     showBootError(error);
@@ -595,7 +586,6 @@ async function boot() {
   bindEvents();
   mapInteractionController?.bind();
   restaurantSwipeDismiss?.bind();
-  recipeSwipeDismiss?.bind();
   if (isAdminPortal) {
     document.body.classList.add("admin-portal");
     activeView = "admin-login";
@@ -623,6 +613,7 @@ async function boot() {
     await loadSharePacks();
   }
   setActiveView(activeView, { push: false });
+  restoreMobileRecipeEditorFromRoute();
   checkShortLinkService();
   await locationController.bootstrap();
   locationUiReady = true;
@@ -768,6 +759,7 @@ function bindEvents() {
   });
   window.addEventListener("hashchange", () => setActiveView(getInitialView(), { push: false }));
   window.addEventListener("popstate", syncMobileSpotDetailFromHistory);
+  window.addEventListener("popstate", syncMobileRecipeEditorFromHistory);
   window.addEventListener("focus", resumeLocationController);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") resumeLocationController();
@@ -3587,9 +3579,69 @@ function recipeDetailTemplate(recipe) {
   return viewTemplates.recipeDetail(recipe);
 }
 
-function openRecipeDialog(recipe = null) {
+function mobileRecipeEditorRouteValue() {
+  return new URL(window.location.href).searchParams.get("recipe-editor") || "";
+}
+
+function currentRecipeEditorRouteValue() {
+  return editingRecipeId || "new";
+}
+
+function openMobileRecipeEditorRoute(value) {
+  if (!isMobileMapViewport() || mobileRecipeEditorRouteValue() === value) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set("recipe-editor", value);
+  window.history.pushState({
+    ...(window.history.state || {}),
+    foodieMapRecipeEditor: value,
+  }, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function clearMobileRecipeEditorRoute() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("recipe-editor")) return;
+  url.searchParams.delete("recipe-editor");
+  const nextState = { ...(window.history.state || {}) };
+  delete nextState.foodieMapRecipeEditor;
+  window.history.replaceState(nextState, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function restoreMobileRecipeEditorFromRoute() {
+  if (!isMobileMapViewport() || elements.recipeDialog?.open) return;
+  const routeValue = mobileRecipeEditorRouteValue();
+  if (!routeValue) return;
+  const recipe = routeValue === "new" ? null : recipes.find((item) => item.id === routeValue);
+  if (routeValue !== "new" && !recipe) {
+    clearMobileRecipeEditorRoute();
+    return;
+  }
+  if (recipe) {
+    selectedRecipeId = recipe.id;
+    recipeMobileDetailOpen = true;
+  }
+  openRecipeDialog(recipe, { skipHistory: true });
+}
+
+async function syncMobileRecipeEditorFromHistory() {
+  if (!isMobileMapViewport()) return;
+  const routeValue = mobileRecipeEditorRouteValue();
+  if (routeValue) {
+    restoreMobileRecipeEditorFromRoute();
+    return;
+  }
+  if (!elements.recipeDialog?.open) return;
+  const editorRouteValue = currentRecipeEditorRouteValue();
+  const force = recipeHistoryClosePending || recipeSaveCompleted;
+  recipeHistoryClosePending = false;
+  const closed = await closeRecipeDialog({ force, fromHistory: true });
+  if (!closed) openMobileRecipeEditorRoute(editorRouteValue);
+}
+
+function openRecipeDialog(recipe = null, { skipHistory = false } = {}) {
   if (!requireLogin()) return;
+  if (!skipHistory) openMobileRecipeEditorRoute(recipe?.id ?? "new");
   editingRecipeId = recipe?.id ?? null;
+  recipeHistoryClosePending = false;
   recipeSaveInFlight = false;
   recipeSaveCompleted = false;
   elements.recipeForm.reset();
@@ -3621,7 +3673,7 @@ function setRecipeAdvancedVisible(visible) {
   if (elements.recipeQuickCaptureIntro) elements.recipeQuickCaptureIntro.hidden = Boolean(editingRecipeId);
 }
 
-async function closeRecipeDialog({ force = false } = {}) {
+async function closeRecipeDialog({ force = false, fromHistory = false } = {}) {
   const hasNewImage = Boolean(elements.recipeImageInput?.files?.length);
   if (!force && (formSnapshot(elements.recipeForm) !== recipeFormBaseline || hasNewImage)) {
     const discard = await confirmAction(t("confirm.discardMessage"), {
@@ -3631,9 +3683,18 @@ async function closeRecipeDialog({ force = false } = {}) {
     });
     if (!discard) return false;
   }
+  const routeValue = mobileRecipeEditorRouteValue();
+  if (!fromHistory && routeValue) {
+    if (window.history.state?.foodieMapRecipeEditor === routeValue) {
+      recipeHistoryClosePending = true;
+      window.history.back();
+      return true;
+    }
+    clearMobileRecipeEditorRoute();
+  }
   editingRecipeId = null;
+  recipeHistoryClosePending = false;
   recipeFormBaseline = "";
-  recipeSwipeDismiss?.reset();
   if (dialogUtilities?.closeDialogSafely) {
     return dialogUtilities.closeDialogSafely(elements.recipeDialog);
   }
@@ -3698,9 +3759,9 @@ async function saveRecipeFromForm(event) {
 }
 
 async function uploadRecipeImage(recipeId, file) {
-  const imageFile = await compressImageFile(file);
+  const imageFile = await compressImage(file);
   const form = new FormData();
-  form.append("image", imageFile);
+  form.append("image", imageFile, imageFile.name);
   const data = await api(`/api/recipes/${recipeId}/image`, { method: "POST", body: form });
   return normalizeRecipe(data.recipe);
 }
