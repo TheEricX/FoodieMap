@@ -8,7 +8,7 @@ const UI_CORE_URL = "/ui-core.mjs?v=20260712-shell";
 const UI_SHELL_URL = "/ui-shell.mjs?v=20260712-shell";
 const UI_DIALOGS_URL = "/ui-dialogs.mjs?v=20260714-dialogs";
 const UI_COMPONENTS_URL = "/ui-components.mjs?v=20260714-components";
-const UI_SWIPE_DISMISS_URL = "/ui-swipe-dismiss.mjs?v=20260714-swipe-dismiss";
+const UI_SWIPE_DISMISS_URL = "/ui-swipe-dismiss.mjs?v=20260901-recipe-horizontal-dismiss";
 const DATA_CLIENT_URL = "/data-client.mjs?v=20260714-client";
 const DOMAIN_CORE_URL = "/domain-core.mjs?v=20260714-domain";
 const VIEW_TEMPLATES_URL = "/view-templates.mjs?v=20260714-views";
@@ -558,6 +558,8 @@ async function loadBrowserCore() {
       surface: elements.recipeDialog,
       dragTarget: elements.recipeForm,
       handles: [document.querySelector("#recipeModalHead"), document.querySelector("#recipeDragHandle")],
+      horizontalTargets: [elements.recipeForm],
+      horizontalDirection: "left",
       isEnabled: isMobileMapViewport,
       onDismiss: () => closeRecipeDialog(),
     });
@@ -3595,6 +3597,8 @@ function openRecipeDialog(recipe = null) {
   elements.recipeFormMode.textContent = recipe ? t("recipes.editMode") : t("recipes.newMode");
   elements.recipeFormTitle.textContent = recipe ? t("recipes.editTitle") : t("recipes.formTitle");
   elements.saveRecipeButton.textContent = recipe ? t("recipes.update") : t("recipes.save");
+  elements.saveRecipeButton.disabled = false;
+  elements.saveRecipeButton.removeAttribute("aria-busy");
   elements.recipeFormHelp.textContent = t("recipes.formHelp");
   setRecipeAdvancedVisible(Boolean(recipe));
   updateRecipeImageName(recipe);
@@ -3630,6 +3634,9 @@ async function closeRecipeDialog({ force = false } = {}) {
 
 async function saveRecipeFromForm(event) {
   event.preventDefault();
+  if (elements.saveRecipeButton.disabled) return;
+  elements.saveRecipeButton.disabled = true;
+  elements.saveRecipeButton.setAttribute("aria-busy", "true");
   try {
     const isEditing = Boolean(editingRecipeId);
     const form = new FormData(elements.recipeForm);
@@ -3652,6 +3659,7 @@ async function saveRecipeFromForm(event) {
     selectedRecipeId = recipe.id;
     elements.recipeFormHelp.textContent = t("recipes.saved");
     await closeRecipeDialog({ force: true });
+    if (elements.recipeDialog.open) elements.recipeDialog.close();
     render();
     showToast(t(isEditing ? "recipes.updated" : "recipes.saved"), {
       actionLabel: t("button.view"),
@@ -3660,6 +3668,9 @@ async function saveRecipeFromForm(event) {
   } catch (error) {
     elements.recipeFormHelp.textContent = error.message;
     showToast(error.message, { tone: "error" });
+  } finally {
+    elements.saveRecipeButton.disabled = false;
+    elements.saveRecipeButton.removeAttribute("aria-busy");
   }
 }
 
@@ -3702,27 +3713,46 @@ function openRecipeShareDialog(recipe) {
   elements.recipeShareResult.hidden = true;
   elements.recipeShareUrlInput.value = "";
   elements.recipeShareCardImage.removeAttribute("src");
+  elements.recipeShareImageLink.href = "#";
+  elements.openRecipeShareImage.href = "#";
+  elements.downloadRecipeShareImage.href = "#";
   elements.openRecipeShareImage.hidden = true;
   elements.downloadRecipeShareImage.hidden = true;
+  elements.createRecipeShareButton.disabled = false;
+  elements.createRecipeShareButton.removeAttribute("aria-busy");
+  elements.copyRecipeShareButton.disabled = true;
   elements.recipeShareHelp.textContent = t("recipes.shareHelp");
   elements.recipeShareDialog.showModal();
 }
 
 async function createRecipeShare(event) {
   event.preventDefault();
+  if (elements.createRecipeShareButton.disabled) return;
   const recipe = recipes.find((item) => item.id === selectedRecipeId);
   if (!recipe) return;
-  const data = await api(`/api/recipes/${recipe.id}/share`, { method: "POST" });
-  elements.recipeShareUrlInput.value = data.share_url;
-  elements.recipeShareCardImage.src = `${data.card_url}?v=${Date.now()}`;
-  elements.recipeShareImageLink.href = data.card_url;
-  elements.openRecipeShareImage.href = data.card_url;
-  elements.downloadRecipeShareImage.href = data.card_url;
-  elements.downloadRecipeShareImage.setAttribute("download", `${slugifyText(recipe.title || "recipe")}.png`);
-  elements.openRecipeShareImage.hidden = false;
-  elements.downloadRecipeShareImage.hidden = false;
-  elements.recipeShareResult.hidden = false;
-  elements.recipeShareHelp.textContent = t("recipes.generated");
+  elements.createRecipeShareButton.disabled = true;
+  elements.createRecipeShareButton.setAttribute("aria-busy", "true");
+  try {
+    const data = await api(`/api/recipes/${recipe.id}/share`, { method: "POST" });
+    elements.recipeShareUrlInput.value = data.share_url;
+    elements.recipeShareCardImage.src = `${data.card_url}?v=${Date.now()}`;
+    elements.recipeShareImageLink.href = data.card_url;
+    elements.openRecipeShareImage.href = data.card_url;
+    elements.downloadRecipeShareImage.href = data.card_url;
+    elements.downloadRecipeShareImage.setAttribute("download", `${slugifyText(recipe.title || "recipe")}.png`);
+    elements.openRecipeShareImage.hidden = false;
+    elements.downloadRecipeShareImage.hidden = false;
+    elements.recipeShareResult.hidden = false;
+    elements.copyRecipeShareButton.disabled = false;
+    elements.recipeShareHelp.textContent = t("recipes.generated");
+    elements.recipeShareResult.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  } catch (error) {
+    elements.recipeShareHelp.textContent = error.message;
+    showToast(error.message, { tone: "error" });
+  } finally {
+    elements.createRecipeShareButton.disabled = false;
+    elements.createRecipeShareButton.removeAttribute("aria-busy");
+  }
 }
 
 async function copyRecipeShareLink() {
@@ -4685,4 +4715,14 @@ function escapeHtml(value) {
 
 function escapeAttribute(value) {
   return escapeHtml(value).replace(/`/g, "&#096;");
+}
+
+function slugifyText(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 80) || "download";
 }

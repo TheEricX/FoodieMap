@@ -293,10 +293,10 @@ test("@mobile new recipe is a compact sheet and expands into one scrollable edit
   expect(compactLayout.detailsHeight).toBeLessThanOrEqual(48);
 
   await page.locator("#toggleRecipeDetails").tap();
-  const expandedLayout = await page.locator("#recipeForm").evaluate((form) => ({
-    clientHeight: form.clientHeight,
-    scrollHeight: form.scrollHeight,
-    overflowY: getComputedStyle(form).overflowY,
+  const expandedLayout = await page.locator("#recipeForm .recipe-form-body").evaluate((body) => ({
+    clientHeight: body.clientHeight,
+    scrollHeight: body.scrollHeight,
+    overflowY: getComputedStyle(body).overflowY,
   }));
   expect(expandedLayout.scrollHeight).toBeGreaterThan(expandedLayout.clientHeight);
   expect(expandedLayout.overflowY).toBe("auto");
@@ -498,4 +498,105 @@ test("@mobile recipe task swipe shares the same discard protection as the close 
   await page.locator("#closeRecipeDialog").tap();
   await page.locator("[data-confirm-accept]").tap();
   await expect(page.locator("#recipeDialog")).toBeHidden();
+});
+
+test("@mobile recipe editor keeps actions clear, closes after update, and supports left swipe", async ({ signedInPage: page }) => {
+  const created = await page.request.post("/api/recipes", { data: {
+    title: "Mobile editor original",
+    rating: 4,
+    cooked_at: Math.floor(Date.now() / 1000),
+    ingredients: "Chicken, coconut milk, curry",
+    steps: "Cook until tender",
+    notes: "Keep the footer away from this note"
+  }});
+  expect(created.ok()).toBeTruthy();
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await page.locator('[data-view="recipes"]:visible').first().tap();
+  await page.locator("#recipeList [data-recipe-id]").filter({ hasText: "Mobile editor original" }).tap();
+  await page.locator("[data-edit-recipe]").tap();
+
+  const layout = await page.locator("#recipeForm").evaluate((form) => {
+    const body = form.querySelector(".recipe-form-body");
+    const actions = form.querySelector(".form-actions");
+    body.scrollTop = body.scrollHeight;
+    const bodyBox = body.getBoundingClientRect();
+    const actionsBox = actions.getBoundingClientRect();
+    const notesBox = form.elements.notes.getBoundingClientRect();
+    return {
+      bodyBottom: bodyBox.bottom,
+      actionsTop: actionsBox.top,
+      actionsBottom: actionsBox.bottom,
+      notesBottom: notesBox.bottom,
+      viewportHeight: window.innerHeight,
+      bodyScrollable: body.scrollHeight > body.clientHeight
+    };
+  });
+  expect(Math.abs(layout.bodyBottom - layout.actionsTop)).toBeLessThanOrEqual(1);
+  expect(layout.notesBottom).toBeLessThanOrEqual(layout.actionsTop + 1);
+  expect(layout.actionsBottom).toBeLessThanOrEqual(layout.viewportHeight + 1);
+  expect(layout.bodyScrollable).toBeTruthy();
+
+  await page.locator('#recipeForm input[name="title"]').fill("Mobile editor updated");
+  await page.locator("#saveRecipeButton").tap();
+  await expect(page.locator("#recipeDialog")).toBeHidden();
+  await expect(page.locator("#recipeDetail")).toContainText("Mobile editor updated");
+
+  await page.locator("[data-edit-recipe]").tap();
+  await page.evaluate(() => {
+    const body = document.querySelector("#recipeForm .recipe-form-body");
+    const form = document.querySelector("#recipeForm");
+    const pointer = (type, target, clientX) => target.dispatchEvent(new PointerEvent(type, {
+      bubbles: true,
+      pointerId: 41,
+      button: 0,
+      clientX,
+      clientY: 420,
+    }));
+    pointer("pointerdown", body, 260);
+    pointer("pointermove", form, 120);
+    pointer("pointerup", form, 120);
+  });
+  await expect(page.locator("#recipeDialog")).toBeHidden();
+});
+
+test("@mobile recipe share is a compact sheet and reveals the generated result", async ({ signedInPage: page }) => {
+  await page.setViewportSize({ width: 430, height: 932 });
+  const created = await page.request.post("/api/recipes", { data: {
+    title: "Mobile share sheet",
+    rating: 4,
+    cooked_at: Math.floor(Date.now() / 1000),
+    ingredients: "Tomato, egg",
+    steps: "Cook",
+    notes: ""
+  }});
+  expect(created.ok()).toBeTruthy();
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await page.locator('[data-view="recipes"]:visible').first().tap();
+  await page.locator("#recipeList [data-recipe-id]").filter({ hasText: "Mobile share sheet" }).tap();
+  await page.locator("[data-share-recipe]").tap();
+
+  const compact = await page.locator("#recipeShareForm").evaluate((form) => {
+    const bounds = form.getBoundingClientRect();
+    const buttons = [...form.querySelectorAll(".share-actions button:not([hidden])")].map((button) => button.getBoundingClientRect());
+    return {
+      bottom: bounds.bottom,
+      height: bounds.height,
+      viewportHeight: window.innerHeight,
+      buttonHeights: buttons.map((button) => button.height)
+    };
+  });
+  expect(Math.abs(compact.bottom - compact.viewportHeight)).toBeLessThanOrEqual(1);
+  expect(compact.height).toBeLessThanOrEqual(380);
+  expect(compact.buttonHeights.every((height) => height >= 48 && height <= 64)).toBeTruthy();
+  await expect(page.locator("#copyRecipeShareButton")).toBeDisabled();
+
+  await page.locator("#createRecipeShareButton").tap();
+  await expect(page.locator("#recipeShareResult")).toBeVisible();
+  await expect(page.locator("#recipeShareUrlInput")).not.toHaveValue("");
+  await expect(page.locator("#recipeShareCardImage")).toHaveAttribute("src", /card\.png/);
+  await expect(page.locator("#copyRecipeShareButton")).toBeEnabled();
+  await expect(page.locator("#openRecipeShareImage")).toBeVisible();
+  await expect(page.locator("#downloadRecipeShareImage")).toBeVisible();
 });

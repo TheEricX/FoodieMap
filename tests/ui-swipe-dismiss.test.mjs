@@ -54,3 +54,24 @@ test("horizontal gestures and form controls do not start a dismiss gesture", () 
   target.dispatch("pointermove", pointer({ clientY: 150 }));
   assert.equal(target.classes.has("is-dragging"), false);
 });
+
+test("configured left swipe dismisses from a non-interactive horizontal target", async () => {
+  const surface = fakeElement();
+  const target = fakeElement();
+  let dismissals = 0;
+  const controller = createSwipeDismissController({
+    surface,
+    dragTarget: target,
+    horizontalTargets: [target],
+    horizontalDirection: "left",
+    onDismiss: async () => { dismissals += 1; return true; },
+  });
+  controller.bind();
+
+  target.dispatch("pointerdown", pointer({ clientX: 180, clientY: 100 }));
+  target.dispatch("pointermove", pointer({ clientX: 60, clientY: 104 }));
+  await target.dispatch("pointerup", pointer({ clientX: 60, clientY: 104 }));
+
+  assert.equal(dismissals, 1);
+  assert.equal(target.properties.has("--sheet-drag-x"), false);
+});
