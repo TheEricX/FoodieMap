@@ -29,6 +29,8 @@ test("domain view selectors keep Discovery ordering and stable selection", () =>
 test("domain model normalizes recipes and share payloads", () => {
   assert.equal(model.normalizeRecipe({ rating: 5.7 }).rating, 5);
   assert.equal(model.normalizeRecipe({}).title, "translated:recipes.formTitle");
+  assert.equal(model.normalizeRecipe({ icon_key: "salad" }).icon_key, "salad");
+  assert.equal(model.normalizeRecipe({}).icon_key, "food");
   assert.equal(model.normalizeSharePack({ items: null }).items.length, 0);
   assert.equal(model.normalizeRecipeShare({ recipe: { id: 9 } }).recipe.id, "9");
 });

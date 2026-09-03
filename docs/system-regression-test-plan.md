@@ -83,6 +83,7 @@ Confirm these static URLs return their expected content type rather than `index.
 - From a restaurant detail, add it to an existing list and create a new list that includes it; verify the restaurant appears exactly once.
 - Create, edit, cancel, save, publish/unpublish, add/remove spots, and delete a custom list.
 - Create, edit, cancel, save, share, copy, and delete a recipe, including image upload.
+- Create or edit a recipe with a selected system image and no uploaded photo; the thumbnail persists, uses the generic food icon when no specific option is selected, and does not change photo quota usage.
 - Restaurant, dish, recipe, and list ownership rules prevent cross-account modification.
 
 ## P1 Map, Location And Permissions

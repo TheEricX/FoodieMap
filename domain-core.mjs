@@ -70,6 +70,7 @@ export function createDomainModel({ translate = (key) => key, now = () => Date.n
       notes: String(item.notes || ""),
       rating: clamp(item.rating, 0, 5),
       cooked_at: Number(item.cooked_at || 0),
+      icon_key: String(item.icon_key || "food"),
       image_url: String(item.image_url || ""),
       created_at: Number(item.created_at || 0),
       updated_at: Number(item.updated_at || 0),

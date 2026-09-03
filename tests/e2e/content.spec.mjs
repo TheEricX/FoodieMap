@@ -78,6 +78,27 @@ test("@cross-browser recipe form saves an uploaded image", async ({ signedInPage
   await expect(page.getByText("E2E Recipe Form Upload", { exact: true }).first()).toBeVisible();
 });
 
+test("@cross-browser recipe form saves a selected system image without upload", async ({ signedInPage: page }) => {
+  await page.locator('[data-view="recipes"]:visible').first().click();
+  await page.locator("#openRecipeDialog").click();
+  await page.locator('#recipeForm input[name="title"]').fill("E2E Recipe System Icon");
+  await page.locator("#toggleRecipeDetails").click();
+  await expect(page.locator("#recipeIconPicker")).toBeVisible();
+  await page.locator('#recipeIconPicker label:has(input[value="salad"])').click();
+  await expect(page.locator('#recipeIconPicker input[value="salad"]')).toBeChecked();
+  await expect(page.locator("#recipeImagePreview img")).toHaveAttribute("src", /^data:image\/svg\+xml/);
+
+  const createResponse = page.waitForResponse((response) => (
+    response.request().method() === "POST" && /\/api\/recipes$/.test(response.url())
+  ));
+  await page.locator("#saveRecipeButton").click();
+  const payload = await (await createResponse).json();
+  expect(payload.recipe.icon_key).toBe("salad");
+  await expect(page.locator("#recipeDialog")).toBeHidden();
+  const rowImage = page.locator("#recipeList [data-recipe-id]").filter({ hasText: "E2E Recipe System Icon" }).locator(".recipe-thumb");
+  await expect(rowImage).toHaveAttribute("src", /^data:image\/svg\+xml/);
+});
+
 test("@cross-browser oversized photos are compressed below the upload limit", async ({ signedInPage: page }) => {
   const recipeResponse = await page.request.post("/api/recipes", { data: {
     title: "E2E Large Photo Compression",

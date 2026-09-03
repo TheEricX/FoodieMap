@@ -21,6 +21,15 @@ const MAP_LINK_CORE_URL = "/map-link-core.mjs?v=20260714-map-links";
 const MAP_GEOMETRY_URL = "/map-geometry.mjs?v=20260714-map-geometry";
 const MAP_INTERACTIONS_URL = "/map-interactions.mjs?v=20260714-map-interactions";
 const isAdminPortal = window.location.pathname.replace(/\/+$/, "") === "/admin";
+const RECIPE_ICON_OPTIONS = [
+  { key: "food", glyph: "🍽️", bg: "#fff1dc", fg: "#8b5a3c" },
+  { key: "noodles", glyph: "🍜", bg: "#ffe4d1", fg: "#a05a3a" },
+  { key: "rice", glyph: "🍚", bg: "#f5f0dc", fg: "#747b4e" },
+  { key: "salad", glyph: "🥗", bg: "#e8f1d7", fg: "#65733f" },
+  { key: "dessert", glyph: "🍰", bg: "#ffe5e2", fg: "#9a5b50" },
+  { key: "drink", glyph: "🧋", bg: "#e4f0ef", fg: "#51706f" },
+  { key: "grill", glyph: "🍖", bg: "#ffe7d5", fg: "#8f4a32" },
+];
 const MAP_ZOOM_MIN = 0.65;
 const MAP_ZOOM_MAX = 2.8;
 const MAP_ZOOM_STEP = 0.18;
@@ -371,6 +380,7 @@ const elements = {
   recipeImageInput: document.querySelector("#recipeImageInput"),
   recipeImageName: document.querySelector("#recipeImageName"),
   recipeImagePreview: document.querySelector("#recipeImagePreview"),
+  recipeIconPicker: document.querySelector("#recipeIconPicker"),
   cancelRecipeButton: document.querySelector("#cancelRecipeButton"),
   saveRecipeButton: document.querySelector("#saveRecipeButton"),
   closeRecipeDialog: document.querySelector("#closeRecipeDialog"),
@@ -829,6 +839,10 @@ function bindEvents() {
   elements.recipeImageInput?.addEventListener("change", updateRecipeImageName);
   bindDetailFileDropzone(elements.recipeImageInput?.closest("[data-recipe-file-dropzone]"), elements.recipeImageInput, {
     onFileSelected: updateRecipeImageName,
+  });
+  hydrateRecipeIconPicker();
+  elements.recipeIconPicker?.querySelectorAll('input[name="iconKey"]').forEach((input) => {
+    input.addEventListener("change", () => updateRecipeImageName());
   });
   elements.closeRecipeShareDialog?.addEventListener("click", () => elements.recipeShareDialog?.close());
   elements.recipeShareDialog?.addEventListener("click", (event) => {
@@ -3873,6 +3887,7 @@ function openRecipeDialog(recipe = null, { skipHistory = false } = {}) {
   elements.recipeForm.elements.ingredients.value = recipe?.ingredients ?? "";
   elements.recipeForm.elements.steps.value = recipe?.steps ?? "";
   elements.recipeForm.elements.notes.value = recipe?.notes ?? "";
+  setRecipeIconKey(recipe?.icon_key || "food");
   elements.recipeFormMode.textContent = recipe ? t("recipes.editMode") : t("recipes.newMode");
   elements.recipeFormTitle.textContent = recipe ? t("recipes.editTitle") : t("recipes.formTitle");
   elements.saveRecipeButton.textContent = recipe ? t("recipes.update") : t("recipes.save");
@@ -3942,6 +3957,7 @@ async function saveRecipeFromForm(event) {
       title: String(form.get("title") || "").trim(),
       rating: Number(form.get("rating") || 0),
       cooked_at: timestampFromDateInput(String(form.get("cookedAt") || "")),
+      icon_key: selectedRecipeIconKey(),
       ingredients: String(form.get("ingredients") || "").trim(),
       steps: String(form.get("steps") || "").trim(),
       notes: String(form.get("notes") || "").trim(),
@@ -3991,8 +4007,13 @@ function updateRecipeImageName(recipe = null) {
   if (!elements.recipeImageName) return;
   const file = elements.recipeImageInput?.files?.[0];
   const existingRecipe = recipe ?? (editingRecipeId ? recipes.find((item) => item.id === editingRecipeId) : null);
-  const previewUrl = file ? URL.createObjectURL(file) : existingRecipe?.image_url || "";
-  elements.recipeImageName.textContent = file ? file.name : existingRecipe?.image_url ? t("recipes.currentPhoto") : t("detail.uploadHint");
+  const iconUrl = recipeSystemIconUrl(selectedRecipeIconKey(existingRecipe?.icon_key));
+  const previewUrl = file ? URL.createObjectURL(file) : existingRecipe?.image_url || iconUrl;
+  elements.recipeImageName.textContent = file
+    ? file.name
+    : existingRecipe?.image_url
+      ? t("recipes.currentPhoto")
+      : t("recipes.systemIconHelp");
   const zone = elements.recipeImageInput?.closest("[data-recipe-file-dropzone]");
   zone?.classList.toggle("has-file", Boolean(file));
   zone?.classList.toggle("has-preview", Boolean(previewUrl));
@@ -4667,8 +4688,44 @@ function recipeSearchText(recipe) {
   return [recipe.title, recipe.ingredients, recipe.steps, recipe.notes].join(" ").toLowerCase();
 }
 
+function recipeIconOption(key) {
+  return RECIPE_ICON_OPTIONS.find((option) => option.key === key) || RECIPE_ICON_OPTIONS[0];
+}
+
+function recipeSystemIconUrl(key = "food") {
+  const option = recipeIconOption(key);
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+      <rect width="128" height="128" rx="26" fill="${option.bg}"/>
+      <circle cx="64" cy="64" r="42" fill="#fffaf4" opacity=".88"/>
+      <text x="64" y="77" text-anchor="middle" font-size="46" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">${option.glyph}</text>
+      <path d="M28 101c18 11 54 11 72 0" fill="none" stroke="${option.fg}" stroke-width="5" stroke-linecap="round" opacity=".36"/>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg.replace(/\s+/g, " ").trim())}`;
+}
+
+function hydrateRecipeIconPicker() {
+  elements.recipeIconPicker?.querySelectorAll("[data-recipe-icon-preview]").forEach((preview) => {
+    const key = preview.dataset.recipeIconPreview || "food";
+    preview.innerHTML = `<img src="${escapeAttribute(recipeSystemIconUrl(key))}" alt="" />`;
+  });
+}
+
+function selectedRecipeIconKey(fallback = "food") {
+  const selected = elements.recipeForm?.elements?.iconKey?.value || fallback || "food";
+  return recipeIconOption(selected).key;
+}
+
+function setRecipeIconKey(key = "food") {
+  const normalized = recipeIconOption(key).key;
+  elements.recipeIconPicker?.querySelectorAll('input[name="iconKey"]').forEach((input) => {
+    input.checked = input.value === normalized;
+  });
+}
+
 function recipeImageUrl(recipe) {
-  return recipe.image_url || foodPlaceholderUrl({ id: recipe.id || recipe.title || "recipe" });
+  return recipe.image_url || recipeSystemIconUrl(recipe.icon_key || "food");
 }
 
 function dateInputValue(timestamp) {

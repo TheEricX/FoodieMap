@@ -88,6 +88,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USERNAME)
+RECIPE_ICON_KEYS = {"food", "noodles", "rice", "salad", "dessert", "drink", "grill"}
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").strip().lower() not in {"0", "false", "no", "off"}
 E2E_CLEANUP_TOKEN = os.getenv("E2E_CLEANUP_TOKEN", "")
 MCP_PUBLIC_URL = os.getenv("MCP_PUBLIC_URL", f"{APP_BASE_URL}/mcp").rstrip("/")
@@ -211,6 +212,7 @@ class RecipeIn(BaseModel):
     notes: str = ""
     rating: float = Field(default=0, ge=0, le=5)
     cooked_at: int = Field(default=0, ge=0)
+    icon_key: str = Field(default="food", max_length=40)
 
 
 class RecipePatch(BaseModel):
@@ -220,6 +222,7 @@ class RecipePatch(BaseModel):
     notes: Optional[str] = None
     rating: Optional[float] = Field(default=None, ge=0, le=5)
     cooked_at: Optional[int] = Field(default=None, ge=0)
+    icon_key: Optional[str] = Field(default=None, max_length=40)
 
 
 class ListIn(BaseModel):
@@ -484,6 +487,7 @@ def init_db() -> None:
               notes TEXT NOT NULL DEFAULT '',
               rating REAL NOT NULL DEFAULT 0,
               cooked_at INTEGER NOT NULL DEFAULT 0,
+              icon_key TEXT NOT NULL DEFAULT 'food',
               image_path TEXT NOT NULL DEFAULT '',
               created_at INTEGER NOT NULL,
               updated_at INTEGER NOT NULL
@@ -615,6 +619,7 @@ def init_db() -> None:
         ensure_column(db, "users", "last_login_at", "INTEGER")
         ensure_column(db, "users", "suspended_at", "INTEGER")
         ensure_column(db, "users", "deleted_at", "INTEGER")
+        ensure_column(db, "recipes", "icon_key", "TEXT NOT NULL DEFAULT 'food'")
         ensure_column(db, "share_packs", "snapshot_json", "TEXT NOT NULL DEFAULT ''")
         ensure_column(db, "share_pack_items", "snapshot_json", "TEXT NOT NULL DEFAULT ''")
         db.execute("UPDATE users SET updated_at = created_at WHERE updated_at = 0")
@@ -1170,14 +1175,20 @@ def recipe_json(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
         "notes": row["notes"],
         "rating": row["rating"],
         "cooked_at": row["cooked_at"],
+        "icon_key": recipe_icon_key(row["icon_key"] if isinstance(row, sqlite3.Row) else row.get("icon_key", "food")),
         "image_url": image_url,
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
 
 
+def recipe_icon_key(value: Any) -> str:
+    key = str(value or "").strip()
+    return key if key in RECIPE_ICON_KEYS else "food"
+
+
 def recipe_snapshot(recipe: dict[str, Any]) -> str:
-    keys = ["id", "title", "ingredients", "steps", "notes", "rating", "cooked_at", "image_url", "created_at", "updated_at"]
+    keys = ["id", "title", "ingredients", "steps", "notes", "rating", "cooked_at", "icon_key", "image_url", "created_at", "updated_at"]
     return json.dumps({"recipe": {key: recipe.get(key) for key in keys}}, ensure_ascii=False)
 
 
@@ -1197,6 +1208,7 @@ def parse_recipe_snapshot(snapshot_json: str) -> dict[str, Any]:
         "notes": "",
         "rating": 0,
         "cooked_at": 0,
+        "icon_key": "food",
         "image_url": "",
         "created_at": 0,
         "updated_at": 0,
@@ -2205,8 +2217,8 @@ def create_recipe(payload: RecipeIn, user: dict[str, Any] = Depends(require_user
         db.execute(
             """
             INSERT INTO recipes
-            (id, owner_user_id, title, ingredients, steps, notes, rating, cooked_at, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, owner_user_id, title, ingredients, steps, notes, rating, cooked_at, icon_key, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 recipe_id,
@@ -2217,6 +2229,7 @@ def create_recipe(payload: RecipeIn, user: dict[str, Any] = Depends(require_user
                 payload.notes.strip(),
                 payload.rating,
                 payload.cooked_at,
+                recipe_icon_key(payload.icon_key),
                 timestamp,
                 timestamp,
             ),
@@ -2235,9 +2248,17 @@ def update_recipe(recipe_id: str, payload: RecipePatch, user: dict[str, Any] = D
     updates = model_values(payload)
     if not updates:
         raise HTTPException(status_code=400, detail="No changes provided")
-    allowed = ["title", "ingredients", "steps", "notes", "rating", "cooked_at"]
+    allowed = ["title", "ingredients", "steps", "notes", "rating", "cooked_at", "icon_key"]
     fields = [field for field in allowed if field in updates]
-    values = [updates[field].strip() if isinstance(updates[field], str) else updates[field] for field in fields]
+    values = []
+    for field in fields:
+        value = updates[field]
+        if field == "icon_key":
+            values.append(recipe_icon_key(value))
+        elif isinstance(value, str):
+            values.append(value.strip())
+        else:
+            values.append(value)
     fields.append("updated_at")
     values.append(now())
     values.extend([recipe_id, user["id"]])
@@ -2800,8 +2821,8 @@ def add_recipe_share(token: str, user: dict[str, Any] = Depends(require_user)) -
         db.execute(
             """
             INSERT INTO recipes
-            (id, owner_user_id, title, ingredients, steps, notes, rating, cooked_at, image_path, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, owner_user_id, title, ingredients, steps, notes, rating, cooked_at, icon_key, image_path, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 recipe_id,
@@ -2812,6 +2833,7 @@ def add_recipe_share(token: str, user: dict[str, Any] = Depends(require_user)) -
                 recipe.get("notes", ""),
                 float(recipe.get("rating") or 0),
                 int(recipe.get("cooked_at") or 0),
+                recipe_icon_key(recipe.get("icon_key")),
                 image_path,
                 timestamp,
                 timestamp,

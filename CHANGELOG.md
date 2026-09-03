@@ -9,6 +9,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 ### Changed
 
 - Unified the mobile Map and List workspace controls, kept capture actions within the viewport, compacted Maps sheets, and made Recipe editing a full-page mobile task.
+- Added selectable system images for Recipes, including a generic food fallback, so users can choose a fitting thumbnail without uploading a photo.
 
 ### Fixed
 
