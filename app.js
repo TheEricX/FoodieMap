@@ -617,7 +617,9 @@ async function boot() {
     await loadSharePacks();
   }
   setActiveView(activeView, { push: false });
+  restoreMobileRecipeDetailFromRoute();
   restoreMobileRecipeEditorFromRoute();
+  await restoreMobileShareFromRoute();
   checkShortLinkService();
   await locationController.bootstrap();
   locationUiReady = true;
@@ -763,7 +765,9 @@ function bindEvents() {
   });
   window.addEventListener("hashchange", () => setActiveView(getInitialView(), { push: false }));
   window.addEventListener("popstate", syncMobileSpotDetailFromHistory);
+  window.addEventListener("popstate", syncMobileRecipeDetailFromHistory);
   window.addEventListener("popstate", syncMobileRecipeEditorFromHistory);
+  window.addEventListener("popstate", syncMobileShareFromHistory);
   window.addEventListener("focus", resumeLocationController);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") resumeLocationController();
@@ -837,7 +841,12 @@ function bindEvents() {
   elements.googleUrlInput.addEventListener("paste", () => window.setTimeout(autofillFromMapsUrl, 0));
   elements.restaurantForm.addEventListener("submit", saveRestaurantFromForm);
   elements.addDishButton.addEventListener("click", addDishFromEditor);
-  elements.closeShareDialog.addEventListener("click", () => elements.shareDialog.close());
+  elements.closeShareDialog.addEventListener("click", () => closeShareDialog());
+  elements.shareDialog.addEventListener("cancel", (event) => {
+    if (!isMobileMapViewport()) return;
+    event.preventDefault();
+    closeShareDialog();
+  });
   elements.shareForm.addEventListener("submit", createShareLink);
   elements.copyShareButton.addEventListener("click", copyShareLink);
   elements.closeSharePackDialog?.addEventListener("click", () => elements.sharePackDialog.close());
@@ -1861,7 +1870,68 @@ async function ensureRestaurantDetail(restaurant) {
   return hydrated;
 }
 
-async function openShareDialog(restaurant = selectedRestaurant()) {
+function mobileShareRouteId() {
+  return new URL(window.location.href).searchParams.get("share") || "";
+}
+
+function mobileShareHistoryState() {
+  return window.history.state?.foodieMapRestaurantShareId || "";
+}
+
+function openMobileShareRoute(restaurantId) {
+  if (!isMobileMapViewport() || mobileShareRouteId() === restaurantId) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set("share", restaurantId);
+  window.history.pushState({
+    ...(window.history.state || {}),
+    foodieMapRestaurantShareId: restaurantId,
+  }, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function clearMobileShareRoute() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("share")) return;
+  url.searchParams.delete("share");
+  const nextState = { ...(window.history.state || {}) };
+  delete nextState.foodieMapRestaurantShareId;
+  window.history.replaceState(nextState, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+async function restoreMobileShareFromRoute() {
+  if (!isMobileMapViewport() || elements.shareDialog?.open) return;
+  const restaurantId = mobileShareRouteId();
+  if (!restaurantId) return;
+  const restaurant = findRestaurantById(restaurantId);
+  if (!restaurant) {
+    clearMobileShareRoute();
+    return;
+  }
+  await openShareDialog(restaurant, { skipHistory: true });
+}
+
+async function syncMobileShareFromHistory() {
+  if (!isMobileMapViewport()) return;
+  if (mobileShareRouteId()) {
+    await restoreMobileShareFromRoute();
+    return;
+  }
+  closeShareDialog({ fromHistory: true });
+}
+
+function closeShareDialog({ fromHistory = false } = {}) {
+  if (!elements.shareDialog?.open) return;
+  const restaurantId = mobileShareRouteId();
+  if (isMobileMapViewport() && !fromHistory && restaurantId) {
+    if (mobileShareHistoryState() === restaurantId) {
+      window.history.back();
+      return;
+    }
+    clearMobileShareRoute();
+  }
+  elements.shareDialog.close();
+}
+
+async function openShareDialog(restaurant = selectedRestaurant(), { skipHistory = false } = {}) {
   if (!requireLogin()) return;
   if (!restaurant) return;
   try {
@@ -1871,6 +1941,7 @@ async function openShareDialog(restaurant = selectedRestaurant()) {
     return;
   }
   selectedRestaurantId = restaurant.id;
+  if (!skipHistory) openMobileShareRoute(restaurant.id);
   elements.shareUrlInput.value = "";
   elements.shareCardImage?.removeAttribute("src");
   elements.shareImageLink.href = "#";
@@ -3631,19 +3702,25 @@ function renderRecipesView() {
   elements.recipeList.querySelectorAll("[data-recipe-id]").forEach((card) => {
     card.addEventListener("click", () => {
       selectedRecipeId = card.dataset.recipeId;
-      recipeMobileDetailOpen = isMobileMapViewport();
+      if (isMobileMapViewport()) {
+        recipeMobileDetailOpen = true;
+        openMobileRecipeDetailRoute(selectedRecipeId);
+      } else {
+        recipeMobileDetailOpen = false;
+      }
       renderRecipesView();
     });
   });
   const selected = domainCore.selectVisibleItem(recipes, visible, selectedRecipeId);
   selectedRecipeId = selected?.id ?? null;
-  elements.recipesView?.classList.toggle("has-selection", Boolean(selected));
-  elements.recipesView?.classList.toggle("mobile-detail-open", Boolean(selected && recipeMobileDetailOpen && isMobileMapViewport()));
-  elements.recipeDetail.hidden = !selected;
-  elements.recipeDetail.innerHTML = selected ? recipeDetailTemplate(selected) : "";
+  const showMobileDetail = Boolean(selected && recipeMobileDetailOpen && isMobileMapViewport());
+  const showDetail = Boolean(selected && (!isMobileMapViewport() || showMobileDetail));
+  elements.recipesView?.classList.toggle("has-selection", Boolean(selected && !isMobileMapViewport()));
+  elements.recipesView?.classList.toggle("mobile-detail-open", showMobileDetail);
+  elements.recipeDetail.hidden = !showDetail;
+  elements.recipeDetail.innerHTML = showDetail ? recipeDetailTemplate(selected) : "";
   elements.recipeDetail.querySelector("[data-back-recipe-list]")?.addEventListener("click", () => {
-    recipeMobileDetailOpen = false;
-    renderRecipesView();
+    closeMobileRecipeDetail();
   });
   elements.recipeDetail.querySelector("[data-edit-recipe]")?.addEventListener("click", () => openRecipeDialog(selected));
   elements.recipeDetail.querySelector("[data-share-recipe]")?.addEventListener("click", () => openRecipeShareDialog(selected));
@@ -3656,6 +3733,71 @@ function recipeRowTemplate(recipe) {
 
 function recipeDetailTemplate(recipe) {
   return viewTemplates.recipeDetail(recipe);
+}
+
+function mobileRecipeDetailRouteId() {
+  return new URL(window.location.href).searchParams.get("recipe") || "";
+}
+
+function mobileRecipeDetailHistoryState() {
+  return window.history.state?.foodieMapRecipeDetailId || "";
+}
+
+function openMobileRecipeDetailRoute(recipeId) {
+  if (!isMobileMapViewport() || mobileRecipeDetailRouteId() === recipeId) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set("recipe", recipeId);
+  window.history.pushState({
+    ...(window.history.state || {}),
+    foodieMapRecipeDetailId: recipeId,
+  }, "", `${url.pathname}${url.search}${url.hash || "#recipes"}`);
+}
+
+function clearMobileRecipeDetailRoute() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("recipe")) return;
+  url.searchParams.delete("recipe");
+  const nextState = { ...(window.history.state || {}) };
+  delete nextState.foodieMapRecipeDetailId;
+  window.history.replaceState(nextState, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function restoreMobileRecipeDetailFromRoute() {
+  if (!isMobileMapViewport()) return;
+  const recipeId = mobileRecipeDetailRouteId();
+  if (!recipeId) return;
+  const recipe = recipes.find((item) => item.id === recipeId);
+  if (!recipe) {
+    clearMobileRecipeDetailRoute();
+    return;
+  }
+  selectedRecipeId = recipe.id;
+  recipeMobileDetailOpen = true;
+  if (activeView !== "recipes") setActiveView("recipes", { push: false });
+  renderRecipesView();
+}
+
+function syncMobileRecipeDetailFromHistory() {
+  if (!isMobileMapViewport()) return;
+  if (mobileRecipeDetailRouteId()) {
+    restoreMobileRecipeDetailFromRoute();
+    return;
+  }
+  closeMobileRecipeDetail({ fromHistory: true });
+}
+
+function closeMobileRecipeDetail({ fromHistory = false } = {}) {
+  if (!isMobileMapViewport()) return;
+  const recipeId = mobileRecipeDetailRouteId();
+  if (!fromHistory && recipeId) {
+    if (mobileRecipeDetailHistoryState() === recipeId) {
+      window.history.back();
+      return;
+    }
+    clearMobileRecipeDetailRoute();
+  }
+  recipeMobileDetailOpen = false;
+  renderRecipesView();
 }
 
 function mobileRecipeEditorRouteValue() {

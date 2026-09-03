@@ -52,6 +52,8 @@ Confirm these static URLs return their expected content type rather than `index.
 - Registration or login reaches Map View.
 - Desktop and mobile navigation complete `Map → Lists → Recipes → Discovery → Map` with exactly one active item.
 - Browser Back/Forward and direct hashes open the corresponding view.
+- On mobile, restaurant sharing opens as a full-page history entry; browser Back and iPhone left-edge Back close it without changing the desktop modal flow.
+- On mobile, Recipes first shows only the recipe list; opening a recipe creates a detail history entry, and browser Back or iPhone left-edge Back returns to the list. Desktop continues to show list and detail side by side.
 - A missing or invalid static asset produces an explicit startup error rather than a visually active but unbound interface.
 - Refresh preserves the authenticated session, language, selected location mode, and server data.
 

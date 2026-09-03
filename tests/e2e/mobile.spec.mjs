@@ -175,7 +175,7 @@ test("@mobile empty favorites explains the state and recovers to all places", as
   await expect(page.locator('.mobile-map-bar [data-filter="all"]')).toHaveClass(/active/);
 });
 
-test("@mobile recipes use a single-detail flow instead of stacked list and detail panes", async ({ signedInPage: page }) => {
+test("@mobile recipes use separate list and detail history pages", async ({ signedInPage: page }) => {
   const create = await page.request.post("/api/recipes", { data: {
     title: "Mobile detail flow recipe",
     rating: 4.5,
@@ -185,19 +185,33 @@ test("@mobile recipes use a single-detail flow instead of stacked list and detai
     notes: ""
   }});
   expect(create.ok()).toBeTruthy();
+  const recipe = (await create.json()).recipe;
 
   await page.locator('[data-view="recipes"]:visible').first().tap();
   await expect(page.locator("#recipeList [data-recipe-id]")).toHaveCount(1);
+  await expect(page.locator("#recipesView")).not.toHaveClass(/mobile-detail-open/);
+  await expect(page.locator("#recipesView .recipes-panel")).toBeVisible();
+  await expect(page.locator("#recipeDetail")).toBeHidden();
   await page.locator("#recipeList [data-recipe-id]").tap();
 
+  await expect(page).toHaveURL(new RegExp(`[?&]recipe=${recipe.id}(?:&|#|$)`));
   await expect(page.locator("#recipesView")).toHaveClass(/mobile-detail-open/);
   await expect(page.locator("#recipesView .recipes-panel")).toBeHidden();
   await expect(page.locator("#recipeDetail")).toBeVisible();
   await expect(page.locator("[data-back-recipe-list]")).toBeVisible();
 
-  await page.locator("[data-back-recipe-list]").tap();
+  await page.goBack();
   await expect(page.locator("#recipesView")).not.toHaveClass(/mobile-detail-open/);
   await expect(page.locator("#recipesView .recipes-panel")).toBeVisible();
+  await expect(page.locator("#recipeDetail")).toBeHidden();
+  await expect(page).not.toHaveURL(/[?&]recipe=/);
+
+  await page.locator("#recipeList [data-recipe-id]").tap();
+  await expect(page).toHaveURL(new RegExp(`[?&]recipe=${recipe.id}(?:&|#|$)`));
+  await page.locator("[data-back-recipe-list]").tap();
+  await expect(page.locator("#recipesView")).not.toHaveClass(/mobile-detail-open/);
+  await expect(page.locator("#recipeDetail")).toBeHidden();
+  await expect(page).not.toHaveURL(/[?&]recipe=/);
 });
 
 test("@mobile @cross-browser restaurant detail avoids focus zoom and uses browser history", async ({ signedInPage: page }) => {
@@ -233,6 +247,55 @@ test("@mobile @cross-browser restaurant detail avoids focus zoom and uses browse
   await page.goBack();
   await expect(page.locator("#spotDetailDialog")).toBeHidden();
   await expect(page).not.toHaveURL(/(?:\?|&)spot=/);
+});
+
+test("@mobile @cross-browser restaurant share is a full-page history entry", async ({ signedInPage: page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const create = await page.request.post("/api/restaurants", { data: {
+    name: "Mobile Share Back",
+    address: "Toronto",
+    lat: 43.6532,
+    lng: -79.3832,
+    google_url: "https://maps.apple.com/?ll=43.6532,-79.3832&q=Mobile%20Share%20Back",
+    status: "want_to_go",
+    visit_count: 0,
+    personal_rating: 0,
+    notes: ""
+  }});
+  expect(create.ok()).toBeTruthy();
+  const restaurant = (await create.json()).restaurant;
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await page.locator('[data-view="my-lists"]:visible').first().click();
+  await page.locator(`[data-restaurant-id="${restaurant.id}"] [data-share-restaurant="${restaurant.id}"]`).click();
+
+  await expect(page.locator("#shareDialog")).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`[?&]share=${restaurant.id}(?:&|#|$)`));
+  const geometry = await page.locator("#shareForm").evaluate((form) => {
+    const box = form.getBoundingClientRect();
+    return {
+      left: box.left,
+      top: box.top,
+      right: box.right,
+      bottom: box.bottom,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    };
+  });
+  expect(Math.abs(geometry.left)).toBeLessThanOrEqual(1);
+  expect(Math.abs(geometry.top)).toBeLessThanOrEqual(1);
+  expect(Math.abs(geometry.right - geometry.viewportWidth)).toBeLessThanOrEqual(1);
+  expect(Math.abs(geometry.bottom - geometry.viewportHeight)).toBeLessThanOrEqual(1);
+
+  await page.goBack();
+  await expect(page.locator("#shareDialog")).toBeHidden();
+  await expect(page).not.toHaveURL(/(?:\?|&)share=/);
+
+  await page.locator(`[data-restaurant-id="${restaurant.id}"] [data-share-restaurant="${restaurant.id}"]`).click();
+  await expect(page).toHaveURL(new RegExp(`[?&]share=${restaurant.id}(?:&|#|$)`));
+  await page.locator("#closeShareDialog").click();
+  await expect(page.locator("#shareDialog")).toBeHidden();
+  await expect(page).not.toHaveURL(/(?:\?|&)share=/);
 });
 
 test("@mobile quick capture opens with only the essential restaurant fields", async ({ signedInPage: page }) => {
