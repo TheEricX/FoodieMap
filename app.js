@@ -335,6 +335,10 @@ const elements = {
   closeShareDialog: document.querySelector("#closeShareDialog"),
   shareDishList: document.querySelector("#shareDishList"),
   shareUrlInput: document.querySelector("#shareUrlInput"),
+  shareCardImage: document.querySelector("#shareCardImage"),
+  shareImageLink: document.querySelector("#shareImageLink"),
+  openShareImage: document.querySelector("#openShareImage"),
+  downloadShareImage: document.querySelector("#downloadShareImage"),
   createShareButton: document.querySelector("#createShareButton"),
   copyShareButton: document.querySelector("#copyShareButton"),
   sharePackView: document.querySelector("#sharePackView"),
@@ -744,7 +748,7 @@ function bindEvents() {
     button.addEventListener("click", () => setDetailDishStatus(button.dataset.detailDishStatus));
   });
   elements.editSpot.addEventListener("click", openEditDialog);
-  elements.shareSpot.addEventListener("click", openShareDialog);
+  elements.shareSpot.addEventListener("click", () => openShareDialog());
   elements.deleteSpot.addEventListener("click", deleteSelectedRestaurant);
   elements.markVisited?.addEventListener("click", markSelectedRestaurantVisited);
   elements.searchInput.addEventListener("input", () => {
@@ -1848,16 +1852,38 @@ function removeDish(dishId) {
   render();
 }
 
-function openShareDialog() {
+async function ensureRestaurantDetail(restaurant) {
+  if (!restaurant || !currentUser || shareToken) return restaurant;
+  if (Array.isArray(restaurant.dishes) && restaurant.dishes.length) return restaurant;
+  const data = await api(`/api/restaurants/${restaurant.id}`);
+  const hydrated = normalizeRestaurant(data.restaurant);
+  upsertRestaurant(hydrated);
+  return hydrated;
+}
+
+async function openShareDialog(restaurant = selectedRestaurant()) {
   if (!requireLogin()) return;
-  const restaurant = selectedRestaurant();
   if (!restaurant) return;
+  try {
+    restaurant = await ensureRestaurantDetail(restaurant);
+  } catch (error) {
+    showToast(error.message);
+    return;
+  }
+  selectedRestaurantId = restaurant.id;
   elements.shareUrlInput.value = "";
+  elements.shareCardImage?.removeAttribute("src");
+  elements.shareImageLink.href = "#";
+  elements.shareImageLink.hidden = true;
+  elements.openShareImage.href = "#";
+  elements.downloadShareImage.href = "#";
+  elements.openShareImage.hidden = true;
+  elements.downloadShareImage.hidden = true;
   const dishes = restaurant.dishes ?? [];
   elements.shareDishList.innerHTML = dishes.length
     ? dishes.map(formTemplates.shareDishOption).join("")
     : `<p class="form-help">${escapeHtml(t("share.noDishes"))}</p>`;
-  elements.createShareButton.disabled = !dishes.length;
+  elements.createShareButton.disabled = false;
   elements.shareDialog.showModal();
 }
 
@@ -1870,6 +1896,16 @@ async function createShareLink(event) {
     body: JSON.stringify({ selected_dish_ids: selectedIds }),
   });
   elements.shareUrlInput.value = data.share_url;
+  if (data.card_url) {
+    elements.shareCardImage.src = `${data.card_url}?v=${Date.now()}`;
+    elements.shareImageLink.href = data.card_url;
+    elements.shareImageLink.hidden = false;
+    elements.openShareImage.href = data.card_url;
+    elements.downloadShareImage.href = data.card_url;
+    elements.openShareImage.hidden = false;
+    elements.downloadShareImage.hidden = false;
+    elements.downloadShareImage.setAttribute("download", `${slugifyText(restaurant.name || "restaurant")}.png`);
+  }
 }
 
 async function copyShareLink() {
@@ -4145,6 +4181,9 @@ function bindSystemListDetailActions(definition) {
       setActiveView("my-map");
     });
   });
+  elements.myListDetail.querySelectorAll("[data-share-restaurant]").forEach((button) => {
+    button.addEventListener("click", () => openShareDialog(domainCore.findById(restaurants, button.dataset.shareRestaurant)));
+  });
   elements.myListDetail.querySelectorAll("[data-delete-spot]").forEach((button) => {
     button.addEventListener("click", () => deleteRestaurantById(button.dataset.deleteSpot));
   });
@@ -4245,6 +4284,9 @@ function bindMyListDetailActions(list) {
       setActiveCategory(`custom:${list.id}`);
       setActiveView("my-map");
     });
+  });
+  elements.myListDetail.querySelectorAll("[data-share-restaurant]").forEach((button) => {
+    button.addEventListener("click", () => openShareDialog(domainCore.findById(restaurants, button.dataset.shareRestaurant)));
   });
   elements.myListDetail.querySelectorAll("[data-remove-list-spot]").forEach((button) => {
     button.addEventListener("click", () => removeSpotFromList(list.id, button.dataset.removeListSpot));

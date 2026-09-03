@@ -31,6 +31,7 @@ export function createListViewTemplates({
       actions: `
         <button class="icon-link" type="button" data-open-spot="${id}">${text("button.map")}</button>
         <button class="icon-link" type="button" data-open-map-restaurant="${id}">${text("button.openMaps")}</button>
+        <button class="icon-link" type="button" data-share-restaurant="${id}">${text("button.share")}</button>
         <button class="icon-link danger-text" type="button" data-delete-spot="${id}">${text("button.delete")}</button>
       `,
     });
@@ -86,6 +87,7 @@ export function createListViewTemplates({
       actions: `
         <button class="icon-link" type="button" data-open-spot="${id}">${text("button.map")}</button>
         <button class="icon-link" type="button" data-open-map-restaurant="${id}">${text("button.openMaps")}</button>
+        <button class="icon-link" type="button" data-share-restaurant="${id}">${text("button.share")}</button>
         <button class="icon-link danger-text" type="button" data-remove-list-spot="${id}">${text("button.remove")}</button>
       `,
     });

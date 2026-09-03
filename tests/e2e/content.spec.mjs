@@ -141,6 +141,51 @@ test("@responsive share actions keep generate and copy aligned in equal columns"
   expect(generateBox.height).toBeGreaterThanOrEqual(48);
 });
 
+test("@responsive restaurant share creates a QR card and anonymous preview", async ({ signedInPage: page, browser }) => {
+  const restaurantResponse = await page.request.post("/api/restaurants", { data: {
+    name: "E2E QR Share Spot",
+    address: "100 Share St, Toronto",
+    lat: 43.66,
+    lng: -79.39,
+    google_url: "https://www.google.com/maps?q=43.66,-79.39",
+    status: "want_to_go",
+    visit_count: 0,
+    personal_rating: 4.7,
+    notes: "share-card flow"
+  }});
+  expect(restaurantResponse.ok()).toBeTruthy();
+  const restaurant = (await restaurantResponse.json()).restaurant;
+  const dishResponse = await page.request.post(`/api/restaurants/${restaurant.id}/dishes`, { data: {
+    name: "Sesame Noodles",
+    dish_status: "liked",
+    rating: 4.8,
+    notes: "Order again"
+  }});
+  expect(dishResponse.ok()).toBeTruthy();
+
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await page.locator('[data-view="my-lists"]:visible').first().click();
+  await page.locator(`[data-restaurant-id="${restaurant.id}"] [data-share-restaurant="${restaurant.id}"]`).click();
+  await page.locator("#createShareButton").click();
+  await expect(page.locator("#shareImageLink")).toBeVisible();
+  const shareUrl = await page.locator("#shareUrlInput").inputValue();
+  const cardHref = await page.locator("#openShareImage").getAttribute("href");
+  expect(shareUrl).toContain("/share/");
+  expect(cardHref).toContain("/api/share/");
+
+  const cardResponse = await page.request.get(cardHref);
+  expect(cardResponse.ok()).toBeTruthy();
+  expect(cardResponse.headers()["content-type"]).toContain("image/png");
+
+  const anonymousPage = await browser.newPage();
+  await anonymousPage.goto(shareUrl);
+  await anonymousPage.waitForLoadState("networkidle");
+  await expect(anonymousPage.getByText("E2E QR Share Spot", { exact: true }).first()).toBeVisible();
+  await expect(anonymousPage.getByText("Sesame Noodles").first()).toBeVisible();
+  await anonymousPage.close();
+});
+
 test("@responsive mobile form actions stay aligned and compact", async ({ signedInPage: page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "Mobile action bar styling");
   await page.evaluate(() => document.querySelector("#listDialog").showModal());

@@ -51,7 +51,7 @@ export function createFormTemplates({
   function shareDishOption(dish) {
     return `
       <label class="share-dish-item">
-        <input type="checkbox" value="${attr(dish.id)}" ${dish.dish_status === "liked" ? "checked" : ""} />
+        <input type="checkbox" value="${attr(dish.id)}" checked />
         <span>${escapeMarkup(dish.name)}</span>
         <small>☆ ${Number(dish.rating || 0).toFixed(1)} · ${escapeMarkup(dishStatusLabel(dish.dish_status))}</small>
       </label>

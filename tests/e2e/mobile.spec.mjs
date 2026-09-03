@@ -200,7 +200,8 @@ test("@mobile recipes use a single-detail flow instead of stacked list and detai
   await expect(page.locator("#recipesView .recipes-panel")).toBeVisible();
 });
 
-test("@mobile restaurant detail uses browser history so an edge-back gesture closes it", async ({ signedInPage: page }) => {
+test("@mobile @cross-browser restaurant detail avoids focus zoom and uses browser history", async ({ signedInPage: page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   const create = await page.request.post("/api/restaurants", { data: {
     name: "E2E Mobile Close",
     address: "Toronto",
@@ -216,9 +217,19 @@ test("@mobile restaurant detail uses browser history so an edge-back gesture clo
   const restaurant = (await create.json()).restaurant;
   await page.reload();
   await page.waitForLoadState("networkidle");
-  await page.locator("#markersLayer .restaurant-marker").first().tap();
+  await page.locator("#markersLayer .restaurant-marker").first().click();
   await expect(page.locator("#spotDetailDialog")).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`spot=${restaurant.id}`));
+  const keyboardControlFontSizes = await page.locator(
+    '#spotDetailDialog input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), #spotDetailDialog select, #spotDetailDialog textarea'
+  ).evaluateAll((controls) => controls.map((control) => ({
+    control: `${control.tagName.toLowerCase()}[${control.getAttribute("name") || control.id || control.type}]`,
+    fontSize: Number.parseFloat(getComputedStyle(control).fontSize)
+  })));
+  expect(keyboardControlFontSizes.length).toBeGreaterThan(0);
+  for (const { control, fontSize } of keyboardControlFontSizes) {
+    expect(fontSize, control).toBeGreaterThanOrEqual(16);
+  }
   await page.goBack();
   await expect(page.locator("#spotDetailDialog")).toBeHidden();
   await expect(page).not.toHaveURL(/(?:\?|&)spot=/);

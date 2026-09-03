@@ -129,6 +129,7 @@ EMAIL_CODE_REQUEST_INTERVAL_SECONDS = 60
 EMAIL_CODE_MAX_ATTEMPTS = 5
 SHARE_CARD_WIDTH = 960
 SHARE_CARD_HEIGHT = 1280
+RESTAURANT_SHARE_CARD_TEMPLATE = ROOT / "assets" / "restaurant-share-card-template.png"
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -1206,6 +1207,18 @@ def parse_recipe_snapshot(snapshot_json: str) -> dict[str, Any]:
 
 def recipe_share_url(token: str) -> str:
     return f"{APP_BASE_URL}/recipe-share/{token}"
+
+
+def restaurant_share_url(token: str) -> str:
+    return f"{APP_BASE_URL}/share/{token}"
+
+
+def restaurant_share_card_url(token: str) -> str:
+    return f"{APP_BASE_URL}/api/share/{token}/card.png"
+
+
+def restaurant_share_qr_url(token: str) -> str:
+    return f"{APP_BASE_URL}/api/share/{token}/qr.svg"
 
 
 def recipe_share_card_url(token: str) -> str:
@@ -2286,7 +2299,7 @@ def create_share(restaurant_id: str, payload: ShareIn, user: dict[str, Any] = De
             "INSERT INTO share_links (id, restaurant_id, owner_user_id, token, selected_dish_ids, created_at) VALUES (?, ?, ?, ?, ?, ?)",
             (new_id(), restaurant_id, user["id"], token, json.dumps(selected_ids), timestamp),
         )
-    return {"share_url": f"{APP_BASE_URL}/share/{token}", "token": token}
+    return {"share_url": restaurant_share_url(token), "qr_url": restaurant_share_qr_url(token), "card_url": restaurant_share_card_url(token), "token": token}
 
 
 def share_payload(token: str) -> dict[str, Any]:
@@ -2309,10 +2322,71 @@ def share_payload(token: str) -> dict[str, Any]:
                 "token": share["token"],
                 "created_at": share["created_at"],
                 "owner": public_owner(dict(owner)) if owner else None,
+                "share_url": restaurant_share_url(share["token"]),
+                "qr_url": restaurant_share_qr_url(share["token"]),
+                "card_url": restaurant_share_card_url(share["token"]),
                 "restaurant": restaurant_json(db, restaurant, include_dishes=False),
                 "dishes": dishes,
             }
         }
+
+
+def restaurant_share_card_png(token: str) -> bytes:
+    from PIL import Image, ImageDraw
+    import qrcode
+
+    payload = share_payload(token)["share"]
+    restaurant = payload["restaurant"]
+    if RESTAURANT_SHARE_CARD_TEMPLATE.is_file():
+        image = Image.open(RESTAURANT_SHARE_CARD_TEMPLATE).convert("RGB").resize((SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT))
+    else:
+        image = Image.new("RGB", (SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT), "#fffaf4")
+    draw = ImageDraw.Draw(image, "RGBA")
+
+    margin = 72
+    eyebrow_font = share_card_font(24, bold=True)
+    title_font = share_card_font(54, bold=True)
+    body_font = share_card_font(28)
+    meta_font = share_card_font(24, bold=True)
+    small_font = share_card_font(21)
+
+    draw.rounded_rectangle((margin, 100, SHARE_CARD_WIDTH - margin, 430), radius=34, fill=(255, 253, 248, 224), outline="#edc4a7", width=3)
+    draw.text((margin + 42, 132), "RESTAURANT SHARE", fill="#647144", font=eyebrow_font)
+    y = 186
+    for line in wrap_card_text(draw, restaurant["name"], title_font, SHARE_CARD_WIDTH - margin * 2 - 84, 2):
+        draw.text((margin + 42, y), line, fill="#3b2e2a", font=title_font)
+        y += 62
+    meta = f"★ {float(restaurant.get('personal_rating') or 0):.1f} · {restaurant.get('address') or 'Open the link for details'}"
+    for line in wrap_card_text(draw, meta, body_font, SHARE_CARD_WIDTH - margin * 2 - 84, 2):
+        draw.text((margin + 42, y + 8), line, fill="#6b422d", font=body_font)
+        y += 38
+
+    dishes = payload["dishes"][:4]
+    if dishes:
+        menu_y = 466
+        draw.rounded_rectangle((margin, menu_y, SHARE_CARD_WIDTH - margin, menu_y + 230), radius=28, fill=(255, 253, 248, 210), outline="#ecd1be", width=2)
+        draw.text((margin + 42, menu_y + 30), "MENU PICKS", fill="#647144", font=eyebrow_font)
+        row_y = menu_y + 76
+        for dish in dishes:
+            line = f"{dish['name']}  ★ {float(dish.get('rating') or 0):.1f}"
+            draw.text((margin + 42, row_y), line, fill="#5f473c", font=meta_font)
+            row_y += 38
+
+    qr = qrcode.QRCode(border=1, box_size=12)
+    qr.add_data(payload["share_url"])
+    qr.make(fit=True)
+    qr_image = qr.make_image(fill_color="#3b2e2a", back_color="#fffdf8").convert("RGB")
+    qr_image = qr_image.resize((330, 330))
+    qr_x = (SHARE_CARD_WIDTH - 330) // 2
+    qr_y = 680
+    draw.rounded_rectangle((qr_x - 26, qr_y - 26, qr_x + 356, qr_y + 356), radius=38, fill=(255, 255, 255, 244), outline="#edc4a7", width=3)
+    image.paste(qr_image, (qr_x, qr_y))
+    draw.text((margin + 42, SHARE_CARD_HEIGHT - 142), "Scan to view this restaurant and menu", fill="#6b422d", font=meta_font)
+    draw.text((margin + 42, SHARE_CARD_HEIGHT - 94), "Sign in to save it to your FoodieMap.", fill="#8c7b70", font=small_font)
+
+    stream = io.BytesIO()
+    image.save(stream, format="PNG", optimize=True)
+    return stream.getvalue()
 
 
 def share_pack_url(token: str) -> str:
@@ -2826,6 +2900,25 @@ def add_share_pack(token: str, user: dict[str, Any] = Depends(require_user)) -> 
 @app.get("/api/share/{token}")
 def get_share(token: str) -> dict[str, Any]:
     return share_payload(token)
+
+
+@app.get("/api/share/{token}/qr.svg")
+def get_restaurant_share_qr(token: str) -> Response:
+    share_payload(token)
+    try:
+        import qrcode
+        import qrcode.image.svg
+    except ImportError as error:
+        raise HTTPException(status_code=500, detail="QR generation is not installed") from error
+    image = qrcode.make(restaurant_share_url(token), image_factory=qrcode.image.svg.SvgPathImage)
+    stream = io.BytesIO()
+    image.save(stream)
+    return Response(content=stream.getvalue(), media_type="image/svg+xml")
+
+
+@app.get("/api/share/{token}/card.png")
+def get_restaurant_share_card(token: str) -> Response:
+    return Response(content=restaurant_share_card_png(token), media_type="image/png")
 
 
 @app.post("/api/share/{token}/add")

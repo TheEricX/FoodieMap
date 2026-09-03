@@ -3460,6 +3460,10 @@ body[data-view="login"] .top-actions {
   display: none;
 }
 
+.card-actions [hidden] {
+  display: none;
+}
+
 .share-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4927,7 +4931,7 @@ dialog.modal:not([open]) {
     scrollbar-gutter: auto;
     transform: translate(var(--sheet-drag-x, 0), var(--sheet-drag-y, 0));
     transition: transform 180ms ease;
-    touch-action: pan-y;
+    touch-action: pan-y pinch-zoom;
     will-change: transform;
   }
 
@@ -6520,7 +6524,7 @@ dialog.modal:not([open]) {
     overscroll-behavior-x: none;
     overscroll-behavior-y: contain;
     scrollbar-width: none;
-    touch-action: pan-y;
+    touch-action: pan-y pinch-zoom;
   }
 
   body[data-view="my-map"] .spot-card::-webkit-scrollbar {
@@ -7033,7 +7037,7 @@ dialog.modal:not([open]) {
     scrollbar-gutter: auto;
     transform: translate(var(--sheet-drag-x, 0), var(--sheet-drag-y, 0));
     transition: transform 180ms ease;
-    touch-action: pan-y;
+    touch-action: pan-y pinch-zoom;
     will-change: transform;
   }
 
@@ -7755,6 +7759,17 @@ dialog.modal:not([open]) {
   .spot-card .tape {
     width: 78px;
     height: 22px;
+  }
+}
+
+/* iOS Safari zooms the page when a keyboard-backed control is focused below
+   16px. Some controls inherit the smaller label/caption size, so enforce the
+   platform-safe minimum without enlarging checkboxes, file pickers, or sliders. */
+@media (max-width: 900px) {
+  .app-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+  .app-shell select,
+  .app-shell textarea {
+    font-size: 16px;
   }
 }
 

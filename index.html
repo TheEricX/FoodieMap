@@ -672,9 +672,14 @@
             <span data-i18n="share.link">Share link</span>
             <input id="shareUrlInput" readonly placeholder="Link appears after creation" data-i18n-placeholder="share.linkPlaceholder" />
           </label>
+          <a class="share-pack-card-preview" id="shareImageLink" href="#" target="_blank" rel="noreferrer" hidden>
+            <img id="shareCardImage" alt="Restaurant share card" data-i18n-alt="share.cardAlt" />
+          </a>
           <div class="card-actions">
             <button class="primary-button" id="createShareButton" type="submit" data-i18n="button.createShareLink">Create Share Link</button>
             <button class="outline-button" id="copyShareButton" type="button" data-i18n="button.copy">Copy</button>
+            <a class="outline-button" id="openShareImage" href="#" target="_blank" rel="noreferrer" data-i18n="button.openImage" hidden>Open Image</a>
+            <a class="outline-button" id="downloadShareImage" href="#" download data-i18n="button.downloadImage" hidden>Download Image</a>
           </div>
         </form>
       </dialog>

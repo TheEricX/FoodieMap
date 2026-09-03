@@ -12,6 +12,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Prevented iPhone Safari from zooming the page when focusing small inherited form controls, while preserving pinch zoom in mobile modals.
 - Fixed Recipe photo uploads failing on an undefined image-compression function, added adaptive quality/size compression below the server limit with Safari JPEG fallback, and covered uploads in Chromium and WebKit.
 - Fixed the mobile Recipe editor footer obscuring fields, made successful saves close reliably on Safari without duplicate updates, and replaced custom swipe dismissal with native browser history Back while retaining unsaved-change protection.
 - Fixed Recipe share generation stopping before showing its link and card, and replaced the oversized mobile share controls with a compact bottom sheet.
@@ -22,6 +23,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Fixed restored restaurant-detail drawers blocking navigation, and kept empty-map actions clear of the mobile map toolbar.
 
 ### Added
+
+- Added restaurant share buttons in List View plus QR-code image cards on the provided card template, with signed-out previews showing restaurant and menu details.
 
 - Added per-account photo quotas across dish and Recipe uploads, with finite Free/Paid defaults, Admin usage visibility and per-user overrides.
 
