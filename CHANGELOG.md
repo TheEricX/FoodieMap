@@ -12,7 +12,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
-- Fixed Recipe photo uploads failing on an undefined image-compression function, and added browser-level upload coverage in Chromium and WebKit.
+- Fixed Recipe photo uploads failing on an undefined image-compression function, added adaptive quality/size compression below the server limit with Safari JPEG fallback, and covered uploads in Chromium and WebKit.
 - Fixed the mobile Recipe editor footer obscuring fields, made successful saves close reliably on Safari without duplicate updates, and replaced custom swipe dismissal with native browser history Back while retaining unsaved-change protection.
 - Fixed Recipe share generation stopping before showing its link and card, and replaced the oversized mobile share controls with a compact bottom sheet.
 - Fixed mobile restaurant detail navigation so an iPhone edge-back gesture closes the detail view, and made list actions easier to distinguish and tap.
@@ -22,6 +22,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 - Fixed restored restaurant-detail drawers blocking navigation, and kept empty-map actions clear of the mobile map toolbar.
 
 ### Added
+
+- Added per-account photo quotas across dish and Recipe uploads, with finite Free/Paid defaults, Admin usage visibility and per-user overrides.
 
 - Added a direct Maps-link import entry point that opens a prefilled place-capture task after sign-in.
 

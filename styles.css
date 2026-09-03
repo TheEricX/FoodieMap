@@ -1618,6 +1618,30 @@ body[data-view="login"] .top-actions {
   padding: 0 12px;
 }
 
+.admin-image-limit-control {
+  display: grid;
+  grid-template-columns: auto 76px auto auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-image-limit-control label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-image-limit-control input {
+  width: 76px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  padding: 0 8px;
+  color: var(--ink);
+  font: inherit;
+}
+
 .custom-list-head {
   margin-top: 0;
 }
@@ -5159,6 +5183,17 @@ dialog.modal:not([open]) {
   .admin-user-state,
   .admin-user-actions {
     justify-content: flex-start;
+  }
+
+  .admin-image-limit-control {
+    width: 100%;
+    grid-template-columns: auto minmax(72px, 100px) auto;
+    justify-content: start;
+  }
+
+  .admin-image-limit-control [data-admin-action="image-limit-reset"] {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .list-detail-panel {

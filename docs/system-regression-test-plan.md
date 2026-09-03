@@ -120,6 +120,7 @@ Confirm these static URLs return their expected content type rather than `index.
 
 - Admin login, search/filter, Free/Paid change, suspend/reactivate, soft delete/restore, and self-protection rules.
 - Free restaurant limit blocks only the over-limit create operation.
+- Dish and Recipe photos share the account photo quota; Admin can inspect and override it, new uploads stop at the limit, and replacing an existing photo remains allowed.
 - Export/import round trip preserves supported local data; malformed import fails safely.
 - PostgreSQL, GCS, SMTP, map-link expansion, reverse geocoding, and upload failures show actionable messages without losing entered form data.
 - `/api/health` reports `postgresql/gcs` on staging and production.

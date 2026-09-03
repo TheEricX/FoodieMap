@@ -121,6 +121,7 @@ export function createAccountShareTemplates({
     const limitLabel = user.restaurant_limit == null
       ? translate("admin.unlimited")
       : translate("admin.limit", { count: user.restaurant_count, limit: user.restaurant_limit });
+    const imageLimitLabel = translate("admin.imageLimit", { count: user.image_upload_count, limit: user.image_upload_limit });
     const authLabel = translate("admin.authMethods", { methods: authMethodLabel(user.auth_methods || []) });
     const statusClass = `admin-status-${attr(user.account_status)}`;
     const id = attr(user.id);
@@ -136,6 +137,7 @@ export function createAccountShareTemplates({
               <span>${text("admin.lists", { count: user.list_count })}</span>
               <span>${text("admin.publicLists", { count: user.public_list_count })}</span>
               <span>${escapeMarkup(limitLabel)}</span>
+              <span>${escapeMarkup(imageLimitLabel)}</span>
               <span>${escapeMarkup(authLabel)}</span>
             </div>
             <div class="admin-user-meta muted">
@@ -149,6 +151,12 @@ export function createAccountShareTemplates({
           <span class="tag-pill ${user.account_status === "active" ? "visited" : user.account_status === "suspended" ? "want_to_go" : "favorite"}">${escapeMarkup(adminStatusLabel(user.account_status))}</span>
         </div>
         <div class="admin-user-actions">
+          <div class="admin-image-limit-control">
+            <label for="adminImageLimit-${id}">${text("admin.photoLimit")}</label>
+            <input id="adminImageLimit-${id}" type="number" min="0" max="10000" step="1" value="${user.image_upload_limit_override == null ? "" : attr(user.image_upload_limit_override)}" placeholder="${attr(user.image_upload_limit)}" data-admin-image-limit />
+            <button class="secondary-button compact-action" type="button" data-admin-action="image-limit" data-user-id="${id}">${text("admin.saveLimit")}</button>
+            ${user.image_upload_limit_override == null ? "" : `<button class="secondary-button compact-action" type="button" data-admin-action="image-limit-reset" data-user-id="${id}">${text("admin.usePlanDefault")}</button>`}
+          </div>
           <button class="secondary-button compact-action" type="button" data-admin-action="plan" data-user-id="${id}" data-next-plan="${user.plan === "paid" ? "free" : "paid"}">${text(user.plan === "paid" ? "admin.makeFree" : "admin.makePaid")}</button>
           ${user.account_status === "active"
             ? `<button class="secondary-button compact-action" type="button" data-admin-action="suspend" data-user-id="${id}">${text("admin.suspend")}</button>`

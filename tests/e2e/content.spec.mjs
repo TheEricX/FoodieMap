@@ -78,6 +78,54 @@ test("@cross-browser recipe form saves an uploaded image", async ({ signedInPage
   await expect(page.getByText("E2E Recipe Form Upload", { exact: true }).first()).toBeVisible();
 });
 
+test("@cross-browser oversized photos are compressed below the upload limit", async ({ signedInPage: page }) => {
+  const recipeResponse = await page.request.post("/api/recipes", { data: {
+    title: "E2E Large Photo Compression",
+    ingredients: "",
+    steps: "",
+    notes: "",
+    rating: 0,
+    cooked_at: 1788307200
+  }});
+  expect(recipeResponse.ok()).toBeTruthy();
+  const recipe = (await recipeResponse.json()).recipe;
+
+  const result = await page.evaluate(async (recipeId) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1800;
+    canvas.height = 1800;
+    const context = canvas.getContext("2d");
+    const pixels = context.createImageData(canvas.width, canvas.height);
+    let seed = 0x12345678;
+    for (let index = 0; index < pixels.data.length; index += 4) {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      pixels.data[index] = seed & 255;
+      pixels.data[index + 1] = (seed >>> 8) & 255;
+      pixels.data[index + 2] = (seed >>> 16) & 255;
+      pixels.data[index + 3] = 255;
+    }
+    context.putImageData(pixels, 0, 0);
+    const sourceBlob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    const sourceFile = new File([sourceBlob], "large-photo.png", { type: "image/png" });
+    const compressed = await window.compressImage(sourceFile);
+    const form = new FormData();
+    form.append("image", compressed, compressed.name);
+    const response = await fetch(`/api/recipes/${recipeId}/image`, { method: "POST", body: form });
+    return {
+      originalSize: sourceFile.size,
+      compressedSize: compressed.size,
+      compressedType: compressed.type,
+      uploadStatus: response.status,
+      uploadBody: await response.text()
+    };
+  }, recipe.id);
+
+  expect(result.originalSize).toBeGreaterThan(1_200_000);
+  expect(result.compressedSize).toBeLessThanOrEqual(1_000_000);
+  expect(["image/jpeg", "image/webp"]).toContain(result.compressedType);
+  expect(result.uploadStatus, result.uploadBody).toBe(200);
+});
+
 test("@responsive share actions keep generate and copy aligned in equal columns", async ({ signedInPage: page }) => {
   const actions = page.locator("#recipeShareForm .share-actions");
   await page.evaluate(() => document.querySelector("#recipeShareDialog").showModal());

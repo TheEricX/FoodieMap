@@ -81,6 +81,8 @@ GOOGLE_GEOCODING_API_KEY = os.getenv("GOOGLE_GEOCODING_API_KEY", "") or os.geten
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 FREE_RESTAURANT_LIMIT = int(os.getenv("FREE_RESTAURANT_LIMIT", "50"))
+FREE_IMAGE_UPLOAD_LIMIT = int(os.getenv("FREE_IMAGE_UPLOAD_LIMIT", "50"))
+PAID_IMAGE_UPLOAD_LIMIT = int(os.getenv("PAID_IMAGE_UPLOAD_LIMIT", "500"))
 SMTP_HOST = os.getenv("SMTP_HOST", "")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
@@ -241,6 +243,7 @@ class ListItemIn(BaseModel):
 class AdminUserPatch(BaseModel):
     account_status: Optional[str] = None
     plan: Optional[str] = None
+    image_upload_limit: Optional[int] = Field(default=None, ge=0, le=10_000)
 
 
 class AdminLoginIn(BaseModel):
@@ -398,6 +401,7 @@ def init_db() -> None:
               updated_at INTEGER NOT NULL DEFAULT 0,
               account_status TEXT NOT NULL DEFAULT 'active',
               plan TEXT NOT NULL DEFAULT 'free',
+              image_upload_limit INTEGER,
               password_hash TEXT NOT NULL DEFAULT '',
               email_verified_at INTEGER,
               last_login_at INTEGER,
@@ -604,6 +608,7 @@ def init_db() -> None:
         ensure_column(db, "users", "updated_at", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "users", "account_status", "TEXT NOT NULL DEFAULT 'active'")
         ensure_column(db, "users", "plan", "TEXT NOT NULL DEFAULT 'free'")
+        ensure_column(db, "users", "image_upload_limit", "INTEGER")
         ensure_column(db, "users", "password_hash", "TEXT NOT NULL DEFAULT ''")
         ensure_column(db, "users", "email_verified_at", "INTEGER")
         ensure_column(db, "users", "last_login_at", "INTEGER")
@@ -889,6 +894,41 @@ def require_restaurant_capacity(db: sqlite3.Connection, user: dict[str, Any], ad
         )
 
 
+def image_upload_count(db: sqlite3.Connection, user_id: str) -> int:
+    row = db.execute(
+        """
+        SELECT
+          (SELECT COUNT(*) FROM recipes WHERE owner_user_id = ? AND image_path != '') +
+          (SELECT COUNT(*) FROM dishes
+             JOIN restaurants ON restaurants.id = dishes.restaurant_id
+            WHERE restaurants.owner_user_id = ? AND dishes.image_path != '') AS count
+        """,
+        (user_id, user_id),
+    ).fetchone()
+    return int(row["count"] if row else 0)
+
+
+def effective_image_upload_limit(user: dict[str, Any] | sqlite3.Row) -> int:
+    override = user["image_upload_limit"]
+    if override is not None:
+        return max(0, int(override))
+    return PAID_IMAGE_UPLOAD_LIMIT if user["plan"] == "paid" else FREE_IMAGE_UPLOAD_LIMIT
+
+
+def require_image_upload_capacity(db: sqlite3.Connection, user: dict[str, Any], replacing: bool = False) -> None:
+    if replacing:
+        return
+    lock_sql = "SELECT id FROM users WHERE id = ? FOR UPDATE" if uses_postgres() else "SELECT id FROM users WHERE id = ?"
+    db.execute(lock_sql, (user["id"],)).fetchone()
+    current_count = image_upload_count(db, user["id"])
+    limit = effective_image_upload_limit(user)
+    if current_count >= limit:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Image upload limit reached: {current_count}/{limit}. Delete an existing photo or contact support.",
+        )
+
+
 def user_by_email(db: sqlite3.Connection, email: str) -> Optional[sqlite3.Row]:
     return db.execute("SELECT * FROM users WHERE LOWER(email) = ?", (normalize_email(email),)).fetchone()
 
@@ -976,11 +1016,17 @@ def admin_user_json(db: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
         SELECT
           (SELECT COUNT(*) FROM restaurants WHERE owner_user_id = ?) AS restaurant_count,
           (SELECT COUNT(*) FROM lists WHERE owner_user_id = ?) AS list_count,
-          (SELECT COUNT(*) FROM lists WHERE owner_user_id = ? AND visibility = 'public') AS public_list_count
+          (SELECT COUNT(*) FROM lists WHERE owner_user_id = ? AND visibility = 'public') AS public_list_count,
+          (SELECT COUNT(*) FROM recipes WHERE owner_user_id = ? AND image_path != '') +
+          (SELECT COUNT(*) FROM dishes
+             JOIN restaurants ON restaurants.id = dishes.restaurant_id
+            WHERE restaurants.owner_user_id = ? AND dishes.image_path != '') AS image_upload_count
         """,
-        (user_id, user_id, user_id),
+        (user_id, user_id, user_id, user_id, user_id),
     ).fetchone()
     restaurant_total = int(counts["restaurant_count"] or 0)
+    image_total = int(counts["image_upload_count"] or 0)
+    image_limit = effective_image_upload_limit(row)
     return {
         "id": user_id,
         "email": row["email"],
@@ -993,6 +1039,10 @@ def admin_user_json(db: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
         "restaurant_count": restaurant_total,
         "restaurant_limit": None if row["plan"] == "paid" else FREE_RESTAURANT_LIMIT,
         "remaining_restaurant_slots": None if row["plan"] == "paid" else max(0, FREE_RESTAURANT_LIMIT - restaurant_total),
+        "image_upload_count": image_total,
+        "image_upload_limit": image_limit,
+        "image_upload_limit_override": row["image_upload_limit"],
+        "remaining_image_uploads": max(0, image_limit - image_total),
         "list_count": int(counts["list_count"] or 0),
         "public_list_count": int(counts["public_list_count"] or 0),
         "created_at": row["created_at"],
@@ -1558,9 +1608,14 @@ def me(request: Request) -> dict[str, Any]:
         return {"user": None}
     with connect() as db:
         count = restaurant_count(db, user["id"])
+        image_count = image_upload_count(db, user["id"])
+        image_limit = effective_image_upload_limit(user)
         payload["restaurant_count"] = count
         payload["restaurant_limit"] = None if user.get("plan") == "paid" else FREE_RESTAURANT_LIMIT
         payload["remaining_restaurant_slots"] = None if user.get("plan") == "paid" else max(0, FREE_RESTAURANT_LIMIT - count)
+        payload["image_upload_count"] = image_count
+        payload["image_upload_limit"] = image_limit
+        payload["remaining_image_uploads"] = max(0, image_limit - image_count)
     return {"user": payload}
 
 
@@ -1888,6 +1943,9 @@ def admin_update_user(user_id: str, payload: AdminUserPatch, admin: dict[str, An
         if "plan" in updates and updates["plan"] is not None:
             assignments.append("plan = ?")
             values.append(valid_plan(updates["plan"]))
+        if "image_upload_limit" in updates:
+            assignments.append("image_upload_limit = ?")
+            values.append(updates["image_upload_limit"])
         if "account_status" in updates and updates["account_status"] is not None:
             next_status = valid_account_status(updates["account_status"])
             assignments.append("account_status = ?")
@@ -2093,6 +2151,7 @@ async def upload_dish_image(
         raise HTTPException(status_code=413, detail="Image is too large")
     with connect() as db:
         dish = owned_dish(db, dish_id, user["id"])
+        require_image_upload_capacity(db, user, replacing=bool(dish["image_path"]))
         if dish["image_path"]:
             delete_upload_object(dish["image_path"])
         filename = save_upload_object("dishes", dish_id, suffix, data, image.content_type)
@@ -2202,6 +2261,7 @@ async def upload_recipe_image(
         raise HTTPException(status_code=413, detail="Image is too large")
     with connect() as db:
         recipe = owned_recipe(db, recipe_id, user["id"])
+        require_image_upload_capacity(db, user, replacing=bool(recipe["image_path"]))
         if recipe["image_path"]:
             delete_upload_object(recipe["image_path"])
         filename = save_upload_object("recipes", recipe_id, suffix, data, image.content_type)

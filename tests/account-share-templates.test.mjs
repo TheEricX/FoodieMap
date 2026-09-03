@@ -30,8 +30,10 @@ test("history and admin templates expose stable action hooks", () => {
   const history = templates.sharePackHistory({ token: 't"1', title: "Pack", description: "", item_count: 2, created_at: 1, card_url: "/card.png", share_url: "/share" });
   assert.match(history, /data-revoke-share-pack="t&quot;1"/);
   assert.match(history, /data-copy-share-pack/);
-  const admin = templates.adminUserRow({ id: 'u"1', email: "user@example.com", name: "User", plan: "free", account_status: "active", restaurant_count: 1, list_count: 2, public_list_count: 0, restaurant_limit: 50, auth_methods: ["password"], created_at: 1, updated_at: 1 });
+  const admin = templates.adminUserRow({ id: 'u"1', email: "user@example.com", name: "User", plan: "free", account_status: "active", restaurant_count: 1, list_count: 2, public_list_count: 0, restaurant_limit: 50, image_upload_count: 4, image_upload_limit: 50, image_upload_limit_override: null, auth_methods: ["password"], created_at: 1, updated_at: 1 });
   assert.match(admin, /data-admin-action="plan"/);
+  assert.match(admin, /data-admin-action="image-limit"/);
+  assert.match(admin, /data-admin-image-limit/);
   assert.match(admin, /data-admin-action="suspend"/);
   assert.match(admin, /data-admin-action="delete"/);
   assert.match(admin, /data-user-id="u&quot;1"/);

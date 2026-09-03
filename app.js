@@ -1770,18 +1770,61 @@ async function uploadDishImage(input) {
   replaceDish(data.dish);
 }
 
+const IMAGE_UPLOAD_TARGET_BYTES = 1_000_000;
+const IMAGE_UPLOAD_MAX_SIDE = 1400;
+
+function canvasImageBlob(canvas, type, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Image compression failed"));
+    }, type, quality);
+  });
+}
+
 async function compressImage(file) {
-  if (file.size <= 800_000 && file.type === "image/webp") return file;
+  if (file.size <= IMAGE_UPLOAD_TARGET_BYTES && ["image/jpeg", "image/png", "image/webp"].includes(file.type)) return file;
   const image = await createImageBitmap(file);
-  const maxSide = 1400;
-  const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
   const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(image.width * scale));
-  canvas.height = Math.max(1, Math.round(image.height * scale));
   const context = canvas.getContext("2d");
-  context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
-  return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, { type: "image/webp" });
+  if (!context) {
+    image.close?.();
+    throw new Error("Image compression failed");
+  }
+
+  let scale = Math.min(1, IMAGE_UPLOAD_MAX_SIDE / Math.max(image.width, image.height));
+  let quality = 0.82;
+  let outputType = "image/webp";
+  let blob = null;
+  let renderedScale = 0;
+  try {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      if (renderedScale !== scale) {
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        renderedScale = scale;
+      }
+      blob = await canvasImageBlob(canvas, outputType, quality);
+      if (outputType === "image/webp" && blob.type !== "image/webp") {
+        outputType = "image/jpeg";
+        blob = await canvasImageBlob(canvas, outputType, quality);
+      }
+      if (blob.size <= IMAGE_UPLOAD_TARGET_BYTES) break;
+      if (quality > 0.5) {
+        quality = Math.max(0.46, quality - 0.12);
+        continue;
+      }
+      const byteScale = Math.sqrt(IMAGE_UPLOAD_TARGET_BYTES / blob.size) * 0.92;
+      scale *= Math.min(0.82, Math.max(0.5, byteScale));
+      quality = 0.72;
+    }
+  } finally {
+    image.close?.();
+  }
+  if (!blob || blob.size > IMAGE_UPLOAD_TARGET_BYTES) throw new Error("Image is too large to compress");
+  const suffix = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" }[blob.type] || ".jpg";
+  return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}${suffix}`, { type: blob.type || "image/jpeg" });
 }
 
 function replaceDish(updatedDish, { rerender = true } = {}) {
@@ -3926,6 +3969,21 @@ async function handleAdminUserAction(button) {
     const nextPlan = button.dataset.nextPlan === "paid" ? "paid" : "free";
     if (!(await confirmAction(t("admin.confirmPlan", { email: user.email, plan: adminPlanLabel(nextPlan) })))) return;
     await updateAdminUser(user.id, { plan: nextPlan });
+    return;
+  }
+  if (action === "image-limit") {
+    const input = button.closest(".admin-user-actions")?.querySelector("[data-admin-image-limit]");
+    const rawLimit = input?.value.trim() || "";
+    const imageLimit = rawLimit === "" ? null : Number(rawLimit);
+    if (imageLimit !== null && (!Number.isInteger(imageLimit) || imageLimit < 0 || imageLimit > 10_000)) {
+      showToast(t("admin.imageLimitInvalid"), { tone: "error" });
+      return;
+    }
+    await updateAdminUser(user.id, { image_upload_limit: imageLimit });
+    return;
+  }
+  if (action === "image-limit-reset") {
+    await updateAdminUser(user.id, { image_upload_limit: null });
     return;
   }
   if (action === "suspend") {
