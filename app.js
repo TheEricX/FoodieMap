@@ -131,6 +131,7 @@ let isSpotCardOpen = false;
 let spotCardDragStart = null;
 let suppressNextSpotCardOutsideClick = false;
 let editingRestaurantId = null;
+let restaurantHistoryClosePending = false;
 let shortLinkResolveTimer = null;
 let shareToken = getShareToken();
 let shareData = null;
@@ -569,7 +570,7 @@ async function loadBrowserCore() {
       surface: elements.addDialog,
       dragTarget: elements.restaurantForm,
       handles: [elements.restaurantModalHead, elements.restaurantDragHandle],
-      isEnabled: isMobileMapViewport,
+      isEnabled: () => false,
       onDismiss: () => closeRestaurantDialog(),
     });
     await boot();
@@ -627,6 +628,7 @@ async function boot() {
     await loadSharePacks();
   }
   setActiveView(activeView, { push: false });
+  restoreMobileRestaurantEditorFromRoute();
   restoreMobileRecipeDetailFromRoute();
   restoreMobileRecipeEditorFromRoute();
   await restoreMobileShareFromRoute();
@@ -706,6 +708,11 @@ function bindEvents() {
   elements.spotCard.addEventListener("pointercancel", cancelMobileSpotCardDrag);
   elements.closeAddPanel.addEventListener("click", () => closeRestaurantDialog());
   elements.cancelSpotButton?.addEventListener("click", () => closeRestaurantDialog());
+  elements.addDialog?.addEventListener("cancel", (event) => {
+    if (!isMobileMapViewport()) return;
+    event.preventDefault();
+    closeRestaurantDialog();
+  });
   elements.toggleRestaurantDetails?.addEventListener("click", () => {
     setRestaurantAdvancedVisible(elements.restaurantAdvancedFields?.hidden);
   });
@@ -775,6 +782,7 @@ function bindEvents() {
   });
   window.addEventListener("hashchange", () => setActiveView(getInitialView(), { push: false }));
   window.addEventListener("popstate", syncMobileSpotDetailFromHistory);
+  window.addEventListener("popstate", syncMobileRestaurantEditorFromHistory);
   window.addEventListener("popstate", syncMobileRecipeDetailFromHistory);
   window.addEventListener("popstate", syncMobileRecipeEditorFromHistory);
   window.addEventListener("popstate", syncMobileShareFromHistory);
@@ -1509,7 +1517,66 @@ async function addSharedRestaurant() {
   return data;
 }
 
-function openCreateDialog() {
+function mobileRestaurantEditorRouteValue() {
+  return new URL(window.location.href).searchParams.get("spot-editor") || "";
+}
+
+function currentRestaurantEditorRouteValue() {
+  return editingRestaurantId || "new";
+}
+
+function openMobileRestaurantEditorRoute(value) {
+  if (!isMobileMapViewport() || mobileRestaurantEditorRouteValue() === value) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set("spot-editor", value);
+  window.history.pushState({
+    ...(window.history.state || {}),
+    foodieMapRestaurantEditor: value,
+  }, "", `${url.pathname}${url.search}${url.hash || "#my-map"}`);
+}
+
+function clearMobileRestaurantEditorRoute() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("spot-editor")) return;
+  url.searchParams.delete("spot-editor");
+  const nextState = { ...(window.history.state || {}) };
+  delete nextState.foodieMapRestaurantEditor;
+  window.history.replaceState(nextState, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function restoreMobileRestaurantEditorFromRoute() {
+  if (!isMobileMapViewport() || elements.addDialog?.open) return;
+  const routeValue = mobileRestaurantEditorRouteValue();
+  if (!routeValue) return;
+  if (routeValue === "new") {
+    openCreateDialog({ skipHistory: true });
+    return;
+  }
+  const restaurant = findRestaurantById(routeValue);
+  if (!restaurant) {
+    clearMobileRestaurantEditorRoute();
+    return;
+  }
+  selectedRestaurantId = restaurant.id;
+  openEditDialog({ skipHistory: true });
+}
+
+async function syncMobileRestaurantEditorFromHistory() {
+  if (!isMobileMapViewport()) return;
+  const routeValue = mobileRestaurantEditorRouteValue();
+  if (routeValue) {
+    restoreMobileRestaurantEditorFromRoute();
+    return;
+  }
+  if (!elements.addDialog?.open) return;
+  const editorRouteValue = currentRestaurantEditorRouteValue();
+  const force = restaurantHistoryClosePending;
+  restaurantHistoryClosePending = false;
+  const closed = await closeRestaurantDialog({ force, fromHistory: true });
+  if (!closed) openMobileRestaurantEditorRoute(editorRouteValue);
+}
+
+function openCreateDialog({ skipHistory = false } = {}) {
   if (sharePackToken) {
     addSharedPackToMyLists();
     return;
@@ -1520,6 +1587,8 @@ function openCreateDialog() {
   }
   if (!requireLogin()) return;
   if (!canAddOneRestaurant()) return;
+  if (!skipHistory) openMobileRestaurantEditorRoute("new");
+  restaurantHistoryClosePending = false;
   resetRestaurantForm();
   elements.dishEditor.hidden = true;
   elements.addDialog.showModal();
@@ -1564,11 +1633,13 @@ async function openInboundMapImport() {
   elements.googleUrlInput.focus();
 }
 
-function openEditDialog() {
+function openEditDialog({ skipHistory = false } = {}) {
   if (!requireLogin()) return;
   const selected = selectedRestaurant();
   if (!selected) return;
 
+  if (!skipHistory) openMobileRestaurantEditorRoute(selected.id);
+  restaurantHistoryClosePending = false;
   editingRestaurantId = selected.id;
   elements.formModeLabel.textContent = t("spot.editMode");
   elements.formTitle.textContent = t("spot.editTitle");
@@ -1595,7 +1666,7 @@ function fillRestaurantForm(restaurant) {
   form.notes.value = restaurant.notes || "";
 }
 
-async function closeRestaurantDialog({ force = false } = {}) {
+async function closeRestaurantDialog({ force = false, fromHistory = false } = {}) {
   if (!force && hasUnsavedRestaurantForm()) {
     const discard = await confirmAction(t("confirm.discardMessage"), {
       title: t("confirm.discardTitle"),
@@ -1604,9 +1675,19 @@ async function closeRestaurantDialog({ force = false } = {}) {
     });
     if (!discard) return false;
   }
+  const routeValue = mobileRestaurantEditorRouteValue();
+  if (isMobileMapViewport() && !fromHistory && routeValue) {
+    if (window.history.state?.foodieMapRestaurantEditor === routeValue) {
+      restaurantHistoryClosePending = true;
+      window.history.back();
+      return true;
+    }
+    clearMobileRestaurantEditorRoute();
+  }
   restaurantSwipeDismiss?.reset();
   elements.addDialog.close();
   resetRestaurantForm();
+  restaurantHistoryClosePending = false;
   return true;
 }
 

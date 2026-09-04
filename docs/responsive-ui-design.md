@@ -50,8 +50,8 @@ JavaScript must use `classifyLayoutMode()` rather than user-agent detection. CSS
 ## Shared Interaction Rules
 
 - Browser-native confirmation dialogs are not used. `ui-dialogs.mjs` owns confirmation, focus, Escape, backdrop cancellation, labels, and destructive tone.
-- Restaurant, List, and Recipe forms capture a baseline when opened. Close, Cancel, mobile browser Back, and remaining swipe dismissal must confirm before losing changed values.
-- Recipe editing uses a full-page browser history entry on mobile so native Back and iPhone edge-back dismiss it; desktop retains the shared modal. The Restaurant mobile task continues to use `ui-swipe-dismiss.mjs`.
+- Restaurant, List, and Recipe forms capture a baseline when opened. Close, Cancel, and mobile browser Back must confirm before losing changed values.
+- Restaurant and Recipe editing use full-page browser history entries on mobile so native Back and iPhone edge-back dismiss them; desktop retains the shared modal flow.
 - Mobile form surfaces are full-screen tasks; desktop form surfaces are modals. Their fields and validation remain shared.
 - Empty guidance is rendered as text. A button is included only when an actual command is available.
 - UI rendering code reads the layout mode from `ui-shell.mjs`; it must not query viewport width, user agent, or device brand directly.

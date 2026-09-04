@@ -7247,13 +7247,8 @@ dialog.modal:not([open]) {
     cursor: grabbing;
   }
 
-  #restaurantForm .modal-head {
-    cursor: grab;
-    touch-action: none;
-  }
-
-  #restaurantForm .modal-head:active {
-    cursor: grabbing;
+  #restaurantForm .modal-drag-handle {
+    display: none;
   }
 
   .auth-card {

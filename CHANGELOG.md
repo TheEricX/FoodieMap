@@ -14,6 +14,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 ### Fixed
 
 - Made restaurant sharing a full-page mobile history entry so iPhone's native left-edge Back gesture closes it, while desktop keeps the modal dialog.
+- Made mobile restaurant add/edit forms use native browser history so Back or iPhone left-edge Back closes the form without changing the desktop modal flow.
 - Split mobile Recipe browsing into separate list and detail history pages so Back or iPhone left-edge Back returns to the list, while desktop keeps the parallel list/detail workspace.
 - Prevented iPhone Safari from zooming the page when focusing small inherited form controls, while preserving pinch zoom in mobile modals.
 - Fixed Recipe photo uploads failing on an undefined image-compression function, added adaptive quality/size compression below the server limit with Safari JPEG fallback, and covered uploads in Chromium and WebKit.

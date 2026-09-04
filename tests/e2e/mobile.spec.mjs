@@ -127,6 +127,8 @@ test("@mobile empty map prioritizes direct restaurant capture", async ({ signedI
   await expect(page.locator(".map-nearest-panel")).toBeHidden();
   await page.locator("#emptyMapAddButton").tap();
   await expect(page.locator("#addDialog")).toBeVisible();
+  await expect(page).toHaveURL(/[?&]spot-editor=new(?:&|#|$)/);
+  await expect(page.locator("#restaurantForm .modal-drag-handle")).toBeHidden();
   await page.locator("#toggleRestaurantDetails").tap();
   const addFormLayout = await page.locator("#restaurantForm").evaluate((form) => {
     const content = form.querySelector(".restaurant-form-content");
@@ -144,9 +146,17 @@ test("@mobile empty map prioritizes direct restaurant capture", async ({ signedI
   expect(addFormLayout.contentCanScroll).toBeTruthy();
   expect(addFormLayout.lastFieldBottom).toBeLessThanOrEqual(addFormLayout.actionsTop - 12);
   expect(addFormLayout.actionsBottom).toBeLessThanOrEqual(addFormLayout.viewportHeight + 1);
+  await page.goBack();
+  await expect(page.locator("#addDialog")).toBeHidden();
+  await expect(page).not.toHaveURL(/(?:\?|&)spot-editor=/);
+  await page.locator("#emptyMapAddButton").tap();
+  await expect(page.locator("#addDialog")).toBeVisible();
   await page.locator("#closeAddPanel").tap();
+  await expect(page.locator("#addDialog")).toBeHidden();
+  await expect(page).not.toHaveURL(/(?:\?|&)spot-editor=/);
   await page.locator("#emptyMapPasteButton").tap();
   await expect(page.locator("#addDialog")).toBeVisible();
+  await expect(page).toHaveURL(/[?&]spot-editor=new(?:&|#|$)/);
 });
 
 test("@mobile empty favorites explains the state and recovers to all places", async ({ signedInPage: page }) => {

@@ -53,6 +53,7 @@ Confirm these static URLs return their expected content type rather than `index.
 - Desktop and mobile navigation complete `Map → Lists → Recipes → Discovery → Map` with exactly one active item.
 - Browser Back/Forward and direct hashes open the corresponding view.
 - On mobile, restaurant sharing opens as a full-page history entry; browser Back and iPhone left-edge Back close it without changing the desktop modal flow.
+- On mobile, restaurant add/edit forms open as full-page history entries; browser Back and iPhone left-edge Back close them, while desktop keeps modal add/edit forms.
 - On mobile, Recipes first shows only the recipe list; opening a recipe creates a detail history entry, and browser Back or iPhone left-edge Back returns to the list. Desktop continues to show list and detail side by side.
 - A missing or invalid static asset produces an explicit startup error rather than a visually active but unbound interface.
 - Refresh preserves the authenticated session, language, selected location mode, and server data.
@@ -113,7 +114,7 @@ Confirm these static URLs return their expected content type rather than `index.
 
 - At 390×844, controls and text do not overlap or create horizontal page scrolling.
 - Bottom navigation remains aligned and single-tap responsive on every primary view.
-- Add/Edit surfaces fit the viewport; close, Cancel, Save, and unsaved-change confirmation work. Recipe editing uses native browser Back on mobile and a modal on desktop; Restaurant swipe-close remains covered separately.
+- Add/Edit surfaces fit the viewport; close, Cancel, Save, and unsaved-change confirmation work. Restaurant and Recipe editing use native browser Back on mobile and modals on desktop.
 - Selected spot sheet opens/closes with one tap, outside tap, and downward swipe without activating content behind it.
 - Keyboard Tab, Enter, Space, Escape, focus return, and visible focus work for dialogs and primary actions.
 - English and Chinese labels fit controls and update location/recovery text immediately.
