@@ -171,7 +171,6 @@ let mapInteractionController = null;
 let isDetailAddDishOpen = false;
 let activeDetailRestaurantId = null;
 let detailCloseTimer = null;
-let detailClosePointerAt = null;
 let restaurantSwipeDismiss = null;
 let dialogUtilities = null;
 let listFormBaseline = "";
@@ -742,9 +741,7 @@ function bindEvents() {
   elements.openSpotDetail.addEventListener("click", openSpotDetail);
   elements.spotAddToList?.addEventListener("click", () => openListPicker(selectedRestaurant()));
   elements.detailAddToList?.addEventListener("click", () => openListPicker(findRestaurantById(activeDetailRestaurantId)));
-  elements.closeSpotDetail.addEventListener("pointerup", closeSpotDetailFromPointer);
   elements.closeSpotDetail.addEventListener("click", closeSpotDetailFromClick);
-  elements.closeSpotDetail.addEventListener("keydown", closeSpotDetailFromKeyboard);
   elements.spotDetailDialog.addEventListener("click", closeSpotDetailFromBackdrop);
   elements.spotDetailForm.addEventListener("submit", saveDetailRestaurant);
   elements.spotDetailForm.querySelectorAll("[data-detail-review-field]").forEach((field) => {
@@ -2331,9 +2328,10 @@ function openSpotDetail({ skipHistory = false } = {}) {
   if (!skipHistory) openMobileSpotDetailRoute(selected.id);
   renderSpotDetail(selected);
   clearTimeout(detailCloseTimer);
-  detailClosePointerAt = null;
   elements.spotDetailDialog.classList.remove("is-open", "is-closing");
   if (!elements.spotDetailDialog.open) elements.spotDetailDialog.showModal();
+  elements.spotDetailDialog.scrollTop = 0;
+  elements.spotDetailForm.scrollTop = 0;
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       elements.spotDetailDialog.classList.add("is-open");
@@ -2364,28 +2362,9 @@ function closeSpotDetail({ immediate = false, fromHistory = false } = {}) {
   }, 240);
 }
 
-function closeSpotDetailFromPointer(event) {
-  if (event.button !== 0) return;
-  event.preventDefault();
-  event.stopPropagation();
-  detailClosePointerAt = performance.now();
-  closeSpotDetail();
-}
-
 function closeSpotDetailFromClick(event) {
-  if (detailClosePointerAt !== null && performance.now() - detailClosePointerAt < 600) {
-    event.preventDefault();
-    event.stopPropagation();
-    return;
-  }
-  closeSpotDetail();
-}
-
-function closeSpotDetailFromKeyboard(event) {
-  if (event.key !== "Enter" && event.key !== " ") return;
   event.preventDefault();
   event.stopPropagation();
-  detailClosePointerAt = null;
   closeSpotDetail();
 }
 

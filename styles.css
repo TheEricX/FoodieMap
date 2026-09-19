@@ -3816,6 +3816,7 @@ body[data-view="login"] .top-actions {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  overscroll-behavior: contain;
   border: 0;
   background: transparent;
   transform: translateX(100%);
@@ -3851,6 +3852,8 @@ body[data-view="login"] .top-actions {
   width: 100%;
   height: 100%;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   border-left: 1px solid rgba(139, 106, 87, 0.48);
   background-color: var(--paper);
   padding: clamp(16px, 1.8vw, 24px);
@@ -6731,6 +6734,9 @@ dialog.modal:not([open]) {
 
   .detail-drawer {
     width: 100vw;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .app-toast {
@@ -6742,6 +6748,9 @@ dialog.modal:not([open]) {
 
   .detail-drawer-card {
     gap: 12px;
+    min-height: 100dvh;
+    height: auto;
+    overflow: visible;
     padding: 14px;
   }
 

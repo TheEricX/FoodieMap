@@ -239,11 +239,32 @@ test("@mobile @cross-browser restaurant detail avoids focus zoom and uses browse
   }});
   expect(create.ok()).toBeTruthy();
   const restaurant = (await create.json()).restaurant;
+  for (const name of ["Soup", "Noodles", "Dumplings", "Clay pot rice"]) {
+    const dish = await page.request.post(`/api/restaurants/${restaurant.id}/dishes`, { data: {
+      name: `Scrollable ${name}`,
+      dish_status: "liked",
+      rating: 4.5,
+      notes: "Long enough to keep the mobile detail page scrollable."
+    }});
+    expect(dish.ok()).toBeTruthy();
+  }
   await page.reload();
   await page.waitForLoadState("networkidle");
   await page.locator("#markersLayer .restaurant-marker").first().click();
   await expect(page.locator("#spotDetailDialog")).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`spot=${restaurant.id}`));
+  const detailScroll = await page.locator("#spotDetailDialog").evaluate((dialog) => {
+    dialog.scrollTop = dialog.scrollHeight;
+    return {
+      scrollTop: dialog.scrollTop,
+      scrollHeight: dialog.scrollHeight,
+      clientHeight: dialog.clientHeight,
+      overflowY: getComputedStyle(dialog).overflowY
+    };
+  });
+  expect(detailScroll.scrollHeight).toBeGreaterThan(detailScroll.clientHeight);
+  expect(detailScroll.scrollTop).toBeGreaterThan(0);
+  expect(detailScroll.overflowY).toMatch(/auto|scroll/);
   const keyboardControlFontSizes = await page.locator(
     '#spotDetailDialog input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), #spotDetailDialog select, #spotDetailDialog textarea'
   ).evaluateAll((controls) => controls.map((control) => ({
@@ -256,6 +277,13 @@ test("@mobile @cross-browser restaurant detail avoids focus zoom and uses browse
   }
   await page.goBack();
   await expect(page.locator("#spotDetailDialog")).toBeHidden();
+  await expect(page).not.toHaveURL(/(?:\?|&)spot=/);
+
+  await page.locator("#markersLayer .restaurant-marker").first().click();
+  await expect(page.locator("#spotDetailDialog")).toBeVisible();
+  await page.locator("#closeSpotDetail").tap();
+  await expect(page.locator("#spotDetailDialog")).toBeHidden();
+  await expect(page.locator("#confirmDialog")).toBeHidden();
   await expect(page).not.toHaveURL(/(?:\?|&)spot=/);
 });
 
