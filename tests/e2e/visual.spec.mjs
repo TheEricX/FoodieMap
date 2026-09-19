@@ -1,5 +1,15 @@
 import { test, expect } from "./fixtures.mjs";
 
+const STABLE_PLACEHOLDER = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 180'%3E%3Crect width='240' height='180' rx='28' fill='%23eef0df'/%3E%3Ccircle cx='120' cy='90' r='52' fill='%23fffdf8'/%3E%3Cpath d='M78 104h84M88 84h64' stroke='%23687653' stroke-width='12' stroke-linecap='round'/%3E%3C/svg%3E";
+
+async function stabilizeGeneratedFoodImages(page) {
+  await page.locator('img[src^="data:image/svg+xml"]').evaluateAll((images, source) => {
+    images.forEach((image) => {
+      image.src = source;
+    });
+  }, STABLE_PLACEHOLDER);
+}
+
 test("@responsive @visual signed-out entry remains visually stable", async ({ page }) => {
   await page.goto("/");
   await page.waitForLoadState("networkidle");
@@ -27,7 +37,29 @@ test("@responsive @visual signed-in map keeps a compact mobile control hierarchy
   expect(created.ok()).toBeTruthy();
   await page.reload();
   await page.waitForLoadState("networkidle");
+  await stabilizeGeneratedFoodImages(page);
   await expect(page.locator("#mapView")).toHaveScreenshot("signed-in-map-controls.png", { animations: "disabled" });
+});
+
+test("@responsive @visual deep-sea theme keeps the map readable", async ({ signedInPage: page }) => {
+  const created = await page.request.post("/api/restaurants", { data: {
+    name: "Night Dive Noodles",
+    address: "Toronto",
+    lat: 43.6532,
+    lng: -79.3832,
+    google_url: "https://maps.apple.com/?ll=43.6532,-79.3832&q=Night%20Dive%20Noodles",
+    status: "favorite",
+    visit_count: 2,
+    personal_rating: 4.8,
+    notes: "A late-night bowl after the last dive."
+  }});
+  expect(created.ok()).toBeTruthy();
+  await page.evaluate(() => localStorage.setItem("foodiemap:theme", "deep-dive"));
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await stabilizeGeneratedFoodImages(page);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "deep-dive");
+  await expect(page.locator("#mapView")).toHaveScreenshot("deep-sea-map-theme.png", { animations: "disabled" });
 });
 
 test("@responsive @visual saved places keep filter controls clear of results", async ({ signedInPage: page }) => {
@@ -46,5 +78,40 @@ test("@responsive @visual saved places keep filter controls clear of results", a
   await page.reload();
   await page.waitForLoadState("networkidle");
   await page.locator('[data-place-view="my-lists"]:visible').click();
+  await stabilizeGeneratedFoodImages(page);
+  const restaurantRow = page.locator(`[data-restaurant-id="${(await created.json()).restaurant.id}"]`);
+  await restaurantRow.hover();
+  await expect.poll(() => restaurantRow.evaluate((row) => getComputedStyle(row, "::after").content)).toBe("none");
   await expect(page.locator("#listsView")).toHaveScreenshot("saved-places-list-controls.png", { animations: "disabled" });
+});
+
+test("@responsive @visual restaurant journal keeps a clear editing hierarchy", async ({ signedInPage: page }) => {
+  const created = await page.request.post("/api/restaurants", { data: {
+    name: "Loon Fong Hotpot",
+    address: "Toronto",
+    lat: 43.6532,
+    lng: -79.3832,
+    google_url: "https://maps.apple.com/?ll=43.6532,-79.3832&q=Loon%20Fong%20Hotpot",
+    status: "want_to_go",
+    visit_count: 0,
+    personal_rating: 0,
+    notes: "A relaxed dinner spot for sharing a few dishes."
+  }});
+  expect(created.ok()).toBeTruthy();
+  const restaurant = (await created.json()).restaurant;
+  const dish = await page.request.post(`/api/restaurants/${restaurant.id}/dishes`, { data: {
+    name: "Tomato broth",
+    dish_status: "liked",
+    rating: 4.5,
+    notes: "Bright, savoury, and good with vegetables."
+  }});
+  expect(dish.ok()).toBeTruthy();
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await page.locator("#markersLayer .restaurant-marker").first().click();
+  if (await page.locator("#openSpotDetail").isVisible()) {
+    await page.locator("#openSpotDetail").click();
+  }
+  await expect(page.locator("#spotDetailDialog")).toBeVisible();
+  await expect(page.locator("#spotDetailDialog")).toHaveScreenshot("restaurant-journal.png", { animations: "disabled" });
 });

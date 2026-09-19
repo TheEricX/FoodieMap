@@ -3,6 +3,7 @@ const LIST_FILTER_ORDER_KEY = "foodiemap:list-filter-order";
 const GOOGLE_GEOCODING_KEY = "foodiemap:google-geocoding-key";
 const MAP_APP_PREFERENCE_KEY = "foodiemap:map-app-preference";
 const LOCATION_PREFERENCE_KEY = "foodiemap.locationMode.v1";
+const THEME_KEY = "foodiemap:theme";
 const LOCATION_CORE_URL = "/location-core.mjs?v=20260710-location";
 const UI_CORE_URL = "/ui-core.mjs?v=20260712-shell";
 const UI_SHELL_URL = "/ui-shell.mjs?v=20260712-shell";
@@ -35,7 +36,28 @@ const MAP_ZOOM_MAX = 2.8;
 const MAP_ZOOM_STEP = 0.18;
 const MAP_PAN_LIMIT_RATIO = 0.42;
 let currentLanguage = getInitialLanguage();
+let currentTheme = normalizeTheme(document.documentElement.dataset.theme);
+let settingsThemeBaseline = currentTheme;
 let i18nCore = null;
+
+function normalizeTheme(theme) {
+  return theme === "deep-dive" ? "deep-dive" : "paper";
+}
+
+function applyTheme(theme, { persist = false } = {}) {
+  currentTheme = normalizeTheme(theme);
+  document.documentElement.dataset.theme = currentTheme;
+  document.querySelector("#themeColorMeta")?.setAttribute(
+    "content",
+    currentTheme === "deep-dive" ? "#071923" : "#f7f6f1"
+  );
+  if (!persist) return;
+  try {
+    localStorage.setItem(THEME_KEY, currentTheme);
+  } catch {
+    // The selected theme still applies for this session.
+  }
+}
 
 function getInitialLanguage() {
   try {
@@ -269,6 +291,7 @@ const elements = {
   cancelSettings: document.querySelector("#cancelSettings"),
   googleApiKey: document.querySelector("#googleApiKey"),
   mapAppPreference: document.querySelector("#mapAppPreference"),
+  themeInputs: document.querySelectorAll('input[name="appTheme"]'),
   integrationList: document.querySelector("#integrationList"),
   cuteMap: document.querySelector("#cuteMap"),
   mapZoomOut: document.querySelector("#mapZoomOut"),
@@ -775,6 +798,7 @@ function bindEvents() {
   elements.navLinks.forEach((link) => {
     link.addEventListener("click", (event) => {
       event.preventDefault();
+      if (link.dataset.view === activeView) return;
       setActiveView(link.dataset.view);
     });
   });
@@ -881,8 +905,15 @@ function bindEvents() {
   elements.importButton.addEventListener("click", () => alert(t("import.cloudOnly")));
   elements.resetButton.addEventListener("click", resetDemoData);
   elements.settingsButton.addEventListener("click", openSettingsDialog);
-  elements.closeSettings.addEventListener("click", () => elements.settingsDialog.close());
-  elements.cancelSettings?.addEventListener("click", () => elements.settingsDialog.close());
+  elements.closeSettings.addEventListener("click", () => closeSettingsDialog({ restoreTheme: true }));
+  elements.cancelSettings?.addEventListener("click", () => closeSettingsDialog({ restoreTheme: true }));
+  elements.settingsDialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeSettingsDialog({ restoreTheme: true });
+  });
+  elements.themeInputs.forEach((input) => {
+    input.addEventListener("change", () => applyTheme(input.value));
+  });
   elements.settingsForm.addEventListener("submit", saveSettings);
   elements.adminRefreshButton?.addEventListener("click", () => loadAdminUsers({ force: true }));
   elements.adminLoginForm?.addEventListener("submit", handleAdminLogin);
@@ -905,10 +936,19 @@ function bindEvents() {
 }
 
 async function openSettingsDialog() {
+  settingsThemeBaseline = currentTheme;
+  elements.themeInputs.forEach((input) => {
+    input.checked = input.value === currentTheme;
+  });
   elements.googleApiKey.value = getGoogleGeocodingKey();
   if (elements.mapAppPreference) elements.mapAppPreference.value = getMapAppPreference();
   elements.settingsDialog.showModal();
   await loadIntegrations();
+}
+
+function closeSettingsDialog({ restoreTheme = false } = {}) {
+  if (restoreTheme) applyTheme(settingsThemeBaseline);
+  elements.settingsDialog.close();
 }
 
 async function loadIntegrations() {
@@ -939,6 +979,9 @@ async function loadIntegrations() {
 
 function saveSettings(event) {
   event.preventDefault();
+  const selectedTheme = [...elements.themeInputs].find((input) => input.checked)?.value || "paper";
+  applyTheme(selectedTheme, { persist: true });
+  settingsThemeBaseline = currentTheme;
   try {
     localStorage.setItem(GOOGLE_GEOCODING_KEY, elements.googleApiKey.value.trim());
     setMapAppPreference(elements.mapAppPreference?.value || "");
@@ -946,7 +989,7 @@ function saveSettings(event) {
     // The app still works without persisted settings.
   }
   elements.formHelp.textContent = t("settings.saved");
-  elements.settingsDialog.close();
+  closeSettingsDialog();
 }
 
 function closeMobileMenuDetails(element) {
@@ -2350,7 +2393,7 @@ function closeSpotDetail({ immediate = false, fromHistory = false } = {}) {
   }
   clearTimeout(detailCloseTimer);
   elements.spotDetailDialog.classList.remove("is-open");
-  if (immediate) {
+  if (immediate || usesTouchDetailDrawer()) {
     elements.spotDetailDialog.classList.remove("is-closing");
     elements.spotDetailDialog.close();
     return;
@@ -2365,7 +2408,7 @@ function closeSpotDetail({ immediate = false, fromHistory = false } = {}) {
 function closeSpotDetailFromClick(event) {
   event.preventDefault();
   event.stopPropagation();
-  closeSpotDetail();
+  closeSpotDetail({ immediate: true });
 }
 
 function closeSpotDetailFromBackdrop(event) {
@@ -3335,6 +3378,10 @@ function selectFirstVisibleRestaurant() {
 
 function isMobileMapViewport() {
   return uiShellController?.getModel().layout === "mobile" || document.body.dataset.layout === "mobile";
+}
+
+function usesTouchDetailDrawer() {
+  return window.matchMedia?.("(pointer: coarse)").matches === true;
 }
 
 function getVisibleRestaurants() {

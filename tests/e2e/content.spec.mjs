@@ -202,8 +202,8 @@ test("@responsive restaurant share creates a QR card and anonymous preview", asy
   const anonymousPage = await browser.newPage();
   await anonymousPage.goto(shareUrl);
   await anonymousPage.waitForLoadState("networkidle");
-  await expect(anonymousPage.getByText("E2E QR Share Spot", { exact: true }).first()).toBeVisible();
-  await expect(anonymousPage.getByText("Sesame Noodles").first()).toBeVisible();
+  await expect(anonymousPage.locator("#spotCard").getByText("E2E QR Share Spot", { exact: true })).toBeVisible();
+  await expect(anonymousPage.locator("#spotCard").getByText("Sesame Noodles")).toBeVisible();
   await anonymousPage.close();
 });
 

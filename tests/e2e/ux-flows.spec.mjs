@@ -19,7 +19,9 @@ async function openListPickerForRestaurant(page, title) {
 
 async function openOwnedList(page, listId) {
   const mobile = await closeMobileSpotDetailIfOpen(page);
-  await page.locator('[data-view="my-lists"]:visible').first().click();
+  if (await page.locator("body").getAttribute("data-view") !== "my-lists") {
+    await page.locator('[data-view="my-lists"]:visible').first().click();
+  }
   await closeMobileSpotDetailIfOpen(page);
   if (mobile) {
     await page.locator("#mobileMyListDrawer > summary").click();

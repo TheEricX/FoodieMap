@@ -1,26 +1,26 @@
 :root {
-  --primary: #96694c;
-  --primary-dark: #68442d;
-  --primary-soft: #b58a6b;
-  --secondary: #7a8450;
-  --secondary-dark: #556030;
-  --secondary-soft: #dce6af;
-  --tertiary: #d4a373;
-  --tertiary-soft: #f4c49d;
-  --neutral: #fdf8f2;
-  --paper: #fffaf4;
-  --paper-warm: #f4eee7;
-  --ink: #2d2926;
-  --muted: #8e8076;
-  --line: #d9c5b7;
-  --line-strong: #8b6a57;
+  --primary: #945b45;
+  --primary-dark: #56382c;
+  --primary-soft: #bc8068;
+  --secondary: #687653;
+  --secondary-dark: #455334;
+  --secondary-soft: #dce5c5;
+  --tertiary: #c97758;
+  --tertiary-soft: #f1c3ad;
+  --neutral: #f7f6f1;
+  --paper: #fffdf8;
+  --paper-warm: #efede6;
+  --ink: #292826;
+  --muted: #756f68;
+  --line: #d8d1c6;
+  --line-strong: #887567;
   --danger: #c82424;
-  --radius-sm: 10px;
-  --radius-md: 18px;
-  --radius-lg: 28px;
-  --radius-card: 24px;
-  --shadow: 0 18px 42px rgba(82, 61, 48, 0.16);
-  --soft-shadow: 0 10px 24px rgba(82, 61, 48, 0.12);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-card: 16px;
+  --shadow: 0 18px 42px rgba(54, 48, 43, 0.13);
+  --soft-shadow: 0 8px 20px rgba(54, 48, 43, 0.09);
   --focus: 0 0 0 4px rgba(122, 132, 80, 0.2);
   --app-max-width: 1720px;
   --app-min-height: 760px;
@@ -42,9 +42,9 @@ body {
   margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(circle, rgba(150, 105, 76, 0.16) 1px, transparent 1.2px) 0 0 / 20px 20px,
-    linear-gradient(180deg, #fffefa 0%, var(--neutral) 46%, #f4ede6 100%);
-  font-family: "Quicksand", system-ui, sans-serif;
+    radial-gradient(circle, rgba(86, 56, 44, 0.1) 1px, transparent 1.2px) 0 0 / 22px 22px,
+    linear-gradient(180deg, #fffefa 0%, var(--neutral) 46%, #efeee8 100%);
+  font-family: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body::before {
@@ -153,7 +153,7 @@ a {
   align-items: center;
   min-height: 74px;
   border: 1px solid rgba(217, 197, 183, 0.82);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   overflow: visible;
   background: linear-gradient(180deg, rgba(255, 253, 248, 0.96) 0%, rgba(255, 248, 240, 0.94) 100%);
   padding: 12px clamp(16px, 2vw, 28px);
@@ -614,8 +614,8 @@ body[data-view="discovery"] .sidebar {
   margin: 0 0 6px;
   color: var(--muted);
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -627,7 +627,7 @@ body[data-view="discovery"] .sidebar {
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 999px;
+  border-radius: 11px;
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.2;
@@ -641,12 +641,12 @@ body[data-view="discovery"] .sidebar {
   background: var(--primary);
   color: white;
   padding: 11px 18px;
-  box-shadow: 0 6px 0 var(--primary-dark), var(--soft-shadow);
+  box-shadow: 0 2px 0 var(--primary-dark), var(--soft-shadow);
 }
 
 .primary-button.alt {
   background: var(--secondary);
-  box-shadow: 0 6px 0 var(--secondary-dark), var(--soft-shadow);
+  box-shadow: 0 2px 0 var(--secondary-dark), var(--soft-shadow);
 }
 
 .primary-button:hover,
@@ -657,8 +657,8 @@ body[data-view="discovery"] .sidebar {
 }
 
 .primary-button:active {
-  transform: translateY(3px);
-  box-shadow: 0 5px 0 var(--primary-dark), var(--soft-shadow);
+  transform: translateY(1px) scale(0.99);
+  box-shadow: 0 1px 0 var(--primary-dark), var(--soft-shadow);
 }
 
 .action-status {
@@ -672,11 +672,11 @@ body[data-view="discovery"] .sidebar {
 .outline-button,
 .outline-link {
   min-height: 44px;
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   background: rgba(255, 250, 244, 0.88);
   color: var(--primary-dark);
   padding: 10px 14px;
-  box-shadow: 0 3px 0 rgba(139, 106, 87, 0.2);
+  box-shadow: 0 1px 0 rgba(86, 56, 44, 0.12);
 }
 
 .secondary-button.danger,
@@ -920,11 +920,11 @@ body[data-view="discovery"] .sidebar {
 
 .map-nearest-panel {
   min-width: 0;
-  border: 1px solid rgba(217, 197, 183, 0.82);
-  border-radius: var(--radius-md);
-  background: rgba(255, 250, 244, 0.72);
-  padding: 10px 12px;
-  box-shadow: 0 7px 16px rgba(82, 61, 48, 0.06);
+  border-block: 1px solid rgba(136, 117, 103, 0.28);
+  border-radius: 0;
+  background: transparent;
+  padding: 10px 2px;
+  box-shadow: none;
 }
 
 .map-nearest-panel .section-head {
@@ -1461,13 +1461,18 @@ body[data-view="login"] .top-actions {
 
 .panel-surface {
   min-width: 0;
-  border: 1px solid rgba(217, 197, 183, 0.86);
+  border: 1px solid rgba(136, 117, 103, 0.3);
   border-radius: var(--radius-md);
-  background:
-    radial-gradient(circle, rgba(150, 105, 76, 0.08) 1px, transparent 1.2px) 0 0 / 18px 18px,
-    rgba(255, 250, 244, 0.9);
+  background: rgba(255, 253, 248, 0.84);
   padding: clamp(14px, 1.4vw, 20px);
-  box-shadow: var(--soft-shadow);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+body[data-view="my-lists"] .list-detail-panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .panel-surface .section-head {
@@ -2009,21 +2014,6 @@ body[data-view="login"] .top-actions {
     transform 160ms ease;
 }
 
-.spot-row::after {
-  position: absolute;
-  top: 50%;
-  right: clamp(220px, 16vw, 280px);
-  color: rgba(104, 68, 45, 0.58);
-  content: "Open details";
-  font-size: 11px;
-  font-weight: 700;
-  opacity: 0;
-  pointer-events: none;
-  text-transform: uppercase;
-  transform: translateY(-50%) translateX(6px);
-  transition: opacity 160ms ease, transform 160ms ease;
-}
-
 .spot-row:hover,
 .spot-row:focus-within {
   border-color: rgba(150, 105, 76, 0.72);
@@ -2032,12 +2022,6 @@ body[data-view="login"] .top-actions {
     0 0 0 4px rgba(150, 105, 76, 0.1),
     0 12px 22px rgba(82, 61, 48, 0.12);
   transform: translateY(-2px);
-}
-
-.spot-row:hover::after,
-.spot-row:focus-within::after {
-  opacity: 1;
-  transform: translateY(-50%);
 }
 
 .spot-row:hover .recent-thumb,
@@ -4050,11 +4034,17 @@ body[data-view="login"] .top-actions {
 .detail-paper-panel {
   display: grid;
   gap: 14px;
-  border: 1px solid rgba(217, 197, 183, 0.86);
-  border-radius: var(--radius-md);
-  background-color: rgba(255, 250, 244, 0.94);
-  padding: clamp(14px, 1.6vw, 20px);
-  box-shadow: 0 10px 24px rgba(82, 61, 48, 0.09);
+  border: 0;
+  border-top: 1px solid rgba(136, 117, 103, 0.3);
+  border-radius: 0;
+  background-color: transparent;
+  padding: clamp(18px, 2vw, 24px) 0 0;
+  box-shadow: none;
+}
+
+.detail-drawer-head + .detail-paper-panel {
+  border-top: 0;
+  padding-top: 8px;
 }
 
 .detail-section-head {
@@ -4084,8 +4074,7 @@ body[data-view="login"] .top-actions {
   gap: 8px;
   color: var(--primary-dark);
   font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .detail-paper-panel input,
@@ -4610,6 +4599,102 @@ dialog.modal:not([open]) {
   display: grid;
   gap: 10px;
 }
+
+.theme-settings {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0 0 14px;
+}
+
+.theme-settings legend {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.theme-settings legend .eyebrow {
+  margin: 0;
+}
+
+.theme-picker {
+  display: grid;
+  border-block: 1px solid var(--line);
+}
+
+.theme-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px 68px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 72px;
+  padding: 10px 4px;
+  cursor: pointer;
+}
+
+.theme-option + .theme-option {
+  border-top: 1px dashed var(--line);
+}
+
+.theme-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.theme-option > span:last-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.theme-option strong,
+.theme-option small {
+  overflow-wrap: anywhere;
+}
+
+.theme-option small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.theme-option:has(input:checked) > span:last-child strong {
+  color: var(--primary);
+}
+
+.theme-swatch {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  width: 68px;
+  height: 42px;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 7px;
+  background: var(--neutral);
+  padding: 5px;
+  box-shadow: inset 0 -5px 0 rgba(45, 41, 38, 0.08);
+}
+
+.theme-swatch i {
+  display: block;
+  border-radius: 2px;
+}
+
+.theme-swatch-paper i:nth-child(1) { background: #945b45; }
+.theme-swatch-paper i:nth-child(2) { background: #fffdf8; }
+.theme-swatch-paper i:nth-child(3) { background: #687653; }
+.theme-swatch-deep-dive { border-color: #2d7f83; background: #071923; }
+.theme-swatch-deep-dive i:nth-child(1) { background: #2dc7bd; }
+.theme-swatch-deep-dive i:nth-child(2) { background: #f3b93e; }
+.theme-swatch-deep-dive i:nth-child(3) { background: #df6a4c; }
 
 .integration-settings {
   border-top: 1px dashed var(--line);
@@ -5482,16 +5567,12 @@ dialog.modal:not([open]) {
 
   body[data-view="my-map"] .top-location-status,
   body[data-view="my-map"] #locateButton,
-  body[data-view="my-map"] #settingsButton,
   body[data-view="my-lists"] .top-location-status,
-  body[data-view="my-lists"] #settingsButton,
   body[data-view="recipes"] .top-location-status,
-  body[data-view="recipes"] #settingsButton,
   body[data-view="recipes"] #locateButton,
   body[data-view="recipes"] .mobile-map-menu,
   body[data-view="recipes"] .mobile-quick-capture,
   body[data-view="discovery"] .top-location-status,
-  body[data-view="discovery"] #settingsButton,
   body[data-view="discovery"] #locateButton,
   body[data-view="discovery"] .mobile-map-menu,
   body[data-view="discovery"] .mobile-quick-capture {
@@ -6997,7 +7078,7 @@ dialog.modal:not([open]) {
   }
 
   .detail-review-status-picker {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .detail-dish-summary {
@@ -7853,6 +7934,34 @@ dialog.modal:not([open]) {
   .spot-card .tape {
     width: 78px;
     height: 22px;
+  }
+}
+
+/* Keep touch scrolling on the dialog itself, including landscape phones whose
+   CSS viewport is wider than the compact mobile breakpoint. */
+@media (pointer: coarse) {
+  .detail-drawer {
+    overflow-x: hidden;
+    overflow-y: auto;
+    transform: none;
+    will-change: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .detail-drawer::backdrop {
+    backdrop-filter: none;
+  }
+
+  .detail-drawer.is-open,
+  .detail-drawer.is-closing {
+    animation: none;
+    transform: none;
+  }
+
+  .detail-drawer-card {
+    min-height: 100dvh;
+    height: auto;
+    overflow: visible;
   }
 }
 

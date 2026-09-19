@@ -120,6 +120,7 @@ PUBLIC_FILES = {
     "map-geometry.mjs",
     "map-interactions.mjs",
     "styles.css",
+    "theme-deep-dive.css",
     "ui-tokens.css",
     "ui-shell.css",
 }

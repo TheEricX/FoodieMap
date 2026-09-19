@@ -275,13 +275,43 @@ test("@mobile @cross-browser restaurant detail avoids focus zoom and uses browse
   for (const { control, fontSize } of keyboardControlFontSizes) {
     expect(fontSize, control).toBeGreaterThanOrEqual(16);
   }
+
   await page.goBack();
   await expect(page.locator("#spotDetailDialog")).toBeHidden();
-  await expect(page).not.toHaveURL(/(?:\?|&)spot=/);
+  await page.setViewportSize({ width: 932, height: 430 });
+  if (await page.evaluate(() => matchMedia("(pointer: coarse)").matches)) {
+    await page.locator("#openSpotDetail").evaluate((button) => button.click());
+    await expect(page.locator("#spotDetailDialog")).toBeVisible();
+    const landscapeTouchScroll = await page.locator("#spotDetailDialog").evaluate((dialog) => {
+      const drawerCard = dialog.querySelector(".detail-drawer-card");
+      dialog.scrollTop = dialog.scrollHeight;
+      return {
+        scrollTop: dialog.scrollTop,
+        scrollHeight: dialog.scrollHeight,
+        clientHeight: dialog.clientHeight,
+        overflowY: getComputedStyle(dialog).overflowY,
+        transform: getComputedStyle(dialog).transform,
+        willChange: getComputedStyle(dialog).willChange,
+        drawerOverflowY: getComputedStyle(drawerCard).overflowY,
+        backdropFilter: getComputedStyle(dialog, "::backdrop").backdropFilter
+      };
+    });
+    expect(landscapeTouchScroll.scrollHeight).toBeGreaterThan(landscapeTouchScroll.clientHeight);
+    expect(landscapeTouchScroll.scrollTop).toBeGreaterThan(0);
+    expect(landscapeTouchScroll.overflowY).toMatch(/auto|scroll/);
+    expect(landscapeTouchScroll.transform).toBe("none");
+    expect(landscapeTouchScroll.willChange).toBe("auto");
+    expect(landscapeTouchScroll.drawerOverflowY).toBe("visible");
+    expect(landscapeTouchScroll.backdropFilter).toBe("none");
+    await page.locator("#closeSpotDetail").click();
+    await expect(page.locator("#spotDetailDialog")).toBeHidden();
+    await expect(page).not.toHaveURL(/(?:\?|&)spot=/);
+  }
 
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.locator("#markersLayer .restaurant-marker").first().click();
   await expect(page.locator("#spotDetailDialog")).toBeVisible();
-  await page.locator("#closeSpotDetail").tap();
+  await page.locator("#closeSpotDetail").click();
   await expect(page.locator("#spotDetailDialog")).toBeHidden();
   await expect(page.locator("#confirmDialog")).toBeHidden();
   await expect(page).not.toHaveURL(/(?:\?|&)spot=/);

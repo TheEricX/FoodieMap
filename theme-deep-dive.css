@@ -1,0 +1,458 @@
+html[data-theme="deep-dive"] {
+  color-scheme: dark;
+  --primary: #f3b93e;
+  --primary-dark: #9b611d;
+  --primary-soft: #ffd66f;
+  --secondary: #2dc7bd;
+  --secondary-dark: #087d78;
+  --secondary-soft: #173f47;
+  --tertiary: #df6a4c;
+  --tertiary-soft: #4b2928;
+  --neutral: #071923;
+  --paper: #0d2b35;
+  --paper-warm: #123943;
+  --ink: #f4ecd6;
+  --muted: #9db7b5;
+  --line: #2f666c;
+  --line-strong: #65b7b2;
+  --danger: #ff7965;
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-lg: 9px;
+  --radius-card: 6px;
+  --shadow: 0 20px 48px rgba(0, 9, 15, 0.42);
+  --soft-shadow: 0 9px 20px rgba(0, 9, 15, 0.3);
+  --focus: 0 0 0 3px rgba(45, 199, 189, 0.34);
+}
+
+html[data-theme="deep-dive"] body {
+  background:
+    repeating-linear-gradient(0deg, rgba(113, 221, 211, 0.025) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg, #04141d 0%, #09252e 56%, #061a23 100%);
+}
+
+html[data-theme="deep-dive"] body::before {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  background:
+    linear-gradient(90deg, transparent 0 49.8%, rgba(45, 199, 189, 0.025) 50%, transparent 50.2%),
+    linear-gradient(0deg, transparent 0 49.8%, rgba(45, 199, 189, 0.025) 50%, transparent 50.2%);
+  background-size: 64px 64px;
+  content: "";
+  pointer-events: none;
+}
+
+html[data-theme="deep-dive"] .app-shell {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-theme="deep-dive"] .layout {
+  border-color: rgba(55, 126, 131, 0.72);
+  background: #071923;
+  box-shadow: var(--shadow);
+}
+
+html[data-theme="deep-dive"] .layout::before {
+  background: linear-gradient(180deg, rgba(45, 199, 189, 0.09), transparent);
+}
+
+html[data-theme="deep-dive"] :is(.map-stage, .lists-stage, .discovery-stage, .recipes-stage, .admin-stage, .admin-login-stage) {
+  background: #071923;
+}
+
+html[data-theme="deep-dive"] :is(.topbar, .sidebar, .panel-surface, .login-panel, .login-actions-panel) {
+  border-color: rgba(62, 139, 143, 0.7);
+  background-color: rgba(8, 35, 44, 0.96);
+  background-image:
+    linear-gradient(90deg, rgba(45, 199, 189, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(45, 199, 189, 0.035) 1px, transparent 1px);
+  background-size: 20px 20px;
+  box-shadow: inset 0 1px 0 rgba(111, 223, 212, 0.1);
+}
+
+html[data-theme="deep-dive"] .topbar {
+  background-color: rgba(8, 31, 40, 0.97);
+  backdrop-filter: blur(14px);
+}
+
+html[data-theme="deep-dive"] .topbar::before {
+  background: repeating-linear-gradient(90deg, rgba(45, 199, 189, 0.1) 0 1px, transparent 1px 12px);
+  opacity: 0.28;
+}
+
+html[data-theme="deep-dive"] body.is-topbar-elevated .topbar {
+  border-color: rgba(77, 177, 177, 0.78);
+  box-shadow: 0 18px 34px rgba(0, 9, 15, 0.32), inset 0 -2px 0 rgba(45, 199, 189, 0.12);
+}
+
+html[data-theme="deep-dive"] .brand {
+  color: var(--primary);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.42);
+}
+
+html[data-theme="deep-dive"] .brand-mark,
+html[data-theme="deep-dive"] .pixel-badge {
+  border: 2px solid #ffd66f;
+  border-radius: 5px;
+  background: #173942;
+  color: var(--primary);
+  box-shadow: inset 0 -5px 0 rgba(0, 12, 18, 0.36), 4px 4px 0 rgba(0, 10, 16, 0.42);
+}
+
+html[data-theme="deep-dive"] :is(.top-nav a.active, .profile-card strong, .sidebar-section-head strong, .map-toolbar h1, .view-toolbar h1, .detail-section-head strong, .detail-paper-panel label, .list-card strong, .empty-map strong) {
+  color: var(--primary);
+}
+
+html[data-theme="deep-dive"] .top-nav a.active::after {
+  height: 4px;
+  border-radius: 1px;
+  background: var(--secondary);
+  box-shadow: 0 0 10px rgba(45, 199, 189, 0.42);
+}
+
+html[data-theme="deep-dive"] :is(.search-box, .location-status, .language-options, .avatar) {
+  border-color: rgba(64, 139, 143, 0.72);
+  background: rgba(8, 35, 44, 0.9);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+html[data-theme="deep-dive"] .place-view-switcher {
+  border-color: rgba(73, 158, 159, 0.72);
+  border-radius: 5px;
+  background: #0b2b35;
+}
+
+html[data-theme="deep-dive"] .place-view-switcher button {
+  border-radius: 3px;
+}
+
+html[data-theme="deep-dive"] .place-view-switcher button.active {
+  background: var(--primary);
+  color: #10212a;
+}
+
+html[data-theme="deep-dive"] :is(.icon-button, .avatar, .text-button) {
+  color: var(--primary);
+}
+
+html[data-theme="deep-dive"] :is(.icon-button:hover, .avatar:hover, .language-options button:hover, .language-options button.active) {
+  border-color: var(--secondary);
+  background: #153d46;
+  color: #eafffb;
+}
+
+html[data-theme="deep-dive"] .primary-button {
+  border: 1px solid #ffd66f;
+  border-radius: 4px;
+  background: var(--primary);
+  color: #10212a;
+  box-shadow: 0 4px 0 #80501b, 0 10px 20px rgba(0, 9, 15, 0.26);
+}
+
+html[data-theme="deep-dive"] .primary-button.alt {
+  border-color: #6ee7dd;
+  background: var(--secondary);
+  color: #061b22;
+  box-shadow: 0 4px 0 var(--secondary-dark), 0 10px 20px rgba(0, 9, 15, 0.26);
+}
+
+html[data-theme="deep-dive"] :is(.secondary-button, .outline-button, .outline-link, .icon-link, .mini-action) {
+  border-color: rgba(79, 164, 165, 0.72);
+  border-radius: 4px;
+  background: #102f39;
+  color: #def7ef;
+  box-shadow: inset 0 -2px 0 rgba(0, 11, 17, 0.28);
+}
+
+html[data-theme="deep-dive"] :is(.primary-button, .secondary-button, .outline-button, .outline-link)::before {
+  border-radius: inherit;
+}
+
+html[data-theme="deep-dive"] :is(.secondary-button:hover, .outline-button:hover, .outline-link:hover, .icon-link:hover) {
+  border-color: var(--primary);
+  background: #183f47;
+}
+
+html[data-theme="deep-dive"] :is(.filter-item, .list-filter-item) {
+  border-color: rgba(47, 102, 108, 0.7);
+  border-radius: 4px;
+  background: rgba(12, 43, 53, 0.72);
+  color: var(--ink);
+}
+
+html[data-theme="deep-dive"] :is(.filter-item.active, .list-filter-item.active) {
+  border-color: var(--primary);
+  background: #163b43;
+  color: #fff4cd;
+  box-shadow: inset 5px 0 0 var(--primary), 0 6px 0 rgba(0, 10, 16, 0.32);
+}
+
+html[data-theme="deep-dive"] .filter-item span:last-child {
+  border-radius: 3px;
+  background: rgba(45, 199, 189, 0.16);
+  color: #7be0d6;
+}
+
+html[data-theme="deep-dive"] .sidebar-lists-panel,
+html[data-theme="deep-dive"] .data-tools,
+html[data-theme="deep-dive"] .integration-settings {
+  border-color: rgba(79, 164, 165, 0.48);
+}
+
+html[data-theme="deep-dive"] .location-prompt {
+  border-color: rgba(72, 151, 153, 0.62);
+  background: rgba(12, 43, 53, 0.78);
+}
+
+html[data-theme="deep-dive"] .location-prompt-mark {
+  border-color: var(--secondary);
+  border-radius: 4px;
+  background: #113942;
+  color: #6ee7dd;
+}
+
+html[data-theme="deep-dive"] .location-prompt-copy strong {
+  color: var(--primary);
+}
+
+html[data-theme="deep-dive"] .recent-item {
+  border-color: rgba(55, 126, 131, 0.75);
+  border-radius: 4px;
+  background: #0d2d37;
+  box-shadow: 0 7px 0 rgba(0, 10, 16, 0.26);
+}
+
+html[data-theme="deep-dive"] .recent-item strong {
+  color: #ffe39a;
+}
+
+html[data-theme="deep-dive"] .cute-map {
+  border: 2px solid rgba(67, 152, 155, 0.86);
+  background:
+    radial-gradient(ellipse at 50% 48%, rgba(38, 142, 142, 0.28) 0 5%, rgba(13, 65, 75, 0.42) 24%, transparent 58%),
+    linear-gradient(145deg, #061923 0%, #0c3039 58%, #071d27 100%);
+  box-shadow: inset 0 0 96px rgba(0, 7, 12, 0.68), 0 14px 34px rgba(0, 9, 15, 0.36);
+}
+
+html[data-theme="deep-dive"] .grid-overlay {
+  opacity: 0.42;
+  background:
+    linear-gradient(rgba(45, 199, 189, 0.075) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 199, 189, 0.075) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+html[data-theme="deep-dive"] .range-ring {
+  border-color: rgba(45, 199, 189, 0.42);
+}
+
+html[data-theme="deep-dive"] .range-ring span {
+  color: rgba(111, 226, 215, 0.72);
+}
+
+html[data-theme="deep-dive"] .map-zoom-controls {
+  border-color: rgba(80, 169, 169, 0.75);
+  border-radius: 5px;
+  background: rgba(7, 30, 39, 0.9);
+  box-shadow: 0 10px 24px rgba(0, 8, 13, 0.38);
+  backdrop-filter: blur(8px);
+}
+
+html[data-theme="deep-dive"] :is(.map-zoom-controls span, .map-zoom-button) {
+  color: var(--primary);
+}
+
+html[data-theme="deep-dive"] .map-zoom-button {
+  border-color: #326c72;
+  border-radius: 3px;
+  background: #102f39;
+}
+
+html[data-theme="deep-dive"] .restaurant-marker {
+  border-color: #317178;
+  border-radius: 5px;
+  background: #0d2c36;
+  color: var(--ink);
+  box-shadow: 0 10px 0 rgba(0, 10, 16, 0.32), 0 18px 28px rgba(0, 8, 13, 0.38);
+}
+
+html[data-theme="deep-dive"] .restaurant-marker::before {
+  top: -7px;
+  width: 44px;
+  height: 8px;
+  border: 0;
+  background: var(--primary);
+  opacity: 1;
+  transform: translateX(-50%);
+}
+
+html[data-theme="deep-dive"] .restaurant-marker small {
+  color: #e9f7ee;
+}
+
+html[data-theme="deep-dive"] .restaurant-marker.favorite { border-color: var(--tertiary); }
+html[data-theme="deep-dive"] .restaurant-marker.want_to_go { border-color: var(--primary); }
+html[data-theme="deep-dive"] .restaurant-marker.visited { border-color: var(--secondary); }
+
+html[data-theme="deep-dive"] .restaurant-marker.selected {
+  border-color: var(--primary-soft);
+  box-shadow: 0 0 0 4px rgba(243, 185, 62, 0.22), 0 12px 0 rgba(0, 10, 16, 0.35), 0 20px 32px rgba(0, 8, 13, 0.4);
+}
+
+html[data-theme="deep-dive"] :is(.marker-photo, .recent-thumb, .recipe-thumb, .recipe-hero-image) {
+  border-color: #39787c;
+  border-radius: 3px;
+  background: #102e38;
+}
+
+html[data-theme="deep-dive"] :is(.spot-card, .detail-drawer-card, .modal-card) {
+  border-color: rgba(71, 160, 161, 0.85);
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(0deg, rgba(111, 226, 215, 0.025) 0 1px, transparent 1px 5px),
+    #0b2731;
+  color: var(--ink);
+  box-shadow: 0 24px 54px rgba(0, 8, 13, 0.5), inset 5px 0 0 rgba(45, 199, 189, 0.12);
+}
+
+html[data-theme="deep-dive"] :is(.spot-card h2, .modal-card h2, .detail-head h2, .recipe-row-main strong) {
+  color: #fff0bf;
+}
+
+html[data-theme="deep-dive"] :is(.spot-card p:not(.eyebrow), .detail-head p:not(.eyebrow), .spot-row p, .recipe-row-main p) {
+  color: #b7ccc5;
+}
+
+html[data-theme="deep-dive"] :is(.spot-card .tape, .row-tape) {
+  border: 0;
+  border-radius: 0;
+  background: var(--primary);
+  opacity: 0.9;
+  mix-blend-mode: normal;
+  transform: rotate(-1deg);
+}
+
+html[data-theme="deep-dive"] .row-tape::after {
+  background: repeating-linear-gradient(90deg, rgba(8, 30, 38, 0.16) 0 2px, transparent 2px 7px);
+}
+
+html[data-theme="deep-dive"] :is(.spot-card-tab, body[data-view="my-map"] .spot-card-tab) {
+  border: 1px solid #ffd66f;
+  border-radius: 4px;
+  background: var(--primary);
+  color: #10212a;
+  box-shadow: 0 7px 0 #80501b, 0 16px 32px rgba(0, 8, 13, 0.4);
+}
+
+html[data-theme="deep-dive"] :is(.spot-card-tab span, body[data-view="my-map"] .spot-card-tab span) {
+  color: rgba(16, 33, 42, 0.7);
+}
+
+html[data-theme="deep-dive"] :is(.list-card, .spot-row, .add-spot-row, .recipe-row, .recipe-detail-card, .integration-item, .detail-add-dish, .detail-dish-card) {
+  border-color: rgba(55, 126, 131, 0.76);
+  border-radius: 5px;
+  background: rgba(12, 43, 53, 0.9);
+  color: var(--ink);
+  box-shadow: 0 8px 0 rgba(0, 11, 17, 0.25);
+}
+
+html[data-theme="deep-dive"] :is(.list-card.selected, .recipe-row.selected, .spot-row:hover, .spot-row:focus-within) {
+  border-color: var(--primary);
+  background: #133b43;
+  box-shadow: inset 5px 0 0 var(--primary), 0 9px 0 rgba(0, 11, 17, 0.28);
+}
+
+html[data-theme="deep-dive"] :is(.empty-panel, .empty-map, .sidebar-empty) {
+  border-color: rgba(73, 158, 159, 0.65);
+  border-radius: 5px;
+  background: rgba(8, 35, 44, 0.62);
+  color: var(--muted);
+}
+
+html[data-theme="deep-dive"] :is(.detail-paper-panel input, .detail-paper-panel select, .detail-paper-panel textarea, .detail-add-dish input, .detail-add-dish select, .detail-add-dish textarea, .detail-dish-card input, .detail-dish-card select, .detail-dish-card textarea, .modal input, .modal select, .modal textarea) {
+  border-color: rgba(60, 136, 140, 0.78);
+  border-radius: 3px;
+  background: #071f29;
+  color: var(--ink);
+}
+
+html[data-theme="deep-dive"] :is(.modal input::placeholder, .modal textarea::placeholder, .search-box input::placeholder) {
+  color: #779693;
+}
+
+html[data-theme="deep-dive"] .detail-paper-panel {
+  border-color: rgba(72, 151, 153, 0.55);
+}
+
+html[data-theme="deep-dive"] :is(.tag-pill, .meta-row span, .detail-meta-row span) {
+  border-radius: 3px;
+}
+
+html[data-theme="deep-dive"] .tag-pill.visited { background: rgba(45, 199, 189, 0.2); color: #83e3db; }
+html[data-theme="deep-dive"] .tag-pill.want_to_go { background: rgba(243, 185, 62, 0.2); color: #ffd66f; }
+html[data-theme="deep-dive"] .tag-pill.favorite { background: rgba(223, 106, 76, 0.22); color: #ff9d83; }
+
+html[data-theme="deep-dive"] .theme-picker {
+  border-color: rgba(78, 163, 164, 0.65);
+}
+
+html[data-theme="deep-dive"] .theme-option + .theme-option {
+  border-color: rgba(78, 163, 164, 0.42);
+}
+
+html[data-theme="deep-dive"] .theme-option:has(input:checked) {
+  background: linear-gradient(90deg, rgba(45, 199, 189, 0.12), transparent 72%);
+}
+
+html[data-theme="deep-dive"] .theme-option:has(input:checked) > span:last-child strong {
+  color: var(--primary);
+}
+
+html[data-theme="deep-dive"] .modal::backdrop,
+html[data-theme="deep-dive"] .detail-drawer::backdrop {
+  background: rgba(0, 9, 15, 0.7);
+}
+
+html[data-theme="deep-dive"] .mobile-bottom-nav {
+  border-color: rgba(69, 151, 153, 0.8);
+  border-radius: 6px;
+  background: rgba(7, 29, 38, 0.96);
+  box-shadow: 0 14px 32px rgba(0, 8, 13, 0.5), inset 0 1px 0 rgba(90, 196, 192, 0.12);
+}
+
+html[data-theme="deep-dive"] .mobile-bottom-nav a {
+  border-radius: 3px;
+}
+
+html[data-theme="deep-dive"] .mobile-bottom-nav a.active {
+  background: var(--primary);
+  color: #10212a;
+}
+
+@media (max-width: 900px) {
+  html[data-theme="deep-dive"] body {
+    background: #061923;
+  }
+
+  html[data-theme="deep-dive"] .topbar {
+    border-bottom-color: rgba(67, 151, 154, 0.78);
+  }
+
+  html[data-theme="deep-dive"] .modal-card,
+  html[data-theme="deep-dive"] .detail-drawer-card {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="deep-dive"] *,
+  html[data-theme="deep-dive"] *::before,
+  html[data-theme="deep-dive"] *::after {
+    scroll-behavior: auto !important;
+  }
+}

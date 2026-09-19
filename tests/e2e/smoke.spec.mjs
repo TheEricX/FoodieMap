@@ -22,6 +22,7 @@ test("@smoke app assets and health endpoint load with expected types", async ({ 
     ["/form-templates.mjs", "text/javascript"],
     ["/map-view-templates.mjs", "text/javascript"],
     ["/styles.css", "text/css"],
+    ["/theme-deep-dive.css", "text/css"],
     ["/ui-tokens.css", "text/css"],
     ["/ui-shell.css", "text/css"]
   ]);
@@ -99,6 +100,27 @@ test("@smoke language selection persists through reload", async ({ signedInPage:
   await page.waitForLoadState("networkidle");
   await expect(page.locator('[data-place-nav]:visible').first()).toHaveText("我的地点");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+});
+
+test("@smoke appearance theme previews, cancels, and persists after save", async ({ signedInPage: page }) => {
+  await page.evaluate(() => localStorage.removeItem("foodiemap:theme"));
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "paper");
+
+  await page.locator("#settingsButton").click();
+  await page.locator('input[name="appTheme"][value="deep-dive"]').check();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "deep-dive");
+  await page.locator("#cancelSettings").click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "paper");
+
+  await page.locator("#settingsButton").click();
+  await page.locator('input[name="appTheme"][value="deep-dive"]').check();
+  await page.locator('#settingsForm button[type="submit"]').click();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("foodiemap:theme"))).toBe("deep-dive");
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "deep-dive");
 });
 
 test("@staging staging reports PostgreSQL and GCS", async ({ request }) => {

@@ -1,18 +1,31 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="paper">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f6f1" id="themeColorMeta" />
     <title>Gourmet Map</title>
+    <script>
+      try {
+        const savedTheme = localStorage.getItem("foodiemap:theme");
+        if (savedTheme === "deep-dive") {
+          document.documentElement.dataset.theme = savedTheme;
+          document.querySelector("#themeColorMeta")?.setAttribute("content", "#071923");
+        }
+      } catch {
+        // Keep the paper theme when browser storage is unavailable.
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/ui-tokens.css?v=20260712-shell" />
     <link rel="stylesheet" href="/styles.css?v=20260902-share-sheet" />
     <link rel="stylesheet" href="/ui-shell.css?v=20260712-shell" />
+    <link rel="stylesheet" href="/theme-deep-dive.css?v=20260919-theme" />
   </head>
   <body>
     <main class="app-shell">
@@ -924,6 +937,31 @@
             </div>
             <button class="icon-button" type="button" id="closeSettings">×</button>
           </div>
+          <fieldset class="theme-settings">
+            <legend>
+              <span class="eyebrow" data-i18n="settings.appearanceEyebrow">APPEARANCE</span>
+              <strong data-i18n="settings.appearanceTitle">App theme</strong>
+            </legend>
+            <p class="form-help" data-i18n="settings.appearanceHelp">Choose how your restaurant journal looks on this device.</p>
+            <div class="theme-picker">
+              <label class="theme-option">
+                <input type="radio" name="appTheme" value="paper" />
+                <span class="theme-swatch theme-swatch-paper" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span>
+                  <strong data-i18n="settings.themePaper">Paper journal</strong>
+                  <small data-i18n="settings.themePaperDescription">Warm, calm and familiar.</small>
+                </span>
+              </label>
+              <label class="theme-option">
+                <input type="radio" name="appTheme" value="deep-dive" />
+                <span class="theme-swatch theme-swatch-deep-dive" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span>
+                  <strong data-i18n="settings.themeDeepDive">Deep-sea log</strong>
+                  <small data-i18n="settings.themeDeepDiveDescription">Night dives, sonar panels and bright catch tags.</small>
+                </span>
+              </label>
+            </div>
+          </fieldset>
           <label>
             <span data-i18n="settings.keyLabel">Google Geocoding API Key</span>
             <input name="googleApiKey" id="googleApiKey" placeholder="AIza..." />

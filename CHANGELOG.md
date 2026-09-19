@@ -30,6 +30,8 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Added a saved appearance setting with paper-journal and deep-sea-log themes, including bilingual controls and responsive visual regression coverage.
+
 - Added restaurant share buttons in List View plus QR-code image cards on the provided card template, with signed-out previews showing restaurant and menu details.
 
 - Added per-account photo quotas across dish and Recipe uploads, with finite Free/Paid defaults, Admin usage visibility and per-user overrides.
