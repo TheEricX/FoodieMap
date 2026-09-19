@@ -9,7 +9,7 @@ Gourmet Map 是一个可自托管的美食地图 MVP。它支持 Google、邮箱
 - SQLite 保存用户、餐厅、菜品、菜谱、分享链接、私密推荐分享包、自定义 list 和公开 Discovery list
 - 保存餐厅状态、去过次数、个人评分、备注、地图链接和坐标
 - 每家店可记录菜品：`Liked` / `Tried`、5 星评分、备注、1 张压缩图片
-- `添加地点` 是唯一主入口；可粘贴 Google Maps、Apple Maps 或地图短链接自动识别店名、地址和坐标，链接只有坐标时可用 Google Geocoding API Key 反查地址
+- `添加地点` 是唯一主入口；打开时会尝试从剪贴板自动识别 Google Maps、Apple Maps 或地图短链接，也可手动粘贴来识别店名、地址和坐标，链接只有坐标时可用 Google Geocoding API Key 反查地址
 - 通过 `?import-map=<编码后的地图链接>` 打开 FoodieMap 时，已登录用户会直接进入预填的地点录入界面；未登录用户完成登录后会继续该录入流程
 - 粘贴地图链接会检测相似餐厅；发现重复时先询问用户是否继续创建
 - 左侧分类支持系统智能分类和自定义清单：`All Spots`、`Visited`、`Want to Go`、`Favorites`，以及用户创建的私密/公开 list
@@ -199,7 +199,7 @@ docker compose down
 ## 使用流程
 
 1. 打开主站会先进入登录页，可选择 Google、邮箱密码或邮箱验证码登录；朋友分享的 `/share/{token}` 和 `/share-pack/{token}` 仍可免登录预览。
-2. 点击 `添加地点`；粘贴 Google Maps / Apple Maps 链接可自动填写地点详情，手动填写仍可作为备用方式。
+2. 复制 Google Maps / Apple Maps 链接后点击 `添加地点`，系统会尝试从剪贴板自动填写地点详情；也可以手动粘贴或手动填写作为备用方式。
 3. Map 首次使用时可选择 `Use my location` 查看距离，或选择 `Not now` 进入不显示距离的隐私浏览模式；之后可随时通过顶部定位图标切换。
 4. 如果自动添加时发现相似餐厅，确认是否继续创建重复记录。
 5. 编辑店铺时可以记录去过次数、个人评分和菜品。

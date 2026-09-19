@@ -133,6 +133,7 @@ let suppressNextSpotCardOutsideClick = false;
 let editingRestaurantId = null;
 let restaurantHistoryClosePending = false;
 let shortLinkResolveTimer = null;
+let autoMapClipboardAttemptId = 0;
 let shareToken = getShareToken();
 let shareData = null;
 let sharePackToken = getSharePackToken();
@@ -786,9 +787,14 @@ function bindEvents() {
   window.addEventListener("popstate", syncMobileRecipeDetailFromHistory);
   window.addEventListener("popstate", syncMobileRecipeEditorFromHistory);
   window.addEventListener("popstate", syncMobileShareFromHistory);
-  window.addEventListener("focus", resumeLocationController);
+  window.addEventListener("focus", () => {
+    resumeLocationController();
+    tryAutofillMapLinkFromClipboard();
+  });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") resumeLocationController();
+    if (document.visibilityState !== "visible") return;
+    resumeLocationController();
+    tryAutofillMapLinkFromClipboard();
   });
   window.addEventListener("scroll", updateTopbarElevation, { passive: true });
   window.addEventListener("resize", recenterMapPanWithinBounds);
@@ -1592,18 +1598,34 @@ function openCreateDialog({ skipHistory = false } = {}) {
   resetRestaurantForm();
   elements.dishEditor.hidden = true;
   elements.addDialog.showModal();
+  tryAutofillMapLinkFromClipboard();
 }
 
 async function openQuickCaptureDialog({ fromClipboard = false } = {}) {
   openCreateDialog();
   if (!elements.addDialog.open || !fromClipboard) return;
+  await tryAutofillMapLinkFromClipboard({ force: true });
+}
+
+async function tryAutofillMapLinkFromClipboard({ force = false } = {}) {
+  if (!elements.addDialog?.open || editingRestaurantId) return false;
+  const form = elements.restaurantForm.elements;
+  if (!force && (form.googleUrl.value.trim() || form.name.value.trim() || form.address.value.trim())) return false;
+  if (!navigator.clipboard?.readText) return false;
+
+  const attemptId = ++autoMapClipboardAttemptId;
   try {
-    const mapUrl = sanitizeMapUrl(extractMapUrl(await navigator.clipboard.readText()));
-    if (!mapUrl) return;
+    const text = (await navigator.clipboard.readText()).trim();
+    if (attemptId !== autoMapClipboardAttemptId) return false;
+    const mapUrl = sanitizeMapUrl(extractMapUrl(text));
+    if (!mapUrl) return false;
+    elements.quickCaptureIntro.textContent = t("maps.clipboardIntro");
     elements.googleUrlInput.value = mapUrl;
-    await autofillFromMapsUrl();
+    await autofillFromMapsUrl({ immediate: true });
+    return true;
   } catch {
-    // Clipboard permission is optional; the focused link field remains ready for paste.
+    // Clipboard access is best-effort; manual paste stays available.
+    return false;
   }
 }
 
@@ -1701,6 +1723,7 @@ function resetRestaurantForm() {
   elements.formTitle.textContent = t("spot.saveTitle");
   elements.saveSpotButton.textContent = t("spot.saveButton");
   elements.formHelp.textContent = t("maps.help");
+  elements.quickCaptureIntro.textContent = t("spot.quickCaptureHelp");
   elements.quickCaptureIntro.hidden = false;
   setRestaurantAdvancedVisible(false);
   elements.dishEditor.hidden = true;

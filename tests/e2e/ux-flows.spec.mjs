@@ -144,6 +144,20 @@ test("@responsive search terms stay scoped to the active product area", async ({
   await expect(page.locator("#searchInput")).toHaveValue("lists-only");
 });
 
+test("@responsive add spot auto-detects a map link from the clipboard", async ({ signedInPage: page, context, baseURL }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: baseURL });
+  const mapUrl = "https://www.google.com/maps/place/Clipboard+Noodles,+123+Queen+St,+Toronto/@43.65011,-79.38022,17z";
+  await page.evaluate((value) => navigator.clipboard.writeText(value), mapUrl);
+
+  const addButton = page.locator("#openAddPanel:visible, #mobileQuickCaptureButton:visible").first();
+  await addButton.click();
+
+  await expect(page.locator("#addDialog")).toBeVisible();
+  await expect(page.locator('input[name="googleUrl"]')).toHaveValue(mapUrl);
+  await expect(page.locator('input[name="name"]')).toHaveValue("Clipboard Noodles");
+  await expect(page.locator("#quickCaptureIntro")).toContainText(/clipboard/i);
+});
+
 test("@desktop recipes retain the parallel list and detail workspace", async ({ signedInPage: page }) => {
   test.skip((await page.locator("body").getAttribute("data-layout")) === "mobile", "Mobile uses the full-detail recipe flow.");
   const create = await page.request.post("/api/recipes", { data: {

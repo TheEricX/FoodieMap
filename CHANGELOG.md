@@ -8,6 +8,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Changed
 
+- Let Add a place auto-detect supported Maps links from the clipboard when the capture form opens or returns to focus, reducing mobile paste steps while keeping manual paste as a fallback.
 - Unified the mobile Map and List workspace controls, kept capture actions within the viewport, compacted Maps sheets, and made Recipe editing a full-page mobile task.
 - Added selectable system images for Recipes, including a generic food fallback, so users can choose a fitting thumbnail without uploading a photo.
 
