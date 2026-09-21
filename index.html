@@ -866,31 +866,33 @@
 
       <dialog class="modal" id="listDialog">
         <form class="modal-card" id="listForm" method="dialog">
-          <div class="modal-head">
-            <div>
-              <p class="eyebrow" id="listFormMode">NEW_LIST</p>
-              <h2 id="listFormTitle">Create List</h2>
+          <div class="list-form-content">
+            <div class="modal-head">
+              <div>
+                <p class="eyebrow" id="listFormMode">NEW_LIST</p>
+                <h2 id="listFormTitle">Create List</h2>
+              </div>
+              <button class="icon-button" type="button" id="closeListDialog">×</button>
             </div>
-            <button class="icon-button" type="button" id="closeListDialog">×</button>
+            <input name="id" type="hidden" />
+            <p class="form-help quick-capture-intro" id="listQuickCaptureIntro" data-i18n="list.quickCaptureHelp">Name the list now. Add a description or cover later.</p>
+            <label>
+              <span data-i18n="listForm.titleLabel">Title</span>
+              <input name="title" required maxlength="160" placeholder="Tokyo Ramen Hunt" />
+            </label>
+            <button class="secondary-button compact-action form-details-toggle" id="toggleListDetails" type="button" aria-expanded="false" aria-controls="listAdvancedFields" data-i18n="spot.addDetails">Add details</button>
+            <section class="form-advanced-fields" id="listAdvancedFields" hidden>
+              <label>
+                <span data-i18n="listForm.descriptionLabel">Description</span>
+                <textarea name="description" rows="4" placeholder="Describe the occasion or theme for this restaurant group." data-i18n-placeholder="listForm.descriptionPlaceholder"></textarea>
+              </label>
+              <label>
+                <span data-i18n="listForm.coverLabel">Cover URL (optional)</span>
+                <input name="coverImageUrl" autocomplete="url" autocapitalize="off" placeholder="Leave blank to use a dish photo from the list" data-i18n-placeholder="listForm.coverPlaceholder" />
+              </label>
+            </section>
+            <p class="form-help" id="listFormHelp">Lists are private by default. Publish when you want them to appear in Discovery.</p>
           </div>
-          <input name="id" type="hidden" />
-          <p class="form-help quick-capture-intro" id="listQuickCaptureIntro" data-i18n="list.quickCaptureHelp">Name the list now. Add a description or cover later.</p>
-          <label>
-            <span data-i18n="listForm.titleLabel">Title</span>
-            <input name="title" required maxlength="160" placeholder="Tokyo Ramen Hunt" />
-          </label>
-          <button class="secondary-button compact-action form-details-toggle" id="toggleListDetails" type="button" aria-expanded="false" aria-controls="listAdvancedFields" data-i18n="spot.addDetails">Add details</button>
-          <section class="form-advanced-fields" id="listAdvancedFields" hidden>
-            <label>
-              <span data-i18n="listForm.descriptionLabel">Description</span>
-              <textarea name="description" rows="4" placeholder="Describe the occasion or theme for this restaurant group." data-i18n-placeholder="listForm.descriptionPlaceholder"></textarea>
-            </label>
-            <label>
-              <span data-i18n="listForm.coverLabel">Cover URL (optional)</span>
-              <input name="coverImageUrl" autocomplete="url" autocapitalize="off" placeholder="Leave blank to use a dish photo from the list" data-i18n-placeholder="listForm.coverPlaceholder" />
-            </label>
-          </section>
-          <p class="form-help" id="listFormHelp">Lists are private by default. Publish when you want them to appear in Discovery.</p>
           <div class="form-actions">
             <button class="secondary-button ghost-button" id="cancelListButton" type="button" data-i18n="button.cancel">Cancel</button>
             <button class="primary-button" id="saveListButton" type="submit" data-i18n="button.createList">Create List</button>

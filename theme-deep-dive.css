@@ -319,6 +319,24 @@ html[data-theme="deep-dive"] :is(.spot-card, .detail-drawer-card, .modal-card) {
   box-shadow: 0 24px 54px rgba(0, 8, 13, 0.5), inset 5px 0 0 rgba(45, 199, 189, 0.12);
 }
 
+html[data-theme="deep-dive"] :is(#settingsForm, #listForm) .form-actions {
+  border-top-color: rgba(78, 163, 164, 0.72);
+  background:
+    linear-gradient(rgba(45, 199, 189, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 199, 189, 0.055) 1px, transparent 1px),
+    #081f29;
+  background-size: 22px 22px;
+  box-shadow: 0 -8px 24px rgba(0, 8, 13, 0.32);
+}
+
+html[data-theme="deep-dive"] :is(#settingsForm, #listForm) .modal-head .icon-button {
+  border: 2px solid #65b7b2;
+  background: #102f39;
+  color: #ffe39a;
+  box-shadow: 0 4px 0 #04131b;
+  font-size: 22px;
+}
+
 html[data-theme="deep-dive"] :is(.spot-card h2, .modal-card h2, .detail-head h2, .recipe-row-main strong) {
   color: #fff0bf;
 }
@@ -482,6 +500,7 @@ html[data-theme="deep-dive"] .mobile-bottom-nav a.active {
 
   html[data-theme="deep-dive"] .modal-card,
   html[data-theme="deep-dive"] .detail-drawer-card {
+    border: 0;
     border-radius: 0;
     box-shadow: none;
   }

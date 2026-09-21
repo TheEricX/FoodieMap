@@ -14,6 +14,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- Kept mobile Settings and Create List forms visually aligned with the selected theme, removed stray full-screen dialog borders, and compacted the Create List layout without sacrificing fixed actions or unsaved-change protection.
 - Fixed intermittent scrolling stalls in the mobile restaurant detail view and prevented its close button from triggering the underlying account sign-out confirmation.
 - Made restaurant sharing a full-page mobile history entry so iPhone's native left-edge Back gesture closes it, while desktop keeps the modal dialog.
 - Made mobile restaurant add/edit forms use native browser history so Back or iPhone left-edge Back closes the form without changing the desktop modal flow.

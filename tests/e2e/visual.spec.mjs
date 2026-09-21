@@ -113,6 +113,31 @@ test("@responsive @visual party-island Discovery uses its activity-board treatme
   await expect(page.locator("#discoveryView")).toHaveScreenshot("party-island-discovery.png", { animations: "disabled" });
 });
 
+test("@responsive @visual party-island settings keeps its themed action bar", async ({ signedInPage: page }) => {
+  await page.evaluate(() => localStorage.setItem("foodiemap:theme", "party-island"));
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await page.locator("#settingsButton").click();
+  await expect(page.locator("#settingsDialog")).toBeVisible();
+  await expect(page.locator("#settingsForm")).toHaveScreenshot("party-island-settings.png", { animations: "disabled" });
+});
+
+test("@responsive @visual create-list form keeps a compact editing flow", async ({ signedInPage: page }, testInfo) => {
+  await page.goto("/#my-lists");
+  await page.waitForLoadState("networkidle");
+  await page.evaluate(() => localStorage.setItem("foodiemap:theme", "party-island"));
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  if (testInfo.project.name === "visual-mobile") {
+    await page.locator("#mobileMyListDrawer summary").click();
+    await page.locator("#mobileMyListDrawer [data-mobile-create-list]").click();
+  } else {
+    await page.locator("#createListButton").click();
+  }
+  await expect(page.locator("#listDialog")).toBeVisible();
+  await expect(page.locator("#listForm")).toHaveScreenshot("create-list-form.png", { animations: "disabled" });
+});
+
 test("@responsive @visual saved places keep filter controls clear of results", async ({ signedInPage: page }) => {
   const created = await page.request.post("/api/restaurants", { data: {
     name: "Visual saved place",
