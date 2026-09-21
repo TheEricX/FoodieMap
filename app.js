@@ -41,16 +41,19 @@ let settingsThemeBaseline = currentTheme;
 let i18nCore = null;
 
 function normalizeTheme(theme) {
-  return theme === "deep-dive" ? "deep-dive" : "paper";
+  return ["deep-dive", "izakaya", "party-island"].includes(theme) ? theme : "paper";
 }
 
 function applyTheme(theme, { persist = false } = {}) {
   currentTheme = normalizeTheme(theme);
   document.documentElement.dataset.theme = currentTheme;
-  document.querySelector("#themeColorMeta")?.setAttribute(
-    "content",
-    currentTheme === "deep-dive" ? "#071923" : "#f7f6f1"
-  );
+  const themeColors = {
+    paper: "#f7f6f1",
+    "deep-dive": "#071923",
+    izakaya: "#211116",
+    "party-island": "#46a8e4",
+  };
+  document.querySelector("#themeColorMeta")?.setAttribute("content", themeColors[currentTheme]);
   if (!persist) return;
   try {
     localStorage.setItem(THEME_KEY, currentTheme);

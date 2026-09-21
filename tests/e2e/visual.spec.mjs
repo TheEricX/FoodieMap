@@ -62,6 +62,57 @@ test("@responsive @visual deep-sea theme keeps the map readable", async ({ signe
   await expect(page.locator("#mapView")).toHaveScreenshot("deep-sea-map-theme.png", { animations: "disabled" });
 });
 
+test("@responsive @visual izakaya theme keeps the map readable", async ({ signedInPage: page }) => {
+  const created = await page.request.post("/api/restaurants", { data: {
+    name: "Kurenai Yakitori",
+    address: "Toronto",
+    lat: 43.6532,
+    lng: -79.3832,
+    google_url: "https://maps.apple.com/?ll=43.6532,-79.3832&q=Kurenai%20Yakitori",
+    status: "favorite",
+    visit_count: 3,
+    personal_rating: 4.7,
+    notes: "Warm lanterns, charcoal skewers, and a late-night counter seat."
+  }});
+  expect(created.ok()).toBeTruthy();
+  await page.evaluate(() => localStorage.setItem("foodiemap:theme", "izakaya"));
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await stabilizeGeneratedFoodImages(page);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "izakaya");
+  await expect(page.locator("#mapView")).toHaveScreenshot("izakaya-map-theme.png", { animations: "disabled" });
+});
+
+test("@responsive @visual party-island theme keeps the map readable", async ({ signedInPage: page }) => {
+  const created = await page.request.post("/api/restaurants", { data: {
+    name: "Rainbow Pier Pizza",
+    address: "Toronto",
+    lat: 43.6532,
+    lng: -79.3832,
+    google_url: "https://maps.apple.com/?ll=43.6532,-79.3832&q=Rainbow%20Pier%20Pizza",
+    status: "want_to_go",
+    visit_count: 1,
+    personal_rating: 4.6,
+    notes: "Bright tables, a breezy patio, and a good place for a group lunch."
+  }});
+  expect(created.ok()).toBeTruthy();
+  await page.evaluate(() => localStorage.setItem("foodiemap:theme", "party-island"));
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await stabilizeGeneratedFoodImages(page);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "party-island");
+  await expect(page.locator("#mapView")).toHaveScreenshot("party-island-map-theme.png", { animations: "disabled" });
+});
+
+test("@responsive @visual party-island Discovery uses its activity-board treatment", async ({ signedInPage: page }) => {
+  await page.evaluate(() => localStorage.setItem("foodiemap:theme", "party-island"));
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await page.locator('[data-view="discovery"]:visible').click();
+  await expect(page.locator("#discoveryView")).toBeVisible();
+  await expect(page.locator("#discoveryView")).toHaveScreenshot("party-island-discovery.png", { animations: "disabled" });
+});
+
 test("@responsive @visual saved places keep filter controls clear of results", async ({ signedInPage: page }) => {
   const created = await page.request.post("/api/restaurants", { data: {
     name: "Visual saved place",

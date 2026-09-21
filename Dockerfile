@@ -9,7 +9,7 @@ RUN apt-get update \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY index.html styles.css theme-deep-dive.css ui-tokens.css ui-shell.css app.js i18n.mjs map-link-core.mjs map-geometry.mjs map-interactions.mjs location-core.mjs ui-core.mjs ui-shell.mjs ui-dialogs.mjs ui-components.mjs ui-swipe-dismiss.mjs data-client.mjs domain-core.mjs view-templates.mjs list-view-templates.mjs account-share-templates.mjs form-templates.mjs map-view-templates.mjs server.py mcp_server.py oauth_service.py foodiemap_service.py ./
+COPY index.html styles.css theme-deep-dive.css theme-izakaya.css theme-party-island.css ui-tokens.css ui-shell.css app.js i18n.mjs map-link-core.mjs map-geometry.mjs map-interactions.mjs location-core.mjs ui-core.mjs ui-shell.mjs ui-dialogs.mjs ui-components.mjs ui-swipe-dismiss.mjs data-client.mjs domain-core.mjs view-templates.mjs list-view-templates.mjs account-share-templates.mjs form-templates.mjs map-view-templates.mjs server.py mcp_server.py oauth_service.py foodiemap_service.py ./
 COPY assets ./assets
 
 ENV DATA_DIR=/data

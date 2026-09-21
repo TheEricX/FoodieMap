@@ -8,9 +8,10 @@
     <script>
       try {
         const savedTheme = localStorage.getItem("foodiemap:theme");
-        if (savedTheme === "deep-dive") {
+        if (["deep-dive", "izakaya", "party-island"].includes(savedTheme)) {
           document.documentElement.dataset.theme = savedTheme;
-          document.querySelector("#themeColorMeta")?.setAttribute("content", "#071923");
+          const themeColors = { "deep-dive": "#071923", izakaya: "#211116", "party-island": "#46a8e4" };
+          document.querySelector("#themeColorMeta")?.setAttribute("content", themeColors[savedTheme]);
         }
       } catch {
         // Keep the paper theme when browser storage is unavailable.
@@ -26,6 +27,8 @@
     <link rel="stylesheet" href="/styles.css?v=20260902-share-sheet" />
     <link rel="stylesheet" href="/ui-shell.css?v=20260712-shell" />
     <link rel="stylesheet" href="/theme-deep-dive.css?v=20260919-theme" />
+    <link rel="stylesheet" href="/theme-izakaya.css?v=20260919-theme" />
+    <link rel="stylesheet" href="/theme-party-island.css?v=20260919-theme" />
   </head>
   <body>
     <main class="app-shell">
@@ -958,6 +961,22 @@
                 <span>
                   <strong data-i18n="settings.themeDeepDive">Deep-sea log</strong>
                   <small data-i18n="settings.themeDeepDiveDescription">Night dives, sonar panels and bright catch tags.</small>
+                </span>
+              </label>
+              <label class="theme-option">
+                <input type="radio" name="appTheme" value="izakaya" />
+                <span class="theme-swatch theme-swatch-izakaya" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span>
+                  <strong data-i18n="settings.themeIzakaya">Izakaya night</strong>
+                  <small data-i18n="settings.themeIzakayaDescription">Lantern light, dark timber and menu paper.</small>
+                </span>
+              </label>
+              <label class="theme-option">
+                <input type="radio" name="appTheme" value="party-island" />
+                <span class="theme-swatch theme-swatch-party-island" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span>
+                  <strong data-i18n="settings.themePartyIsland">Party island</strong>
+                  <small data-i18n="settings.themePartyIslandDescription">Blue skies, playful panels and bright rewards.</small>
                 </span>
               </label>
             </div>

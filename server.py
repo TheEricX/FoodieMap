@@ -121,6 +121,8 @@ PUBLIC_FILES = {
     "map-interactions.mjs",
     "styles.css",
     "theme-deep-dive.css",
+    "theme-izakaya.css",
+    "theme-party-island.css",
     "ui-tokens.css",
     "ui-shell.css",
 }

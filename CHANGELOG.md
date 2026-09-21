@@ -30,7 +30,7 @@ This project follows a lightweight [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
-- Added a saved appearance setting with paper-journal and deep-sea-log themes, including bilingual controls and responsive visual regression coverage.
+- Added a saved appearance setting with paper-journal, deep-sea-log, Japanese izakaya, and colorful party-island themes, including bilingual controls and responsive visual regression coverage.
 
 - Added restaurant share buttons in List View plus QR-code image cards on the provided card template, with signed-out previews showing restaurant and menu details.
 

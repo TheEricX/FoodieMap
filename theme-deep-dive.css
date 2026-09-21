@@ -400,6 +400,44 @@ html[data-theme="deep-dive"] .theme-picker {
   border-color: rgba(78, 163, 164, 0.65);
 }
 
+html[data-theme="deep-dive"] .discovery-hero {
+  border-color: #3f8b8d;
+  background:
+    linear-gradient(rgba(45, 199, 189, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 199, 189, 0.055) 1px, transparent 1px),
+    #0b2731;
+  background-size: 24px 24px;
+  color: var(--ink);
+  box-shadow: 0 10px 0 rgba(0, 10, 16, 0.28), var(--shadow);
+}
+
+html[data-theme="deep-dive"] .discovery-hero .paper-label {
+  border-radius: 2px;
+  background: var(--primary);
+  color: #10212a;
+  transform: none;
+}
+
+html[data-theme="deep-dive"] .discovery-hero h1 { color: #fff0bf; }
+html[data-theme="deep-dive"] .discovery-hero p { color: #b7ccc5; }
+
+html[data-theme="deep-dive"] .discovery-hero .hero-mascot {
+  border: 2px solid #65b7b2;
+  border-radius: 6px;
+  background: #102f39;
+  font-size: 0;
+  box-shadow: inset 0 0 0 5px rgba(45, 199, 189, 0.08);
+}
+
+html[data-theme="deep-dive"] .discovery-hero .hero-mascot::before {
+  content: "SONAR";
+  color: var(--primary);
+  font-family: "Space Mono", monospace;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
 html[data-theme="deep-dive"] .theme-option + .theme-option {
   border-color: rgba(78, 163, 164, 0.42);
 }
@@ -446,6 +484,10 @@ html[data-theme="deep-dive"] .mobile-bottom-nav a.active {
   html[data-theme="deep-dive"] .detail-drawer-card {
     border-radius: 0;
     box-shadow: none;
+  }
+
+  html[data-theme="deep-dive"] .discovery-hero .hero-mascot::before {
+    font-size: 8px;
   }
 }
 

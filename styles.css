@@ -4695,6 +4695,14 @@ dialog.modal:not([open]) {
 .theme-swatch-deep-dive i:nth-child(1) { background: #2dc7bd; }
 .theme-swatch-deep-dive i:nth-child(2) { background: #f3b93e; }
 .theme-swatch-deep-dive i:nth-child(3) { background: #df6a4c; }
+.theme-swatch-izakaya { border-color: #8d4d32; background: #211116; }
+.theme-swatch-izakaya i:nth-child(1) { background: #b93545; }
+.theme-swatch-izakaya i:nth-child(2) { background: #e0a63d; }
+.theme-swatch-izakaya i:nth-child(3) { background: #f2e2c0; }
+.theme-swatch-party-island { border-color: #467aa8; background: #dff3ff; }
+.theme-swatch-party-island i:nth-child(1) { background: #46a8e4; }
+.theme-swatch-party-island i:nth-child(2) { background: #ee3d4a; }
+.theme-swatch-party-island i:nth-child(3) { background: #f6c83d; }
 
 .integration-settings {
   border-top: 1px dashed var(--line);

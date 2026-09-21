@@ -1,0 +1,490 @@
+html[data-theme="izakaya"] {
+  color-scheme: light;
+  --primary: #b93545;
+  --primary-dark: #6e1f2b;
+  --primary-soft: #e45f6f;
+  --secondary: #d9a13a;
+  --secondary-dark: #85551d;
+  --secondary-soft: #f1d28b;
+  --tertiary: #315465;
+  --tertiary-soft: #b9ced3;
+  --neutral: #211116;
+  --paper: #f3e6c9;
+  --paper-warm: #dfc69a;
+  --ink: #2b201e;
+  --muted: #76645d;
+  --line: #a98255;
+  --line-strong: #6d462b;
+  --danger: #b61f2f;
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 7px;
+  --radius-card: 4px;
+  --shadow: 0 22px 48px rgba(16, 5, 8, 0.48);
+  --soft-shadow: 0 9px 18px rgba(32, 10, 13, 0.25);
+  --focus: 0 0 0 3px rgba(217, 161, 58, 0.38);
+}
+
+html[data-theme="izakaya"] body {
+  background:
+    repeating-linear-gradient(90deg, rgba(113, 48, 38, 0.12) 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(0deg, rgba(8, 3, 5, 0.22) 0 2px, transparent 2px 8px),
+    #211116;
+}
+
+html[data-theme="izakaya"] body::before {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  background:
+    linear-gradient(90deg, transparent 0 4%, rgba(185, 53, 69, 0.11) 4% 4.3%, transparent 4.3% 95.7%, rgba(185, 53, 69, 0.11) 95.7% 96%, transparent 96%),
+    linear-gradient(180deg, rgba(217, 161, 58, 0.08), transparent 22%);
+  content: "";
+  pointer-events: none;
+}
+
+html[data-theme="izakaya"] .app-shell {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-theme="izakaya"] .layout {
+  border: 2px solid #754129;
+  background: #1d1115;
+  box-shadow: 0 0 0 4px #31191a, var(--shadow);
+}
+
+html[data-theme="izakaya"] .layout::before {
+  background: repeating-linear-gradient(90deg, rgba(217, 161, 58, 0.18) 0 1px, transparent 1px 18px);
+  opacity: 0.46;
+}
+
+html[data-theme="izakaya"] :is(.map-stage, .lists-stage, .discovery-stage, .recipes-stage, .admin-stage, .admin-login-stage) {
+  background:
+    repeating-linear-gradient(0deg, rgba(117, 65, 41, 0.08) 0 1px, transparent 1px 7px),
+    #26171a;
+}
+
+html[data-theme="izakaya"] :is(.topbar, .sidebar, .login-panel, .login-actions-panel) {
+  border-color: #754129;
+  background:
+    linear-gradient(90deg, transparent 0 49.8%, rgba(217, 161, 58, 0.06) 50%, transparent 50.2%),
+    repeating-linear-gradient(0deg, rgba(255, 229, 183, 0.025) 0 1px, transparent 1px 6px),
+    #28161a;
+  color: #f5e7ca;
+  box-shadow: inset 0 -3px 0 rgba(94, 37, 31, 0.72);
+}
+
+html[data-theme="izakaya"] .topbar {
+  border-bottom: 3px solid #8e4a2d;
+  background-color: rgba(35, 17, 21, 0.98);
+  backdrop-filter: blur(12px);
+}
+
+html[data-theme="izakaya"] .topbar::before {
+  background: repeating-linear-gradient(90deg, #8f2635 0 20px, #b93545 20px 40px, #251419 40px 44px);
+  opacity: 0.72;
+}
+
+html[data-theme="izakaya"] body.is-topbar-elevated .topbar {
+  border-color: #a45d36;
+  box-shadow: 0 18px 34px rgba(12, 3, 6, 0.42), inset 0 -3px 0 rgba(217, 161, 58, 0.14);
+}
+
+html[data-theme="izakaya"] .brand {
+  color: #f2d697;
+  text-shadow: 2px 2px 0 #5d1c28;
+}
+
+html[data-theme="izakaya"] :is(.brand-mark, .pixel-badge) {
+  border: 2px solid #d9a13a;
+  border-radius: 3px;
+  background: #9f2e3c;
+  color: #ffe5a9;
+  box-shadow: inset 0 -5px 0 rgba(84, 18, 27, 0.36), 4px 4px 0 rgba(11, 3, 5, 0.48);
+}
+
+html[data-theme="izakaya"] :is(.top-nav a, .top-actions, .sidebar .eyebrow, .sidebar p, .profile-card span) {
+  color: #c9b79b;
+}
+
+html[data-theme="izakaya"] :is(.top-nav a.active, .profile-card strong, .sidebar-section-head strong) {
+  color: #f4d58f;
+}
+
+html[data-theme="izakaya"] .top-nav a.active::after {
+  height: 4px;
+  border-radius: 0;
+  background: #e54e65;
+  box-shadow: 0 -2px 0 #701b28;
+}
+
+html[data-theme="izakaya"] :is(.search-box, .location-status, .language-options, .avatar) {
+  border-color: #765037;
+  background: #382126;
+  color: #f4e5c6;
+  box-shadow: inset 0 1px 0 rgba(255, 227, 177, 0.08);
+}
+
+html[data-theme="izakaya"] :is(.search-box input, .search-box input::placeholder) {
+  color: #dac9ad;
+}
+
+html[data-theme="izakaya"] :is(.icon-button, .avatar, .text-button) {
+  color: #e5bb66;
+}
+
+html[data-theme="izakaya"] :is(.icon-button:hover, .avatar:hover, .language-options button:hover, .language-options button.active) {
+  border-color: #d9a13a;
+  background: #6f2630;
+  color: #fff0c6;
+}
+
+html[data-theme="izakaya"] .place-view-switcher {
+  border-color: #714530;
+  border-radius: 3px;
+  background: #2c1b1e;
+}
+
+html[data-theme="izakaya"] .place-view-switcher button {
+  border-radius: 2px;
+  color: #d9c7aa;
+}
+
+html[data-theme="izakaya"] .place-view-switcher button.active {
+  background: #c13a4c;
+  color: #fff3d4;
+}
+
+html[data-theme="izakaya"] :is(.primary-button, .mobile-bottom-nav a.active) {
+  border: 1px solid #f0c76e;
+  border-radius: 3px;
+  background: #b93545;
+  color: #fff0c8;
+  box-shadow: 0 4px 0 #641b27, 0 10px 20px rgba(17, 4, 7, 0.28);
+}
+
+html[data-theme="izakaya"] .primary-button.alt {
+  border-color: #f3cc74;
+  background: #d9a13a;
+  color: #342116;
+  box-shadow: 0 4px 0 #79501e, 0 10px 20px rgba(17, 4, 7, 0.28);
+}
+
+html[data-theme="izakaya"] :is(.secondary-button, .outline-button, .outline-link, .icon-link, .mini-action) {
+  border: 1px solid #9a7549;
+  border-radius: 3px;
+  background: #f0dfbd;
+  color: #5f2b27;
+  box-shadow: 0 2px 0 #7a4e30;
+}
+
+html[data-theme="izakaya"] :is(.primary-button, .secondary-button, .outline-button, .outline-link, .icon-link, .mini-action):active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+html[data-theme="izakaya"] .panel-surface {
+  border: 2px solid #8c5e36;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(0deg, rgba(106, 72, 42, 0.035) 0 1px, transparent 1px 5px),
+    #f3e6c9;
+  box-shadow: inset 0 0 0 3px rgba(126, 80, 41, 0.08), 0 10px 0 rgba(19, 5, 8, 0.22);
+}
+
+html[data-theme="izakaya"] :is(.detail-section-head strong, .detail-paper-panel label, .list-card strong, .empty-map strong) {
+  color: #752b2f;
+}
+
+html[data-theme="izakaya"] :is(.map-toolbar h1, .view-toolbar h1, .map-nearest-panel .section-head strong) {
+  color: #f2d697;
+}
+
+html[data-theme="izakaya"] :is(.map-toolbar .eyebrow, .view-toolbar .eyebrow, .map-nearest-panel .section-head .eyebrow) {
+  color: #d66a74;
+}
+
+html[data-theme="izakaya"] :is(.map-toolbar p, .view-toolbar p, .map-nearest-panel .section-head small) {
+  color: #c9b79b;
+}
+
+html[data-theme="izakaya"] .location-prompt {
+  border-color: #9a7549;
+  background: #eadbbc;
+  color: #4e2a27;
+}
+
+html[data-theme="izakaya"] .location-prompt-copy small {
+  color: #806c60;
+}
+
+html[data-theme="izakaya"] .cute-map {
+  border-color: #8d5b36;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(0deg, rgba(79, 43, 31, 0.055) 0 1px, transparent 1px 7px),
+    linear-gradient(135deg, #e4d4b1 0%, #cdb78e 100%);
+  box-shadow: inset 0 0 0 4px rgba(77, 40, 27, 0.08);
+}
+
+html[data-theme="izakaya"] .grid-overlay {
+  opacity: 0.38;
+  background:
+    linear-gradient(rgba(130, 48, 54, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(130, 48, 54, 0.1) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+html[data-theme="izakaya"] .range-ring {
+  border-color: rgba(155, 54, 61, 0.38);
+}
+
+html[data-theme="izakaya"] .range-ring span {
+  color: rgba(105, 36, 42, 0.7);
+}
+
+html[data-theme="izakaya"] .map-zoom-controls {
+  border: 2px solid #7f5233;
+  border-radius: 3px;
+  background: #29181d;
+  box-shadow: 0 7px 0 rgba(25, 7, 10, 0.34);
+}
+
+html[data-theme="izakaya"] :is(.map-zoom-controls span, .map-zoom-button) {
+  color: #f0cf88;
+}
+
+html[data-theme="izakaya"] .map-zoom-button {
+  border-color: #7b4c34;
+  border-radius: 2px;
+  background: #4b2829;
+}
+
+html[data-theme="izakaya"] .restaurant-marker {
+  border: 2px solid #825738;
+  border-radius: 3px;
+  background: #f0dfbd;
+  color: #33231e;
+  box-shadow: 5px 7px 0 rgba(77, 34, 29, 0.25), 0 15px 22px rgba(43, 16, 14, 0.2);
+}
+
+html[data-theme="izakaya"] .restaurant-marker::before {
+  top: -7px;
+  width: 42px;
+  height: 9px;
+  border: 0;
+  border-radius: 0;
+  background: #b93545;
+  opacity: 0.9;
+  transform: translateX(-50%) rotate(-2deg);
+}
+
+html[data-theme="izakaya"] .restaurant-marker small {
+  color: #6e5449;
+}
+
+html[data-theme="izakaya"] .restaurant-marker.favorite { border-color: #b93545; }
+html[data-theme="izakaya"] .restaurant-marker.want_to_go { border-color: #d09932; }
+html[data-theme="izakaya"] .restaurant-marker.visited { border-color: #315465; }
+
+html[data-theme="izakaya"] .restaurant-marker.selected {
+  border-color: #b93545;
+  box-shadow: 0 0 0 4px rgba(185, 53, 69, 0.2), 5px 8px 0 rgba(77, 34, 29, 0.28);
+}
+
+html[data-theme="izakaya"] :is(.marker-photo, .recent-thumb, .recipe-thumb, .recipe-hero-image) {
+  border-color: #8a5d3b;
+  border-radius: 2px;
+  background: #dfc69a;
+}
+
+html[data-theme="izakaya"] :is(.spot-card, .detail-drawer-card, .modal-card) {
+  border: 3px solid #8b5934;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(0deg, rgba(91, 58, 38, 0.035) 0 1px, transparent 1px 5px),
+    #f3e6c9;
+  color: #2b201e;
+  box-shadow: 0 0 0 5px #2a1719, 0 25px 54px rgba(12, 3, 5, 0.52), inset 5px 0 0 rgba(185, 53, 69, 0.1);
+}
+
+html[data-theme="izakaya"] :is(.spot-card h2, .modal-card h2, .detail-head h2, .recipe-row-main strong) {
+  color: #60252a;
+}
+
+html[data-theme="izakaya"] :is(.spot-card p:not(.eyebrow), .detail-head p:not(.eyebrow), .spot-row p, .recipe-row-main p) {
+  color: #705b50;
+}
+
+html[data-theme="izakaya"] :is(.spot-card .tape, .row-tape) {
+  border: 0;
+  border-radius: 0;
+  background: #d9a13a;
+  opacity: 0.92;
+  mix-blend-mode: multiply;
+  transform: rotate(-1deg);
+}
+
+html[data-theme="izakaya"] :is(.spot-card-tab, body[data-view="my-map"] .spot-card-tab) {
+  border: 2px solid #efc873;
+  border-radius: 3px;
+  background: #a52f3d;
+  color: #fff1cb;
+  box-shadow: 0 6px 0 #5c1a24, 0 16px 30px rgba(15, 4, 6, 0.4);
+}
+
+html[data-theme="izakaya"] :is(.spot-card-tab span, body[data-view="my-map"] .spot-card-tab span) {
+  color: rgba(255, 238, 198, 0.72);
+}
+
+html[data-theme="izakaya"] :is(.list-card, .spot-row, .add-spot-row, .recipe-row, .recipe-detail-card, .integration-item, .detail-add-dish, .detail-dish-card) {
+  border: 1px solid #a37b4d;
+  border-radius: 3px;
+  background: #f0dfbd;
+  color: #2d211d;
+  box-shadow: 4px 5px 0 rgba(79, 37, 27, 0.14);
+}
+
+html[data-theme="izakaya"] :is(.list-card.selected, .recipe-row.selected, .spot-row:hover, .spot-row:focus-within) {
+  border-color: #b93545;
+  background: #f4e6c9;
+  box-shadow: inset 5px 0 0 #b93545, 4px 5px 0 rgba(79, 37, 27, 0.16);
+}
+
+html[data-theme="izakaya"] :is(.empty-panel, .empty-map, .sidebar-empty) {
+  border-color: #a77b4b;
+  border-radius: 3px;
+  background: rgba(240, 223, 189, 0.72);
+  color: #735e52;
+}
+
+html[data-theme="izakaya"] :is(.detail-paper-panel input, .detail-paper-panel select, .detail-paper-panel textarea, .detail-add-dish input, .detail-add-dish select, .detail-add-dish textarea, .detail-dish-card input, .detail-dish-card select, .detail-dish-card textarea, .modal input, .modal select, .modal textarea) {
+  border: 1px solid #9a7549;
+  border-radius: 2px;
+  background: #fbefd5;
+  color: #2b201e;
+  box-shadow: inset 0 2px 0 rgba(90, 52, 31, 0.05);
+}
+
+html[data-theme="izakaya"] :is(.modal input::placeholder, .modal textarea::placeholder) {
+  color: #9a8678;
+}
+
+html[data-theme="izakaya"] .detail-paper-panel {
+  border-color: rgba(126, 78, 41, 0.46);
+}
+
+html[data-theme="izakaya"] :is(.tag-pill, .meta-row span, .detail-meta-row span) {
+  border-radius: 2px;
+}
+
+html[data-theme="izakaya"] .tag-pill.visited { background: #c7d5d5; color: #294d59; }
+html[data-theme="izakaya"] .tag-pill.want_to_go { background: #f0d18a; color: #6d4519; }
+html[data-theme="izakaya"] .tag-pill.favorite { background: #eab0b3; color: #7b2630; }
+
+html[data-theme="izakaya"] .theme-picker {
+  border-color: #a57b4c;
+}
+
+html[data-theme="izakaya"] .discovery-hero {
+  border: 3px solid #8b5934;
+  border-radius: 5px;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 229, 183, 0.025) 0 1px, transparent 1px 6px),
+    linear-gradient(110deg, #2a1719 0 68%, #6f2630 68% 100%);
+  color: #f3e6c9;
+  box-shadow: 0 0 0 4px #211116, 0 18px 36px rgba(12, 3, 5, 0.42);
+}
+
+html[data-theme="izakaya"] .discovery-hero .paper-label {
+  border-radius: 0;
+  background: #d9a13a;
+  color: #4d291d;
+  transform: rotate(-1deg);
+}
+
+html[data-theme="izakaya"] .discovery-hero h1 { color: #f5dd9f; }
+html[data-theme="izakaya"] .discovery-hero p { color: #d2bea0; }
+
+html[data-theme="izakaya"] .discovery-hero .hero-mascot {
+  border: 2px solid #d9a13a;
+  border-radius: 5px;
+  background: #3b2023;
+  font-size: 0;
+  box-shadow: 5px 6px 0 rgba(12, 3, 5, 0.34);
+}
+
+html[data-theme="izakaya"] .discovery-hero .hero-mascot::before {
+  content: "🍶";
+  font-size: 70px;
+}
+
+html[data-theme="izakaya"] .theme-option + .theme-option {
+  border-color: rgba(133, 85, 45, 0.35);
+}
+
+html[data-theme="izakaya"] .theme-option:has(input:checked) {
+  background: linear-gradient(90deg, rgba(185, 53, 69, 0.12), transparent 76%);
+}
+
+html[data-theme="izakaya"] .theme-option:has(input:checked) > span:last-child strong {
+  color: #8c2834;
+}
+
+html[data-theme="izakaya"] :is(.modal::backdrop, .detail-drawer::backdrop) {
+  background: rgba(18, 5, 8, 0.78);
+}
+
+html[data-theme="izakaya"] .mobile-bottom-nav {
+  border: 2px solid #78422f;
+  border-radius: 4px;
+  background: rgba(38, 19, 23, 0.97);
+  box-shadow: 0 14px 32px rgba(12, 3, 5, 0.52), inset 0 1px 0 rgba(245, 205, 126, 0.1);
+}
+
+html[data-theme="izakaya"] .mobile-bottom-nav a {
+  border-radius: 2px;
+  color: #d5bea0;
+}
+
+@media (max-width: 900px) {
+  html[data-theme="izakaya"] body {
+    background: #211116;
+  }
+
+  html[data-theme="izakaya"] .topbar {
+    border-bottom-color: #8e4a2d;
+  }
+
+  html[data-theme="izakaya"] :is(.modal-card, .detail-drawer-card) {
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  html[data-theme="izakaya"] body[data-view="my-map"] .mobile-filter-chip,
+  html[data-theme="izakaya"] body[data-view="my-lists"] .mobile-list-chip {
+    color: #d6bea0;
+  }
+
+  html[data-theme="izakaya"] body[data-view="my-map"] .mobile-filter-chip.active,
+  html[data-theme="izakaya"] body[data-view="my-lists"] .mobile-list-chip.active {
+    color: #fff0c8;
+  }
+
+  html[data-theme="izakaya"] .discovery-hero .hero-mascot::before {
+    font-size: 25px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="izakaya"] *,
+  html[data-theme="izakaya"] *::before,
+  html[data-theme="izakaya"] *::after {
+    scroll-behavior: auto !important;
+  }
+}

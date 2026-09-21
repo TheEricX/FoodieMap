@@ -23,6 +23,8 @@ test("@smoke app assets and health endpoint load with expected types", async ({ 
     ["/map-view-templates.mjs", "text/javascript"],
     ["/styles.css", "text/css"],
     ["/theme-deep-dive.css", "text/css"],
+    ["/theme-izakaya.css", "text/css"],
+    ["/theme-party-island.css", "text/css"],
     ["/ui-tokens.css", "text/css"],
     ["/ui-shell.css", "text/css"]
   ]);
@@ -115,12 +117,15 @@ test("@smoke appearance theme previews, cancels, and persists after save", async
   await expect(page.locator("html")).toHaveAttribute("data-theme", "paper");
 
   await page.locator("#settingsButton").click();
-  await page.locator('input[name="appTheme"][value="deep-dive"]').check();
+  await page.locator('input[name="appTheme"][value="izakaya"]').check();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "izakaya");
+  await page.locator('input[name="appTheme"][value="party-island"]').check();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "party-island");
   await page.locator('#settingsForm button[type="submit"]').click();
-  await expect.poll(() => page.evaluate(() => localStorage.getItem("foodiemap:theme"))).toBe("deep-dive");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("foodiemap:theme"))).toBe("party-island");
   await page.reload();
   await page.waitForLoadState("networkidle");
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "deep-dive");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "party-island");
 });
 
 test("@staging staging reports PostgreSQL and GCS", async ({ request }) => {
